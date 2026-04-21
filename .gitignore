@@ -1,41 +1,35 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# 🚫 NPMの不要ファイル
 node_modules/
 
-# Expo
+# 🚫 Expoの自動生成ファイル
 .expo/
 dist/
 web-build/
-expo-env.d.ts
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
-
-# generated native folders
-/ios
+# 🚫 Expo Doctorが求めている「正しい除外ルール」
 /android
+/ios
+
+# 🟢 ローカルモジュールは除外しない（エラー解決の要！）
+!modules/
+
+# 🚫 ビルド一時ファイルや環境設定
+build/
+.idea/
+.vscode/
+.DS_Store
+
+# 🚫 鍵ファイルやアプリ本体
+*.jks
+*.keystore
+*.aab
+*.apk
+*.ipa
+*.tar.gz
+local.properties
+annieworks.keystore
+credentials.json
+
+# @generated expo-cli sync-2b81b286409207a5da26e14c78851eb30d8ccbdb
+expo-env.d.ts
+# @end expo-cli
