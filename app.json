@@ -13,7 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.annieworks.AnnieWalkingLog",
+      "infoPlist": {
+        "UIBackgroundModes": ["location", "fetch"] // 🌟 これが重要！
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +25,19 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.t.karimataannieworks.AnnieWalkingLog"
+      "package": "com.annieworks.AnnieWalkingLog",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION", // 🌟 Androidでもバックグラウンドを許可
+        "FOREGROUND_SERVICE",          // 🌟 通知を出すために必要
+        "FOREGROUND_SERVICE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBXwoxT__x0iG8-7cAlsArsvU-neNs3PxM"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,6 +46,15 @@
       "eas": {
         "projectId": "7718817f-9965-453a-a6a4-4b5b6223a22e"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "アニーちゃんのお散歩ルートを記録するために位置情報を使用します。",
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ]
+    ]
   }
 }
