@@ -9,7 +9,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../../services/firebase'; 
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
 
-// 🌟 これが抜けていると保存時に落ちます！
 import { calculateTotalDistance } from '../../utils/locationUtils';
 
 const LOCATION_TASK_NAME = 'background-location-task';

@@ -152,11 +152,11 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 25,
-    bottom: 90,
+    bottom: 30,     
     backgroundColor: '#FF6F61', 
-    width: 75,
-    height: 75,
-    borderRadius: 37.5,
+    width: 65,      
+    height: 65,     
+    borderRadius: 32.5,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,           
@@ -165,9 +165,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
+  // 🌟 3. ボタンが少し小さくなったので、文字も少しだけスッキリさせます
   fabText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14, 
     fontWeight: 'bold',
   },
 });

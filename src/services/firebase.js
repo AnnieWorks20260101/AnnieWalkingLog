@@ -1,6 +1,7 @@
 // src/services/firebase.js
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from "firebase/storage";
 
 // ⚠️ さきほどFirebaseコンソールに表示されたご自身のキー情報に書き換えてください
 const firebaseConfig = {
@@ -17,3 +18,4 @@ const app = initializeApp(firebaseConfig);
 
 // データベース（Firestore）の準備
 export const db = getFirestore(app);
+export const storage = getStorage(app);
