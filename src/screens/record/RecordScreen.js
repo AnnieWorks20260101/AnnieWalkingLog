@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, FlatList, Image, ActivityIndicator } from 'react-native';
 import { db } from '../../services/firebase';
+import { COLORS, FONT_SIZES } from '../../../constants/theme';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
+import i18n from '../../i18n';
 
 export default function RecordScreen({ navigation }) {
+  const { currentTheme } = useTheme();
   const [pets, setPets] = useState([]);
   const [selectedPetId, setSelectedPetId] = useState(null); // 🌟 現在選択されているペットのID
   const [loading, setLoading] = useState(true);
@@ -39,27 +43,27 @@ export default function RecordScreen({ navigation }) {
         {item.photoUrl ? (
           <Image source={{ uri: item.photoUrl }} style={styles.petIcon} />
         ) : (
-          <View style={[styles.petIcon, styles.noImageIcon]}>
-            <Ionicons name="paw" size={24} color={isSelected ? "#FF6F61" : "#ccc"} />
+          <View style={[styles.petIcon, styles.noImageIcon, { backgroundColor: currentTheme.background, borderColor: currentTheme.border }]}>
+            <Ionicons name="paw" size={24} color={isSelected ? currentTheme.primary : currentTheme.border} />
           </View>
         )}
-        <Text style={[styles.petName, isSelected && styles.petNameSelected]} numberOfLines={1}>
+        <Text style={[styles.petName, { color: currentTheme.textSecondary }, isSelected && { color: currentTheme.primary, fontWeight: 'bold' }]} numberOfLines={1}>
           {item.name}
         </Text>
       </TouchableOpacity>
     );
   };
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#FF6F61" /></View>;
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={currentTheme.primary} /></View>;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🍖 飼育記録</Text>
+    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+      <Text style={[styles.title, { color: currentTheme.text }]}>{i18n.t('record.title')}</Text>
 
       {/* 🌟 ペット選択エリア（横スクロール） */}
-      <View style={styles.petSelectorWrapper}>
+      <View style={[styles.petSelectorWrapper, { borderBottomColor: currentTheme.border }]}>
         {pets.length === 0 ? (
-          <Text style={styles.noPetText}>設定タブからペットを登録してください🐾</Text>
+          <Text style={[styles.noPetText, { color: currentTheme.textSecondary }]}>{i18n.t('record.noPet')}</Text>
         ) : (
           <FlatList
             data={pets}
@@ -74,52 +78,51 @@ export default function RecordScreen({ navigation }) {
 
       {/* メニューエリア */}
       <View style={styles.menuGrid}>
-        <TouchableOpacity style={styles.menuItem} onPress={() => alert('体重記録機能は準備中です')}>
+        <TouchableOpacity style={[styles.menuItem, { backgroundColor: currentTheme.card, borderColor: currentTheme.border }]} onPress={() => alert(i18n.t('record.menuWeight') + i18n.t('record.alertComingSoon'))}>
           <Text style={styles.menuEmoji}>⚖️</Text>
-          <Text style={styles.menuText}>体重</Text>
+          <Text style={[styles.menuText, { color: currentTheme.textSecondary }]}>{i18n.t('record.menuWeight')}</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={styles.menuItem} 
+          style={[styles.menuItem, { backgroundColor: currentTheme.card, borderColor: currentTheme.border }]} 
           // 🌟 修正：選択中のペットIDとペット一覧を渡して遷移
           onPress={() => {
             if (!selectedPetId) {
-              alert("先にペットを登録・選択してください🐾");
+              alert(i18n.t('record.alertNoPet'));
               return;
             }
             navigation.navigate('Medicine', { selectedPetId, pets });
           }}
         >
           <Text style={styles.menuEmoji}>💊</Text>
-          <Text style={styles.menuText}>薬/予防</Text>
+          <Text style={[styles.menuText, { color: currentTheme.textSecondary }]}>{i18n.t('record.menuMedicine')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => alert('トリミング機能は準備中です')}>
+        <TouchableOpacity style={[styles.menuItem, { backgroundColor: currentTheme.card, borderColor: currentTheme.border }]} onPress={() => alert(i18n.t('record.menuTrimming') + i18n.t('record.alertComingSoon'))}>
           <Text style={styles.menuEmoji}>✂️</Text>
-          <Text style={styles.menuText}>トリミング</Text>
+          <Text style={[styles.menuText, { color: currentTheme.textSecondary }]}>{i18n.t('record.menuTrimming')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => alert('病院機能は準備中です')}>
+        <TouchableOpacity style={[styles.menuItem, { backgroundColor: currentTheme.card, borderColor: currentTheme.border }]} onPress={() => alert(i18n.t('record.menuHospital') + i18n.t('record.alertComingSoon'))}>
           <Text style={styles.menuEmoji}>🏥</Text>
-          <Text style={styles.menuText}>病院</Text>
+          <Text style={[styles.menuText, { color: currentTheme.textSecondary }]}>{i18n.t('record.menuHospital')}</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.subtitle}>最近の記録</Text>
+      <Text style={[styles.subtitle, { color: currentTheme.text }]}>{i18n.t('record.recentRecords')}</Text>
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>まだ記録がありません。{"\n"}上のメニューから追加していきましょう！</Text>
+        <Text style={[styles.emptyText, { color: currentTheme.textSecondary }]}>{i18n.t('record.noRecords')}</Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 20, paddingTop: 60 },
+  container: { flex: 1, padding: 20, paddingTop: 60 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 15 },
+  title: { fontSize: FONT_SIZES.standard.xl, fontWeight: 'bold', marginBottom: 15 },
   
   // ペット選択エリア
   petSelectorWrapper: {
     marginBottom: 25,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
     paddingBottom: 15,
   },
   petSelectorList: {
@@ -128,10 +131,10 @@ const styles = StyleSheet.create({
   petIconContainer: {
     alignItems: 'center',
     marginRight: 15,
-    opacity: 0.5, // 選択されていないものは少し薄くする
+    opacity: 0.5,
   },
   petIconContainerSelected: {
-    opacity: 1, // 選択されているものはクッキリ
+    opacity: 1,
   },
   petIcon: {
     width: 60,
@@ -141,35 +144,31 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   noImageIcon: {
-    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor: '#eee',
   },
   petName: {
-    fontSize: 12,
+    fontSize: FONT_SIZES.standard.s,
     marginTop: 5,
-    color: '#666',
     maxWidth: 70,
   },
   petNameSelected: {
     fontWeight: 'bold',
-    color: '#FF6F61', // 選択されている名前はアニーちゃんカラーに
   },
   noPetText: {
-    color: '#999',
     fontStyle: 'italic',
   },
 
   // メニューエリア
-  subtitle: { fontSize: 18, fontWeight: 'bold', marginTop: 30, marginBottom: 15, color: '#333' },
+  subtitle: { fontSize: FONT_SIZES.standard.l, fontWeight: 'bold', marginTop: 30, marginBottom: 15 },
   menuGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   menuItem: {
-    width: '23%', backgroundColor: '#f8f8f8', padding: 15, borderRadius: 12, alignItems: 'center', marginBottom: 10,
-    borderWidth: 1, borderColor: '#eee'
+    width: '23%', padding: 15, borderRadius: 12, alignItems: 'center', marginBottom: 10,
+    borderWidth: 1
   },
-  menuEmoji: { fontSize: 24, marginBottom: 5 },
-  menuText: { fontSize: 12, color: '#555', fontWeight: '600' },
+  menuEmoji: { fontSize: FONT_SIZES.standard.xl, marginBottom: 5 },
+  menuText: { fontSize: FONT_SIZES.standard.s, fontWeight: '600' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -50 },
-  emptyText: { color: '#999', textAlign: 'center', lineHeight: 22 }
+  emptyText: { textAlign: 'center', lineHeight: 22 }
 });

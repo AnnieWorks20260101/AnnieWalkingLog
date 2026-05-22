@@ -1,0 +1,111 @@
+{
+  "tabs": {
+    "record": "飼育記録",
+    "walk": "お散歩",
+    "settings": "設定"
+  },
+  "record": {
+    "title": "🍖 飼育記録",
+    "noPet": "設定タブからペットを登録してください🐾",
+    "menuWeight": "体重",
+    "menuMedicine": "薬/予防",
+    "menuTrimming": "トリミング",
+    "menuHospital": "病院",
+    "recentRecords": "最近の記録",
+    "noRecords": "まだ記録がありません。\n上のメニューから追加していきましょう！",
+    "alertNoPet": "先にペットを登録・選択してください🐾",
+    "alertComingSoon": "機能は準備中です"
+  },
+  "medicine": {
+    "title": "薬・予防の記録",
+    "recordTitle": "💊 薬・予防の記録",
+    "history": "📝 投薬履歴",
+    "noRecords": "記録がありません",
+    "date": "日付",
+    "type": "種類",
+    "memo": "メモ (任意)",
+    "memoPlaceholder": "例: フロントライン滴下、ご飯に混ぜて完食 など",
+    "save": "記録する",
+    "saveSuccess": "保存完了",
+    "saveError": "保存に失敗しました。",
+    "types": {
+      "fleaTick": "ノミ・ダニ",
+      "filaria": "フィラリア",
+      "vaccine": "ワクチン",
+      "prescription": "処方薬",
+      "other": "その他"
+    }
+  },
+  "walk": {
+    "title": "🐾 お散歩画面",
+    "historyTitle": "お散歩履歴",
+    "detailTitle": "お散歩の記録",
+    "start": "スタート！",
+    "walking": "お散歩中...",
+    "end": "終了！",
+    "startWalk": "🐾 開始",
+    "gettingLocation": "現在地を取得中...🐾",
+    "locationError": "位置情報の許可が必要です",
+    "locationErrorMsg": "設定から許可をお願いします。",
+    "bgLocationWarning": "⚠️ バックグラウンド記録がオフです",
+    "bgLocationWarningMsg": "スマホの設定で「常に許可」にされていないため、画面を消したり他のアプリを開いたりすると、お散歩の記録が途切れる可能性があります。",
+    "startError": "開始に失敗しました。GPSの電波状況などを確認してください。",
+    "endConfirm": "お散歩終了",
+    "endConfirmMsg": "この記録を保存しますか？",
+    "discard": "破棄",
+    "save": "保存する",
+    "saveSuccess": "保存完了！",
+    "saveSuccessMsg": "今日もお疲れ様でした！🐾",
+    "viewResult": "結果を見る",
+    "deleteConfirm": "データの削除",
+    "deleteConfirmMsg": "このお散歩記録を削除してもよろしいですか？",
+    "cancel": "キャンセル",
+    "delete": "削除する",
+    "distance": "距離",
+    "time": "時間",
+    "poopCount": "うんち %{count}回",
+    "poopLabel": "💩"
+  },
+  "settings": {
+    "title": "設定",
+    "themeCardTitle": "テーマカラー",
+    "themeCardDesc": "アプリの全体的な色合いを変更します。",
+    "permissionCardTitle": "権限の確認",
+    "permissionCardDesc": "位置情報や通知の設定が正しく行われているか確認します。",
+    "petListCardTitle": "ペット登録",
+    "petListCardDesc": "ペットの情報を登録・編集します。"
+  },
+  "petList": {
+    "title": "ペット一覧",
+    "noPets": "まだ登録されていません。\n右下のボタンから追加してください🐾",
+    "otherPets": "その他のペット",
+    "unspecified": "未設定"
+  },
+  "petRegistration": {
+    "title": "ペット登録",
+    "addPhoto": "写真を追加",
+    "nameLabel": "お名前",
+    "namePlaceholder": "例: アニー",
+    "groupLabel": "グループ (任意)",
+    "groupPlaceholder": "例: 自宅、実家、〇〇家 など",
+    "typeLabel": "種類 (犬種・猫種など)",
+    "typePlaceholder": "例: トイプードル、ミックス",
+    "birthdayLabel": "お誕生日",
+    "birthdayPlaceholder": "日付を選択してください",
+    "genderLabel": "性別",
+    "genderBoy": "男の子",
+    "genderGirl": "女の子",
+    "genderUnspecified": "未設定",
+    "save": "登録する",
+    "saving": "保存中...",
+    "nameRequired": "名前は入力必須です🐾",
+    "saveSuccessMsg": "%{name} を登録しました！",
+    "saveError": "保存に失敗しました。"
+  },
+  "common": {
+    "error": "エラー",
+    "ok": "OK",
+    "hour": "時間",
+    "minute": "分"
+  }
+}

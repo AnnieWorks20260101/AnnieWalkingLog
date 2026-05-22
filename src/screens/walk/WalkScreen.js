@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, Button, TouchableOpacity, Alert } from 'react-native';
 import * as Location from 'expo-location';
+import { FONT_SIZES } from '../../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import i18n from '../../i18n';
 import MapView, { Polyline, Marker } from 'react-native-maps';
 import * as TaskManager from 'expo-task-manager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -32,6 +35,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 });
 
 export default function WalkScreen({ navigation }) {
+  const { currentTheme } = useTheme();
   const [route, setRoute] = useState([]);
   const [poops, setPoops] = useState([]);
   const [isTracking, setIsTracking] = useState(false);
@@ -47,7 +51,7 @@ export default function WalkScreen({ navigation }) {
         // 1. フォアグラウンド権限のみリクエスト（バックグラウンドはここでは聞かない！）
         let { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
         if (foregroundStatus !== 'granted') {
-          Alert.alert('位置情報の許可が必要です', '設定から許可をお願いします。');
+          Alert.alert(i18n.t('walk.locationError'), i18n.t('walk.locationErrorMsg'));
           setInitialRegion({ latitude: 35.681236, longitude: 139.767125, latitudeDelta: 0.005, longitudeDelta: 0.005 });
           return;
         }
@@ -102,8 +106,8 @@ export default function WalkScreen({ navigation }) {
       if (bgStatus !== 'granted') {
         // 🌟 警告だけ出して、return で処理を止めない！
         Alert.alert(
-          '⚠️ バックグラウンド記録がオフです', 
-          'スマホの設定で「常に許可」にされていないため、画面を消したり他のアプリを開いたりすると、お散歩の記録が途切れる可能性があります。'
+          i18n.t('walk.bgLocationWarning'), 
+          i18n.t('walk.bgLocationWarningMsg')
         );
       }
 
@@ -119,14 +123,14 @@ export default function WalkScreen({ navigation }) {
         distanceInterval: 5,
         showsBackgroundLocationIndicator: true,
         foregroundService: {
-          notificationTitle: "お散歩記録中",
-          notificationBody: "アニーちゃんとのお散歩を記録しています🐾",
+          notificationTitle: i18n.t('walk.walking'),
+          notificationBody: "🐾",
         },
       });
     } catch (error) {
       setIsTracking(false);
       console.error(error);
-      Alert.alert("エラー", "開始に失敗しました。GPSの電波状況などを確認してください。");
+      Alert.alert(i18n.t('common.error'), i18n.t('walk.startError'));
     }
   };
 
@@ -142,11 +146,11 @@ export default function WalkScreen({ navigation }) {
     const finalRoute = saved ? JSON.parse(saved) : [];
 
     Alert.alert(
-      "お散歩終了",
-      "この記録を保存しますか？",
+      i18n.t('walk.endConfirm'),
+      i18n.t('walk.endConfirmMsg'),
       [
-        { text: "破棄", style: "destructive", onPress: () => setRoute([]) },
-        { text: "保存する", onPress: () => saveWalkData(finalRoute) }
+        { text: i18n.t('walk.discard'), style: "destructive", onPress: () => setRoute([]) },
+        { text: i18n.t('walk.save'), onPress: () => saveWalkData(finalRoute) }
       ]
     );
   };
@@ -171,9 +175,9 @@ export default function WalkScreen({ navigation }) {
       const docRef = await addDoc(collection(db, "walks"), walkData);
       await AsyncStorage.removeItem(TEMP_ROUTE_KEY);
 
-      Alert.alert("保存完了！", "今日もお疲れ様でした！🐾", [
+      Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('walk.saveSuccessMsg'), [
         { 
-          text: "結果を見る", 
+          text: i18n.t('walk.viewResult'), 
           onPress: () => {
             navigation.replace('WalkDetail', { walk: { ...walkData, id: docRef.id } });
           } 
@@ -181,7 +185,7 @@ export default function WalkScreen({ navigation }) {
       ]);
     } catch (e) {
       console.error(e);
-      Alert.alert("エラー", "保存に失敗しました。");
+      Alert.alert(i18n.t('common.error'), i18n.t('medicine.saveError'));
     }
   };
 
@@ -195,29 +199,29 @@ export default function WalkScreen({ navigation }) {
 
   if (!initialRegion) {
     return (
-      <View style={styles.container}>
-        <Text style={{ marginTop: 100, textAlign: 'center' }}>現在地を取得中...🐾</Text>
+      <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+        <Text style={{ marginTop: 100, textAlign: 'center', color: currentTheme.textSecondary }}>{i18n.t('walk.gettingLocation')}</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🐾 お散歩画面</Text>
+    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+      <Text style={[styles.title, { color: currentTheme.text }]}>{i18n.t('walk.title')}</Text>
       <View style={styles.buttonContainer}>
-        <Button title={isTracking ? "お散歩中..." : "スタート！"} onPress={startTracking} disabled={isTracking} />
-        <Button title="終了！" onPress={stopTracking} disabled={!isTracking} color="red" />
+        <Button title={isTracking ? i18n.t('walk.walking') : i18n.t('walk.start')} onPress={startTracking} disabled={isTracking} color={currentTheme.primary} />
+        <Button title={i18n.t('walk.end')} onPress={stopTracking} disabled={!isTracking} color={currentTheme.danger} />
       </View>
-      <View style={styles.mapContainer}>
+      <View style={[styles.mapContainer, { borderColor: currentTheme.border }]}>
         <MapView ref={mapRef} style={styles.map} showsUserLocation={true} initialRegion={initialRegion}>
-          {route.length > 0 && <Polyline coordinates={route} strokeColor="#FF0000" strokeWidth={5} />}
+          {route.length > 0 && <Polyline coordinates={route} strokeColor={currentTheme.primary} strokeWidth={5} />}
           {poops.map((poop, index) => (
             <Marker key={index} coordinate={poop}><Text style={{fontSize: 30}}>💩</Text></Marker>
           ))}
         </MapView>
         {isTracking && (
-          <TouchableOpacity style={styles.poopButton} onPress={recordPoop}>
-            <Text style={styles.poopButtonText}>💩</Text>
+          <TouchableOpacity style={[styles.poopButton, { backgroundColor: currentTheme.card }]} onPress={recordPoop}>
+            <Text style={styles.poopButtonText}>{i18n.t('walk.poopLabel')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -226,16 +230,15 @@ export default function WalkScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  title: { fontSize: 20, fontWeight: 'bold', marginVertical: 10, textAlign: 'center' },
+  container: { flex: 1 },
+  title: { fontSize: FONT_SIZES.standard.xl, fontWeight: 'bold', marginVertical: 10, textAlign: 'center' },
   buttonContainer: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 10 },
-  mapContainer: { flex: 1, borderWidth: 1, borderColor: '#ccc' },
+  mapContainer: { flex: 1, borderWidth: 1 },
   map: { width: '100%', height: '100%' },
   poopButton: {
     position: 'absolute',
     bottom: 100,
     right: 30,
-    backgroundColor: '#fff',
     width: 70,
     height: 70,
     borderRadius: 35,

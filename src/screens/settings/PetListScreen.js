@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, SectionList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { db } from '../../services/firebase';
+import { FONT_SIZES } from '../../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
+import i18n from '../../i18n';
 
 export default function PetListScreen({ navigation }) {
+  const { currentTheme } = useTheme();
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,7 +23,7 @@ export default function PetListScreen({ navigation }) {
       // 🌟 ここで「グループごと」のデータ構造に変換します
       const groupedData = petData.reduce((acc, pet) => {
         // グループが未入力の場合は「その他のペット」という枠に入れる
-        const groupName = pet.group ? pet.group : 'その他のペット';
+        const groupName = pet.group ? pet.group : i18n.t('petList.otherPets');
         if (!acc[groupName]) {
           acc[groupName] = [];
         }
@@ -35,8 +39,8 @@ export default function PetListScreen({ navigation }) {
 
       // 「その他のペット」を一番下に持っていくための並び替え
       sectionArray.sort((a, b) => {
-        if (a.title === 'その他のペット') return 1;
-        if (b.title === 'その他のペット') return -1;
+        if (a.title === i18n.t('petList.otherPets')) return 1;
+        if (b.title === i18n.t('petList.otherPets')) return -1;
         return a.title.localeCompare(b.title);
       });
 
@@ -48,43 +52,43 @@ export default function PetListScreen({ navigation }) {
   }, []);
 
   const renderItem = ({ item }) => (
-    <View style={styles.petCard}>
+    <View style={[styles.petCard, { backgroundColor: currentTheme.card }]}>
       <View style={styles.avatarContainer}>
         {item.photoUrl ? (
-          <Image source={{ uri: item.photoUrl }} style={styles.avatar} />
+          <Image source={{ uri: item.photoUrl }} style={[styles.avatar, { borderColor: currentTheme.border }]} />
         ) : (
-          <View style={[styles.avatar, styles.noImage]}>
-            <Ionicons name="paw" size={30} color="#ccc" />
+          <View style={[styles.avatar, styles.noImage, { backgroundColor: currentTheme.background, borderColor: currentTheme.border }]}>
+            <Ionicons name="paw" size={30} color={currentTheme.textSecondary} />
           </View>
         )}
       </View>
       
       <View style={styles.infoContainer}>
-        <Text style={styles.petName}>{item.name}</Text>
-        <Text style={styles.petDetails}>
+        <Text style={[styles.petName, { color: currentTheme.text }]}>{item.name}</Text>
+        <Text style={[styles.petDetails, { color: currentTheme.textSecondary }]}>
           {item.type} {item.gender ? ` / ${item.gender}` : ''}
         </Text>
-        <Text style={styles.birthdayText}>🎂 {item.birthday || '未設定'}</Text>
+        <Text style={[styles.birthdayText, { color: currentTheme.textSecondary }]}>🎂 {item.birthday || i18n.t('petList.unspecified')}</Text>
       </View>
     </View>
   );
 
   // 🌟 見出し（グループ名）の描画
   const renderSectionHeader = ({ section: { title } }) => (
-    <View style={styles.sectionHeader}>
-      <Ionicons name={title === 'その他のペット' ? "paw-outline" : "home-outline"} size={18} color="#555" />
-      <Text style={styles.sectionHeaderText}>{title}</Text>
+    <View style={[styles.sectionHeader, { borderBottomColor: currentTheme.border }]}>
+      <Ionicons name={title === i18n.t('petList.otherPets') ? "paw-outline" : "home-outline"} size={18} color={currentTheme.textSecondary} />
+      <Text style={[styles.sectionHeaderText, { color: currentTheme.textSecondary }]}>{title}</Text>
     </View>
   );
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#FF6F61" /></View>;
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={currentTheme.primary} /></View>;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       {sections.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="paw" size={60} color="#ccc" />
-          <Text style={styles.emptyText}>まだ登録されていません。{"\n"}右下のボタンから追加してください🐾</Text>
+          <Ionicons name="paw" size={60} color={currentTheme.textSecondary} />
+          <Text style={[styles.emptyText, { color: currentTheme.textSecondary }]}>{i18n.t('petList.noPets')}</Text>
         </View>
       ) : (
         <SectionList
@@ -97,18 +101,18 @@ export default function PetListScreen({ navigation }) {
         />
       )}
       
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('PetRegistration')}>
-        <Ionicons name="add" size={32} color="#fff" />
+      <TouchableOpacity style={[styles.fab, { backgroundColor: currentTheme.primary }]} onPress={() => navigation.navigate('PetRegistration')}>
+        <Ionicons name="add" size={32} color={currentTheme.card} />
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { textAlign: 'center', color: '#888', marginTop: 10, lineHeight: 22 },
+  emptyText: { textAlign: 'center', marginTop: 10, lineHeight: 22 },
   
   // 🌟 追加：見出しのスタイル
   sectionHeader: {
@@ -119,22 +123,20 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 5,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
   },
   sectionHeaderText: {
-    fontSize: 16,
+    fontSize: FONT_SIZES.standard.m,
     fontWeight: 'bold',
-    color: '#555',
     marginLeft: 8,
   },
 
-  petCard: { flexDirection: 'row', backgroundColor: '#fff', padding: 15, borderRadius: 15, marginBottom: 10, alignItems: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+  petCard: { flexDirection: 'row', padding: 15, borderRadius: 15, marginBottom: 10, alignItems: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
   avatarContainer: { marginRight: 15 },
-  avatar: { width: 70, height: 70, borderRadius: 35, borderWidth: 1, borderColor: '#eee' },
-  noImage: { backgroundColor: '#f9f9f9', justifyContent: 'center', alignItems: 'center' },
+  avatar: { width: 70, height: 70, borderRadius: 35, borderWidth: 1 },
+  noImage: { justifyContent: 'center', alignItems: 'center' },
   infoContainer: { flex: 1 },
-  petName: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 2 },
-  petDetails: { fontSize: 14, color: '#666' },
-  birthdayText: { fontSize: 12, color: '#999', marginTop: 5 },
-  fab: { position: 'absolute', right: 25, bottom: 30, backgroundColor: '#FF6F61', width: 65, height: 65, borderRadius: 32.5, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5 },
+  petName: { fontSize: FONT_SIZES.standard.l, fontWeight: 'bold', marginBottom: 2 },
+  petDetails: { fontSize: FONT_SIZES.standard.s },
+  birthdayText: { fontSize: FONT_SIZES.standard.s, marginTop: 5 },
+  fab: { position: 'absolute', right: 25, bottom: 30, width: 65, height: 65, borderRadius: 32.5, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5 },
 });

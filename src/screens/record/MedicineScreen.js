@@ -3,7 +3,10 @@ import { StyleSheet, View, Text, TouchableOpacity, FlatList, Image, Modal, TextI
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
+import { FONT_SIZES } from '../../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import i18n from '../../i18n';
 
 // カレンダーを日本語化
 LocaleConfig.locales['jp'] = {
@@ -14,6 +17,7 @@ LocaleConfig.locales['jp'] = {
 LocaleConfig.defaultLocale = 'jp';
 
 export default function MedicineScreen({ route }) {
+  const { currentTheme } = useTheme();
   // RecordScreenから渡されたペット情報を受け取る
   const { pets, selectedPetId: initialPetId } = route.params;
   const [selectedPetId, setSelectedPetId] = useState(initialPetId);
@@ -25,10 +29,16 @@ export default function MedicineScreen({ route }) {
 
   // モーダルのState
   const [isModalVisible, setModalVisible] = useState(false);
-  const [medicineType, setMedicineType] = useState('ノミ・ダニ'); // 初期値
+  const [medicineType, setMedicineType] = useState(i18n.t('medicine.types.fleaTick')); // 初期値
   const [memo, setMemo] = useState('');
 
-  const medicineOptions = ['ノミ・ダニ', 'フィラリア', 'ワクチン', '処方薬', 'その他'];
+  const medicineOptions = [
+    i18n.t('medicine.types.fleaTick'), 
+    i18n.t('medicine.types.filaria'), 
+    i18n.t('medicine.types.vaccine'), 
+    i18n.t('medicine.types.prescription'), 
+    i18n.t('medicine.types.other')
+  ];
 
   // 🌟 Firebaseから投薬履歴を取得する
   useEffect(() => {
@@ -49,7 +59,7 @@ export default function MedicineScreen({ route }) {
         const record = { id: doc.id, ...doc.data() };
         data.push(record);
         // カレンダーに丸印をつけるためのデータを作成
-        marks[record.date] = { marked: true, dotColor: '#FF6F61' };
+        marks[record.date] = { marked: true, dotColor: currentTheme.primary };
       });
 
       setRecords(data);
@@ -63,7 +73,7 @@ export default function MedicineScreen({ route }) {
   const getMarkedDates = () => {
     return {
       ...markedDates,
-      [selectedDate]: { ...markedDates[selectedDate], selected: true, selectedColor: '#FF6F61' }
+      [selectedDate]: { ...markedDates[selectedDate], selected: true, selectedColor: currentTheme.primary }
     };
   };
 
@@ -81,27 +91,27 @@ export default function MedicineScreen({ route }) {
       setMemo(''); // メモをリセット
     } catch (error) {
       console.error(error);
-      Alert.alert("エラー", "保存に失敗しました。");
+      Alert.alert(i18n.t('common.error'), i18n.t('medicine.saveError'));
     }
   };
 
   // 🌟 履歴リストの表示
   const renderRecordItem = ({ item }) => (
-    <View style={styles.recordCard}>
-      <View style={styles.recordDateBox}>
-        <Text style={styles.recordDateText}>{item.date.replace(/-/g, '/')}</Text>
+    <View style={[styles.recordCard, { backgroundColor: currentTheme.card }]}>
+      <View style={[styles.recordDateBox, { borderColor: currentTheme.border }]}>
+        <Text style={[styles.recordDateText, { color: currentTheme.textSecondary }]}>{item.date.replace(/-/g, '/')}</Text>
       </View>
       <View style={styles.recordInfo}>
-        <Text style={styles.recordType}>💊 {item.type}</Text>
-        {item.memo ? <Text style={styles.recordMemo}>{item.memo}</Text> : null}
+        <Text style={[styles.recordType, { color: currentTheme.text }]}>💊 {item.type}</Text>
+        {item.memo ? <Text style={[styles.recordMemo, { color: currentTheme.textSecondary }]}>{item.memo}</Text> : null}
       </View>
     </View>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       {/* 🐾 上部：ペット選択（横スクロール） */}
-      <View style={styles.petSelectorWrapper}>
+      <View style={[styles.petSelectorWrapper, { backgroundColor: currentTheme.card, borderColor: currentTheme.border }]}>
         <FlatList
           data={pets}
           horizontal
@@ -117,9 +127,9 @@ export default function MedicineScreen({ route }) {
                 {item.photoUrl ? (
                   <Image source={{ uri: item.photoUrl }} style={styles.petIcon} />
                 ) : (
-                  <View style={[styles.petIcon, styles.noImageIcon]}><Ionicons name="paw" size={24} color={isSelected ? "#FF6F61" : "#ccc"} /></View>
+                  <View style={[styles.petIcon, styles.noImageIcon, { backgroundColor: currentTheme.background, borderColor: currentTheme.border }]}><Ionicons name="paw" size={24} color={isSelected ? currentTheme.primary : currentTheme.border} /></View>
                 )}
-                <Text style={[styles.petName, isSelected && styles.petNameSelected]} numberOfLines={1}>{item.name}</Text>
+                <Text style={[styles.petName, { color: currentTheme.textSecondary }, isSelected && { color: currentTheme.primary, fontWeight: 'bold' }]} numberOfLines={1}>{item.name}</Text>
               </TouchableOpacity>
             );
           }}
@@ -132,17 +142,22 @@ export default function MedicineScreen({ route }) {
         onDayPress={(day) => setSelectedDate(day.dateString)}
         markedDates={getMarkedDates()}
         theme={{
-          selectedDayBackgroundColor: '#FF6F61',
-          todayTextColor: '#FF6F61',
-          arrowColor: '#FF6F61',
+          selectedDayBackgroundColor: currentTheme.primary,
+          todayTextColor: currentTheme.primary,
+          arrowColor: currentTheme.primary,
+          calendarBackground: currentTheme.card,
+          textSectionTitleColor: currentTheme.textSecondary,
+          dayTextColor: currentTheme.text,
+          textDisabledColor: currentTheme.border,
+          monthTextColor: currentTheme.text,
         }}
       />
 
       {/* 📋 履歴リスト（選択された日付の記録、または全履歴など） */}
       <View style={styles.listContainer}>
-        <Text style={styles.listTitle}>📝 投薬履歴</Text>
+        <Text style={[styles.listTitle, { color: currentTheme.text }]}>{i18n.t('medicine.history')}</Text>
         {records.length === 0 ? (
-          <Text style={styles.emptyText}>記録がありません</Text>
+          <Text style={[styles.emptyText, { color: currentTheme.textSecondary }]}>{i18n.t('medicine.noRecords')}</Text>
         ) : (
           <FlatList
             data={records}
@@ -154,48 +169,57 @@ export default function MedicineScreen({ route }) {
       </View>
 
       {/* ➕ 追加ボタン (FAB) */}
-      <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
-        <Ionicons name="add" size={32} color="#fff" />
+      <TouchableOpacity style={[styles.fab, { backgroundColor: currentTheme.primary }]} onPress={() => setModalVisible(true)}>
+        <Ionicons name="add" size={32} color={currentTheme.card} />
       </TouchableOpacity>
 
       {/* 🌟 登録用モーダル */}
       <Modal visible={isModalVisible} transparent={true} animationType="slide">
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: currentTheme.card }]}>
             
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>💊 薬・予防の記録</Text>
+              <Text style={[styles.modalTitle, { color: currentTheme.text }]}>{i18n.t('medicine.recordTitle')}</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={28} color="#666" />
+                <Ionicons name="close" size={28} color={currentTheme.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalDate}>日付: {selectedDate.replace(/-/g, '/')}</Text>
+            <Text style={[styles.modalDate, { color: currentTheme.primary }]}>{i18n.t('medicine.date')}: {selectedDate.replace(/-/g, '/')}</Text>
 
-            <Text style={styles.label}>種類</Text>
+            <Text style={[styles.label, { color: currentTheme.textSecondary }]}>{i18n.t('medicine.type')}</Text>
             <View style={styles.chipContainer}>
               {medicineOptions.map((type) => (
                 <TouchableOpacity 
                   key={type} 
-                  style={[styles.chip, medicineType === type && styles.chipActive]} 
+                  style={[
+                    styles.chip, 
+                    { backgroundColor: currentTheme.background, borderColor: currentTheme.border },
+                    medicineType === type && { backgroundColor: currentTheme.primary, borderColor: currentTheme.primary }
+                  ]} 
                   onPress={() => setMedicineType(type)}
                 >
-                  <Text style={[styles.chipText, medicineType === type && styles.chipTextActive]}>{type}</Text>
+                  <Text style={[
+                    styles.chipText, 
+                    { color: currentTheme.textSecondary },
+                    medicineType === type && { color: currentTheme.card, fontWeight: 'bold' }
+                  ]}>{type}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <Text style={styles.label}>メモ (任意)</Text>
+            <Text style={[styles.label, { color: currentTheme.textSecondary }]}>{i18n.t('medicine.memo')}</Text>
             <TextInput
-              style={styles.input}
-              placeholder="例: フロントライン滴下、ご飯に混ぜて完食 など"
+              style={[styles.input, { backgroundColor: currentTheme.inputBackground, borderColor: currentTheme.border, color: currentTheme.text }]}
+              placeholder={i18n.t('medicine.memoPlaceholder')}
+              placeholderTextColor={currentTheme.textSecondary}
               value={memo}
               onChangeText={setMemo}
               multiline
             />
 
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveButtonText}>記録する</Text>
+            <TouchableOpacity style={[styles.saveButton, { backgroundColor: currentTheme.primary }]} onPress={handleSave}>
+              <Text style={[styles.saveButtonText, { color: currentTheme.card }]}>{i18n.t('medicine.save')}</Text>
             </TouchableOpacity>
 
           </View>
@@ -206,47 +230,44 @@ export default function MedicineScreen({ route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9' },
+  container: { flex: 1 },
   
   // ペット選択
-  petSelectorWrapper: { backgroundColor: '#fff', paddingVertical: 10, borderBottomWidth: 1, borderColor: '#eee' },
+  petSelectorWrapper: { paddingVertical: 10, borderBottomWidth: 1 },
   petIconContainer: { alignItems: 'center', marginRight: 15, opacity: 0.4 },
   petIconContainerSelected: { opacity: 1 },
   petIcon: { width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: 'transparent' },
-  noImageIcon: { backgroundColor: '#f5f5f5', justifyContent: 'center', alignItems: 'center', borderColor: '#eee' },
-  petName: { fontSize: 11, marginTop: 4, color: '#666', maxWidth: 60 },
-  petNameSelected: { fontWeight: 'bold', color: '#FF6F61' },
+  noImageIcon: { justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
+  petName: { fontSize: FONT_SIZES.standard.s, marginTop: 4, maxWidth: 60 },
 
   // リスト
   listContainer: { flex: 1, padding: 15 },
-  listTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 10 },
-  emptyText: { color: '#999', textAlign: 'center', marginTop: 20 },
-  recordCard: { flexDirection: 'row', backgroundColor: '#fff', padding: 15, borderRadius: 10, marginBottom: 10, elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3 },
-  recordDateBox: { justifyContent: 'center', alignItems: 'center', borderRightWidth: 1, borderColor: '#eee', paddingRight: 15, marginRight: 15 },
-  recordDateText: { fontSize: 14, fontWeight: 'bold', color: '#666' },
+  listTitle: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold', marginBottom: 10 },
+  emptyText: { textAlign: 'center', marginTop: 20 },
+  recordCard: { flexDirection: 'row', padding: 15, borderRadius: 10, marginBottom: 10, elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3 },
+  recordDateBox: { justifyContent: 'center', alignItems: 'center', borderRightWidth: 1, paddingRight: 15, marginRight: 15 },
+  recordDateText: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold' },
   recordInfo: { flex: 1, justifyContent: 'center' },
-  recordType: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  recordMemo: { fontSize: 13, color: '#777', marginTop: 4 },
+  recordType: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold' },
+  recordMemo: { fontSize: FONT_SIZES.standard.s, marginTop: 4 },
 
   // FAB
-  fab: { position: 'absolute', right: 25, bottom: 30, backgroundColor: '#FF6F61', width: 65, height: 65, borderRadius: 32.5, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4 },
+  fab: { position: 'absolute', right: 25, bottom: 30, width: 65, height: 65, borderRadius: 32.5, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4 },
 
   // モーダル
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 25, paddingBottom: 40 },
+  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 25, paddingBottom: 40 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#333' },
-  modalDate: { fontSize: 16, color: '#FF6F61', fontWeight: 'bold', marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: 'bold', color: '#555', marginBottom: 8, marginTop: 10 },
+  modalTitle: { fontSize: FONT_SIZES.standard.xl, fontWeight: 'bold' },
+  modalDate: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold', marginBottom: 20 },
+  label: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold', marginBottom: 8, marginTop: 10 },
   
   // チップ
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10 },
-  chip: { backgroundColor: '#f0f0f0', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 15, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: '#eee' },
-  chipActive: { backgroundColor: '#FF6F61', borderColor: '#FF6F61' },
-  chipText: { color: '#555', fontSize: 14, fontWeight: '500' },
-  chipTextActive: { color: '#fff', fontWeight: 'bold' },
+  chip: { borderRadius: 20, paddingVertical: 8, paddingHorizontal: 15, marginRight: 8, marginBottom: 8, borderWidth: 1 },
+  chipText: { fontSize: FONT_SIZES.standard.m, fontWeight: '500' },
 
-  input: { backgroundColor: '#f9f9f9', borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 15, fontSize: 15, minHeight: 80, textAlignVertical: 'top' },
-  saveButton: { backgroundColor: '#FF6F61', borderRadius: 25, paddingVertical: 15, alignItems: 'center', marginTop: 25 },
-  saveButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  input: { borderWidth: 1, borderRadius: 10, padding: 15, fontSize: FONT_SIZES.standard.m, minHeight: 80, textAlignVertical: 'top' },
+  saveButton: { borderRadius: 25, paddingVertical: 15, alignItems: 'center', marginTop: 25 },
+  saveButtonText: { fontSize: FONT_SIZES.standard.l, fontWeight: 'bold' },
 });

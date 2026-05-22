@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { db } from '../../services/firebase';
+import { FONT_SIZES } from '../../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { collection, query, orderBy, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import i18n from '../../i18n';
 
 export default function HistoryScreen({ navigation }) {
+  const { currentTheme } = useTheme();
   const [walks, setWalks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,10 +25,10 @@ export default function HistoryScreen({ navigation }) {
   }, []);
 
   const formatDuration = (minutes) => {
-    if (!minutes) return "0分";
+    if (!minutes) return `0${i18n.t('common.minute')}`;
     const h = Math.floor(minutes / 60);
     const m = Math.round(minutes % 60);
-    return h > 0 ? `${h}時間${m}分` : `${m}分`;
+    return h > 0 ? `${h}${i18n.t('common.hour')}${m}${i18n.t('common.minute')}` : `${m}${i18n.t('common.minute')}`;
   };
 
   const formatDate = (timestamp) => {
@@ -41,19 +45,19 @@ export default function HistoryScreen({ navigation }) {
 
   const handleDelete = (id) => {
     Alert.alert(
-      "データの削除",
-      "このお散歩記録を削除してもよろしいですか？",
+      i18n.t('walk.deleteConfirm'),
+      i18n.t('walk.deleteConfirmMsg'),
       [
-        { text: "キャンセル", style: "cancel" },
+        { text: i18n.t('walk.cancel'), style: "cancel" },
         { 
-          text: "削除する", 
+          text: i18n.t('walk.delete'), 
           style: "destructive", 
           onPress: async () => {
             try {
               await deleteDoc(doc(db, "walks", id));
             } catch (error) {
               console.error("削除エラー:", error);
-              Alert.alert("エラー", "削除に失敗しました。");
+              Alert.alert(i18n.t('common.error'), i18n.t('medicine.saveError'));
             }
           } 
         }
@@ -67,30 +71,30 @@ export default function HistoryScreen({ navigation }) {
     return (
       <View>
         {showDateHeader && (
-          <Text style={styles.dateHeader}>{formatDate(item.startTime)}</Text>
+          <Text style={[styles.dateHeader, { backgroundColor: currentTheme.border, color: currentTheme.text }]}>{formatDate(item.startTime)}</Text>
         )}
         
         <TouchableOpacity 
-          style={styles.card}
+          style={[styles.card, { backgroundColor: currentTheme.card }]}
           onPress={() => navigation.navigate('WalkDetail', { walk: item })}
         >
           <View style={styles.timelineContainer}>
-            <View style={styles.timelineDot} />
-            <View style={styles.timelineLine} />
+            <View style={[styles.timelineDot, { backgroundColor: currentTheme.textSecondary }]} />
+            <View style={[styles.timelineLine, { backgroundColor: currentTheme.border }]} />
           </View>
 
-          <View style={styles.contentContainer}>
+          <View style={[styles.contentContainer, { borderBottomColor: currentTheme.border }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Text style={styles.timeText}>{formatTime(item.startTime)}</Text>
+              <Text style={[styles.timeText, { color: currentTheme.text }]}>{formatTime(item.startTime)}</Text>
               <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.id)}>
                 <Text style={{ fontSize: 18 }}>🗑️</Text>
               </TouchableOpacity>
             </View>
             
-            <View style={styles.detailsContainer}>
-              <Text style={styles.petNames}>🐾 {item.petName || "アニー"}</Text>
-              <Text style={styles.statsText}>💩 うんち {item.poops?.length || 0}回</Text>
-              <Text style={styles.statsText}>
+            <View style={[styles.detailsContainer, { backgroundColor: currentTheme.background }]}>
+              <Text style={[styles.petNames, { color: currentTheme.text }]}>🐾 {item.petName || "アニー"}</Text>
+              <Text style={[styles.statsText, { color: currentTheme.textSecondary }]}>{i18n.t('walk.poopCount', { count: item.poops?.length || 0 })}</Text>
+              <Text style={[styles.statsText, { color: currentTheme.textSecondary }]}>
                 📍 {item.distance ? item.distance.toFixed(2) : "0.00"} km / {formatDuration(item.duration)}
               </Text>
             </View>
@@ -101,11 +105,11 @@ export default function HistoryScreen({ navigation }) {
   };
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" /></View>;
+    return <View style={styles.center}><ActivityIndicator size="large" color={currentTheme.primary} /></View>;
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       <FlatList
         data={walks}
         keyExtractor={(item) => item.id}
@@ -114,38 +118,36 @@ export default function HistoryScreen({ navigation }) {
       />
 
       <TouchableOpacity 
-        style={styles.fab} 
+        style={[styles.fab, { backgroundColor: currentTheme.primary }]} 
         onPress={() => navigation.navigate('Walk')}
       >
-        <Text style={styles.fabText}>🐾 開始</Text>
+        <Text style={[styles.fabText, { color: currentTheme.card }]}>{i18n.t('walk.startWalk')}</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9' },
+  container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   
   listContent: { paddingBottom: 180 }, 
   
   dateHeader: {
-    fontSize: 18,
+    fontSize: FONT_SIZES.standard.l,
     fontWeight: 'bold',
-    backgroundColor: '#f0f0f0',
     paddingVertical: 8,
     paddingHorizontal: 20,
-    color: '#333',
   },
-  card: { flexDirection: 'row', backgroundColor: '#fff', paddingHorizontal: 15 },
+  card: { flexDirection: 'row', paddingHorizontal: 15 },
   timelineContainer: { width: 20, alignItems: 'center' },
-  timelineDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#ccc', marginTop: 20 },
-  timelineLine: { flex: 1, width: 2, backgroundColor: '#eee' },
-  contentContainer: { flex: 1, paddingVertical: 15, paddingLeft: 10, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  timeText: { fontSize: 16, fontWeight: '600', color: '#444', marginBottom: 4 },
-  detailsContainer: { backgroundColor: '#fafafa', padding: 10, borderRadius: 8, marginTop: 5 },
-  petNames: { fontSize: 15, fontWeight: 'bold', color: '#555', marginBottom: 3 },
-  statsText: { fontSize: 13, color: '#777', marginTop: 2 },
+  timelineDot: { width: 10, height: 10, borderRadius: 5, marginTop: 20 },
+  timelineLine: { flex: 1, width: 2 },
+  contentContainer: { flex: 1, paddingVertical: 15, paddingLeft: 10, borderBottomWidth: 1 },
+  timeText: { fontSize: FONT_SIZES.standard.m, fontWeight: '600', marginBottom: 4 },
+  detailsContainer: { padding: 10, borderRadius: 8, marginTop: 5 },
+  petNames: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold', marginBottom: 3 },
+  statsText: { fontSize: FONT_SIZES.standard.s, marginTop: 2 },
   deleteButton: { padding: 10, marginTop: -5, marginRight: -5 },
   
   // FAB
@@ -153,7 +155,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 25,
     bottom: 30,     
-    backgroundColor: '#FF6F61', 
     width: 65,      
     height: 65,     
     borderRadius: 32.5,
@@ -167,8 +168,7 @@ const styles = StyleSheet.create({
   },
   // 🌟 3. ボタンが少し小さくなったので、文字も少しだけスッキリさせます
   fabText: {
-    color: '#fff',
-    fontSize: 14, 
+    fontSize: FONT_SIZES.standard.s, 
     fontWeight: 'bold',
   },
 });

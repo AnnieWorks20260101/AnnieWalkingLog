@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { FONT_SIZES } from '../../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import i18n from '../../i18n';
 
 // 🌟 getDocs と getDoc などを追加
 import { db, storage } from '../../services/firebase';
@@ -10,6 +13,7 @@ import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function PetRegistrationScreen({ navigation }) {
+  const { currentTheme } = useTheme();
   const [photo, setPhoto] = useState(null);
   const [name, setName] = useState('');
   const [type, setType] = useState('');
@@ -67,7 +71,7 @@ export default function PetRegistrationScreen({ navigation }) {
 
   const handleSave = async () => {
     if (!name) {
-      Alert.alert("エラー", "名前は入力必須です🐾");
+      Alert.alert(i18n.t('common.error'), i18n.t('petRegistration.nameRequired'));
       return;
     }
     setUploading(true);
@@ -92,45 +96,46 @@ export default function PetRegistrationScreen({ navigation }) {
         createdAt: serverTimestamp(),
       });
 
-      Alert.alert("保存完了", `${name} を登録しました！`, [
-        { text: "OK", onPress: () => navigation.goBack() }
+      Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('petRegistration.saveSuccessMsg', { name }), [
+        { text: i18n.t('common.ok'), onPress: () => navigation.goBack() }
       ]);
     } catch (error) {
       console.error(error);
-      Alert.alert("エラー", "保存に失敗しました。");
+      Alert.alert(i18n.t('common.error'), i18n.t('petRegistration.saveError'));
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: currentTheme.background }]} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
         <View style={styles.photoContainer}>
-          <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
+          <TouchableOpacity style={[styles.photoButton, { backgroundColor: currentTheme.background, borderColor: currentTheme.border }]} onPress={pickImage}>
             {photo ? (
               <Image source={{ uri: photo }} style={styles.photo} />
             ) : (
               <View style={styles.photoPlaceholder}>
-                <Ionicons name="camera" size={40} color="#ccc" />
-                <Text style={styles.photoText}>写真を追加</Text>
+                <Ionicons name="camera" size={40} color={currentTheme.textSecondary} />
+                <Text style={[styles.photoText, { color: currentTheme.textSecondary }]}>{i18n.t('petRegistration.addPhoto')}</Text>
               </View>
             )}
           </TouchableOpacity>
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>お名前 <Text style={styles.required}>*</Text></Text>
-          <TextInput style={styles.input} placeholder="例: アニー" value={name} onChangeText={setName} />
+          <Text style={[styles.label, { color: currentTheme.textSecondary }]}>{i18n.t('petRegistration.nameLabel')} <Text style={[styles.required, { color: currentTheme.danger }]}>*</Text></Text>
+          <TextInput style={[styles.input, { backgroundColor: currentTheme.inputBackground, borderColor: currentTheme.border, color: currentTheme.text }]} placeholder={i18n.t('petRegistration.namePlaceholder')} placeholderTextColor={currentTheme.textSecondary} value={name} onChangeText={setName} />
         </View>
 
         {/* 🌟 追加：グループ入力エリア */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>グループ (任意)</Text>
+          <Text style={[styles.label, { color: currentTheme.textSecondary }]}>{i18n.t('petRegistration.groupLabel')}</Text>
           <TextInput 
-            style={styles.input} 
-            placeholder="例: 自宅、実家、〇〇家 など" 
+            style={[styles.input, { backgroundColor: currentTheme.inputBackground, borderColor: currentTheme.border, color: currentTheme.text }]} 
+            placeholder={i18n.t('petRegistration.groupPlaceholder')} 
+            placeholderTextColor={currentTheme.textSecondary}
             value={group} 
             onChangeText={setGroup} 
           />
@@ -140,10 +145,18 @@ export default function PetRegistrationScreen({ navigation }) {
               {existingGroups.map((g, index) => (
                 <TouchableOpacity 
                   key={index} 
-                  style={[styles.chip, group === g && styles.chipActive]} 
+                  style={[
+                    styles.chip, 
+                    { backgroundColor: currentTheme.background, borderColor: currentTheme.border },
+                    group === g && { backgroundColor: currentTheme.primary, borderColor: currentTheme.primary }
+                  ]} 
                   onPress={() => setGroup(g)}
                 >
-                  <Text style={[styles.chipText, group === g && styles.chipTextActive]}>{g}</Text>
+                  <Text style={[
+                    styles.chipText, 
+                    { color: currentTheme.textSecondary },
+                    group === g && { color: currentTheme.card, fontWeight: 'bold' }
+                  ]}>{g}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -151,17 +164,17 @@ export default function PetRegistrationScreen({ navigation }) {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>種類 (犬種・猫種など)</Text>
-          <TextInput style={styles.input} placeholder="例: トイプードル、ミックス" value={type} onChangeText={setType} />
+          <Text style={[styles.label, { color: currentTheme.textSecondary }]}>{i18n.t('petRegistration.typeLabel')}</Text>
+          <TextInput style={[styles.input, { backgroundColor: currentTheme.inputBackground, borderColor: currentTheme.border, color: currentTheme.text }]} placeholder={i18n.t('petRegistration.typePlaceholder')} placeholderTextColor={currentTheme.textSecondary} value={type} onChangeText={setType} />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>お誕生日</Text>
-          <TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker(true)}>
-            <Text style={birthdayStr ? styles.dateText : styles.placeholderText}>
-              {birthdayStr || "日付を選択してください"}
+          <Text style={[styles.label, { color: currentTheme.textSecondary }]}>{i18n.t('petRegistration.birthdayLabel')}</Text>
+          <TouchableOpacity style={[styles.dateInput, { backgroundColor: currentTheme.inputBackground, borderColor: currentTheme.border }]} onPress={() => setShowDatePicker(true)}>
+            <Text style={birthdayStr ? [styles.dateText, { color: currentTheme.text }] : [styles.placeholderText, { color: currentTheme.textSecondary }]}>
+              {birthdayStr || i18n.t('petRegistration.birthdayPlaceholder')}
             </Text>
-            <Ionicons name="calendar-outline" size={20} color="#999" />
+            <Ionicons name="calendar-outline" size={20} color={currentTheme.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -170,26 +183,26 @@ export default function PetRegistrationScreen({ navigation }) {
         )}
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>性別</Text>
+          <Text style={[styles.label, { color: currentTheme.textSecondary }]}>{i18n.t('petRegistration.genderLabel')}</Text>
           <View style={styles.genderContainer}>
-            <TouchableOpacity style={[styles.genderButton, gender === '男の子' && styles.genderActiveBoy]} onPress={() => setGender('男の子')}>
-              <Text style={[styles.genderText, gender === '男の子' && styles.genderTextActive]}>男の子</Text>
+            <TouchableOpacity style={[styles.genderButton, { borderColor: currentTheme.border, backgroundColor: currentTheme.inputBackground }, gender === '男の子' && styles.genderActiveBoy]} onPress={() => setGender('男の子')}>
+              <Text style={[styles.genderText, { color: currentTheme.textSecondary }, gender === '男の子' && styles.genderTextActiveBoy]}>{i18n.t('petRegistration.genderBoy')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.genderButton, gender === '女の子' && styles.genderActiveGirl]} onPress={() => setGender('女の子')}>
-              <Text style={[styles.genderText, gender === '女の子' && styles.genderTextActive]}>女の子</Text>
+            <TouchableOpacity style={[styles.genderButton, { borderColor: currentTheme.border, backgroundColor: currentTheme.inputBackground }, gender === '女の子' && styles.genderActiveGirl]} onPress={() => setGender('女の子')}>
+              <Text style={[styles.genderText, { color: currentTheme.textSecondary }, gender === '女の子' && styles.genderTextActiveGirl]}>{i18n.t('petRegistration.genderGirl')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.genderButton, gender === '未設定' && styles.genderActiveOther]} onPress={() => setGender('未設定')}>
-              <Text style={[styles.genderText, gender === '未設定' && styles.genderTextActive]}>未設定</Text>
+            <TouchableOpacity style={[styles.genderButton, { borderColor: currentTheme.border, backgroundColor: currentTheme.inputBackground }, gender === '未設定' && { backgroundColor: currentTheme.textSecondary, borderColor: currentTheme.textSecondary }]} onPress={() => setGender('未設定')}>
+              <Text style={[styles.genderText, { color: currentTheme.textSecondary }, gender === '未設定' && { color: currentTheme.card }]}>{i18n.t('petRegistration.genderUnspecified')}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <TouchableOpacity 
-          style={[styles.saveButton, uploading && { backgroundColor: '#ccc' }]} 
+          style={[styles.saveButton, { backgroundColor: currentTheme.primary }, uploading && { backgroundColor: currentTheme.textSecondary }]} 
           onPress={handleSave}
           disabled={uploading}
         >
-          <Text style={styles.saveButtonText}>{uploading ? "保存中..." : "登録する"}</Text>
+          <Text style={[styles.saveButtonText, { color: currentTheme.card }]}>{uploading ? i18n.t('petRegistration.saving') : i18n.t('petRegistration.save')}</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -198,38 +211,36 @@ export default function PetRegistrationScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 50 },
   photoContainer: { alignItems: 'center', marginVertical: 20 },
-  photoButton: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 2, borderColor: '#eee' },
+  photoButton: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 2 },
   photoPlaceholder: { alignItems: 'center' },
   photo: { width: '100%', height: '100%' },
-  photoText: { color: '#888', fontSize: 12, marginTop: 5 },
+  photoText: { fontSize: FONT_SIZES.standard.s, marginTop: 5 },
   inputGroup: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: 'bold', color: '#555', marginBottom: 8 },
-  required: { color: '#FF6F61' },
-  input: { backgroundColor: '#f9f9f9', borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 15, fontSize: 16, color: '#333' },
+  label: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold', marginBottom: 8 },
+  required: { },
+  input: { borderWidth: 1, borderRadius: 10, padding: 15, fontSize: FONT_SIZES.standard.m },
   
   // 🌟 追加：チップ（タグ）のスタイル
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
   chip: { 
-    backgroundColor: '#eee', borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, 
-    marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: '#ddd' 
+    borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, 
+    marginRight: 8, marginBottom: 8, borderWidth: 1 
   },
-  chipActive: { backgroundColor: '#FF6F61', borderColor: '#FF6F61' },
-  chipText: { color: '#555', fontSize: 13 },
-  chipTextActive: { color: '#fff', fontWeight: 'bold' },
+  chipText: { fontSize: FONT_SIZES.standard.m },
 
-  dateInput: { backgroundColor: '#f9f9f9', borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 15, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dateText: { fontSize: 16, color: '#333' },
-  placeholderText: { fontSize: 16, color: '#999' },
+  dateInput: { borderWidth: 1, borderRadius: 10, padding: 15, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  dateText: { fontSize: FONT_SIZES.standard.m },
+  placeholderText: { fontSize: FONT_SIZES.standard.m },
   genderContainer: { flexDirection: 'row', justifyContent: 'space-between' },
-  genderButton: { flex: 1, paddingVertical: 12, borderWidth: 1, borderColor: '#eee', borderRadius: 10, alignItems: 'center', marginHorizontal: 5, backgroundColor: '#f9f9f9' },
-  genderText: { fontSize: 14, color: '#666', fontWeight: 'bold' },
-  genderTextActive: { color: '#fff' },
+  genderButton: { flex: 1, paddingVertical: 12, borderWidth: 1, borderRadius: 10, alignItems: 'center', marginHorizontal: 5 },
+  genderText: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold' },
   genderActiveBoy: { backgroundColor: '#4A90E2', borderColor: '#4A90E2' },
   genderActiveGirl: { backgroundColor: '#FF6B81', borderColor: '#FF6B81' },
-  genderActiveOther: { backgroundColor: '#999', borderColor: '#999' },
-  saveButton: { backgroundColor: '#FF6F61', borderRadius: 25, paddingVertical: 15, alignItems: 'center', marginTop: 30, shadowColor: '#FF6F61', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5 },
-  saveButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  genderTextActiveBoy: { color: '#fff' },
+  genderTextActiveGirl: { color: '#fff' },
+  saveButton: { borderRadius: 25, paddingVertical: 15, alignItems: 'center', marginTop: 30, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5 },
+  saveButtonText: { fontSize: FONT_SIZES.standard.l, fontWeight: 'bold' },
 });

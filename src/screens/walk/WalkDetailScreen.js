@@ -2,8 +2,12 @@
 import React from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import MapView, { Polyline, Marker } from 'react-native-maps';
+import { FONT_SIZES } from '../../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import i18n from '../../i18n';
 
 export default function WalkDetailScreen({ route }) {
+  const { currentTheme } = useTheme();
   const { walk } = route.params;
   const walkRoute = walk.route || [];
   const poops = walk.poops || [];
@@ -27,24 +31,24 @@ export default function WalkDetailScreen({ route }) {
   return (
     <View style={styles.container}>
       {/* 🌟 統計情報パネル */}
-      <View style={styles.statsContainer}>
+      <View style={[styles.statsContainer, { backgroundColor: currentTheme.card, borderBottomColor: currentTheme.border }]}>
         <View style={styles.statBox}>
-          <Text style={styles.statLabel}>距離</Text>
-          <Text style={styles.statValue}>{distanceStr}<Text style={styles.unit}> km</Text></Text>
+          <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>{i18n.t('walk.distance')}</Text>
+          <Text style={[styles.statValue, { color: currentTheme.text }]}>{distanceStr}<Text style={styles.unit}> km</Text></Text>
         </View>
         <View style={styles.statBox}>
-          <Text style={styles.statLabel}>時間</Text>
-          <Text style={styles.statValue}>{durationStr}<Text style={styles.unit}> 分</Text></Text>
+          <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>{i18n.t('walk.time')}</Text>
+          <Text style={[styles.statValue, { color: currentTheme.text }]}>{durationStr}<Text style={styles.unit}> {i18n.t('common.minute')}</Text></Text>
         </View>
         <View style={styles.statBox}>
-          <Text style={styles.statLabel}>💩</Text>
-          <Text style={styles.statValue}>{poops.length}<Text style={styles.unit}> 回</Text></Text>
+          <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>{i18n.t('walk.poopLabel')}</Text>
+          <Text style={[styles.statValue, { color: currentTheme.text }]}>{poops.length}<Text style={styles.unit}> 回</Text></Text>
         </View>
       </View>
 
       <MapView style={styles.map} initialRegion={initialRegion}>
         {walkRoute.length > 0 && (
-          <Polyline coordinates={walkRoute} strokeColor="#FF0000" strokeWidth={5} />
+          <Polyline coordinates={walkRoute} strokeColor={currentTheme.primary} strokeWidth={5} />
         )}
         {poops.map((poop, index) => (
           <Marker key={index} coordinate={poop}>
@@ -61,16 +65,14 @@ const styles = StyleSheet.create({
   map: { flex: 1 },
   statsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
     paddingVertical: 20,
     justifyContent: 'space-around',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
     elevation: 3,
     zIndex: 10,
   },
   statBox: { alignItems: 'center' },
-  statLabel: { fontSize: 12, color: '#666', marginBottom: 5 },
-  statValue: { fontSize: 20, fontWeight: 'bold' },
-  unit: { fontSize: 12, fontWeight: 'normal' },
+  statLabel: { fontSize: FONT_SIZES.standard.s, marginBottom: 5 },
+  statValue: { fontSize: FONT_SIZES.standard.xl, fontWeight: 'bold' },
+  unit: { fontSize: FONT_SIZES.standard.s, fontWeight: 'normal' },
 });
