@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "468922569983",
+    "project_id": "anniewalkinglog",
+    "storage_bucket": "anniewalkinglog.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:468922569983:android:8cd0aba7bb42f812fb68ca",
+        "android_client_info": {
+          "package_name": "com.annieworks.AnnieWalkingLog"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaI8LcwChRDIx4cqYkXEa5ccL0RrYNTiU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

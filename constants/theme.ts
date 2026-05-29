@@ -3,8 +3,8 @@
 // 🎨 カラーパレットの定義
 export const COLORS = {
   light: {
-    background: '#FFFFFF',
-    card: '#F8F8F8',
+    background: '#F5F9FF',
+    card: '#FFFFFF',
     text: '#333333',
     textSecondary: '#888888',
     primary: '#007AFF',     // アニーのメインブルー
@@ -15,8 +15,8 @@ export const COLORS = {
     inputBackground: '#FFFFFF',
   },
   dark: {
-    background: '#121212',
-    card: '#252525',
+    background: '#0F1419',
+    card: '#1E2A3A',
     text: '#E0E0E0',
     textSecondary: '#AAAAAA',
     primary: '#0A84FF',

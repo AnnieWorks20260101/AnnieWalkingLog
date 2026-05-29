@@ -3,16 +3,24 @@ import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, 
 import { db } from '../../services/firebase';
 import { FONT_SIZES } from '../../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
-import { collection, query, orderBy, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { useAuth } from '../../contexts/AuthContext';
+import ScreenHeader from '../../components/ScreenHeader';
 import i18n from '../../i18n';
 
 export default function HistoryScreen({ navigation }) {
   const { currentTheme } = useTheme();
+  const { familyId } = useAuth();
   const [walks, setWalks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "walks"), orderBy("startTime", "desc"));
+    if (!familyId) return;
+    const q = query(
+      collection(db, 'walks'),
+      where('familyId', '==', familyId),
+      orderBy('startTime', 'desc')
+    );
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const walkData = [];
       querySnapshot.forEach((document) => {
@@ -22,7 +30,7 @@ export default function HistoryScreen({ navigation }) {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [familyId]);
 
   const formatDuration = (minutes) => {
     if (!minutes) return `0${i18n.t('common.minute')}`;
@@ -71,19 +79,21 @@ export default function HistoryScreen({ navigation }) {
     return (
       <View>
         {showDateHeader && (
-          <Text style={[styles.dateHeader, { backgroundColor: currentTheme.border, color: currentTheme.text }]}>{formatDate(item.startTime)}</Text>
+          <Text style={[styles.dateHeader, { backgroundColor: currentTheme.surface, color: currentTheme.headerText || currentTheme.primary }]}>
+            {formatDate(item.startTime)}
+          </Text>
         )}
         
         <TouchableOpacity 
-          style={[styles.card, { backgroundColor: currentTheme.card }]}
+          style={[styles.card, { backgroundColor: currentTheme.cardTinted }]}
           onPress={() => navigation.navigate('WalkDetail', { walk: item })}
         >
           <View style={styles.timelineContainer}>
-            <View style={[styles.timelineDot, { backgroundColor: currentTheme.textSecondary }]} />
-            <View style={[styles.timelineLine, { backgroundColor: currentTheme.border }]} />
+            <View style={[styles.timelineDot, { backgroundColor: currentTheme.primary }]} />
+            <View style={[styles.timelineLine, { backgroundColor: currentTheme.accentBorder }]} />
           </View>
 
-          <View style={[styles.contentContainer, { borderBottomColor: currentTheme.border }]}>
+          <View style={[styles.contentContainer, { borderBottomColor: currentTheme.accentBorder }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <Text style={[styles.timeText, { color: currentTheme.text }]}>{formatTime(item.startTime)}</Text>
               <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.id)}>
@@ -91,7 +101,7 @@ export default function HistoryScreen({ navigation }) {
               </TouchableOpacity>
             </View>
             
-            <View style={[styles.detailsContainer, { backgroundColor: currentTheme.background }]}>
+            <View style={[styles.detailsContainer, { backgroundColor: currentTheme.primaryMuted }]}>
               <Text style={[styles.petNames, { color: currentTheme.text }]}>🐾 {item.petName || "アニー"}</Text>
               <Text style={[styles.statsText, { color: currentTheme.textSecondary }]}>{i18n.t('walk.poopCount', { count: item.poops?.length || 0 })}</Text>
               <Text style={[styles.statsText, { color: currentTheme.textSecondary }]}>
@@ -105,12 +115,18 @@ export default function HistoryScreen({ navigation }) {
   };
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color={currentTheme.primary} /></View>;
+    return (
+      <View style={[styles.center, { backgroundColor: currentTheme.background }]}>
+        <ActivityIndicator size="large" color={currentTheme.primary} />
+      </View>
+    );
   }
 
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+      <ScreenHeader title={i18n.t('walk.historyTitle')} />
       <FlatList
+        style={styles.list}
         data={walks}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
@@ -129,6 +145,7 @@ export default function HistoryScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  list: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   
   listContent: { paddingBottom: 180 }, 

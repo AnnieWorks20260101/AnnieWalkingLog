@@ -3,17 +3,25 @@ import { StyleSheet, View, Text, SectionList, TouchableOpacity, Image, ActivityI
 import { db } from '../../services/firebase';
 import { FONT_SIZES } from '../../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { useAuth } from '../../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import ScreenHeader from '../../components/ScreenHeader';
 import i18n from '../../i18n';
 
 export default function PetListScreen({ navigation }) {
   const { currentTheme } = useTheme();
+  const { familyId } = useAuth();
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "pets"), orderBy("createdAt", "desc"));
+    if (!familyId) return;
+    const q = query(
+      collection(db, 'pets'),
+      where('familyId', '==', familyId),
+      orderBy('createdAt', 'desc')
+    );
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const petData = [];
       querySnapshot.forEach((doc) => {
@@ -49,10 +57,17 @@ export default function PetListScreen({ navigation }) {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [familyId]);
 
   const renderItem = ({ item }) => (
-    <View style={[styles.petCard, { backgroundColor: currentTheme.card }]}>
+    <TouchableOpacity
+      style={[
+        styles.petCard,
+        { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.accentBorder, borderLeftColor: currentTheme.primary },
+      ]}
+      onPress={() => navigation.navigate('PetRegistration', { petId: item.id })}
+      activeOpacity={0.7}
+    >
       <View style={styles.avatarContainer}>
         {item.photoUrl ? (
           <Image source={{ uri: item.photoUrl }} style={[styles.avatar, { borderColor: currentTheme.border }]} />
@@ -70,21 +85,29 @@ export default function PetListScreen({ navigation }) {
         </Text>
         <Text style={[styles.birthdayText, { color: currentTheme.textSecondary }]}>🎂 {item.birthday || i18n.t('petList.unspecified')}</Text>
       </View>
-    </View>
+      <Ionicons name="chevron-forward" size={22} color={currentTheme.textSecondary} />
+    </TouchableOpacity>
   );
 
   // 🌟 見出し（グループ名）の描画
   const renderSectionHeader = ({ section: { title } }) => (
-    <View style={[styles.sectionHeader, { borderBottomColor: currentTheme.border }]}>
-      <Ionicons name={title === i18n.t('petList.otherPets') ? "paw-outline" : "home-outline"} size={18} color={currentTheme.textSecondary} />
-      <Text style={[styles.sectionHeaderText, { color: currentTheme.textSecondary }]}>{title}</Text>
+    <View style={[styles.sectionHeader, { backgroundColor: currentTheme.surface, borderBottomColor: currentTheme.accentBorder }]}>
+      <Ionicons name={title === i18n.t('petList.otherPets') ? "paw-outline" : "home-outline"} size={18} color={currentTheme.primary} />
+      <Text style={[styles.sectionHeaderText, { color: currentTheme.headerText || currentTheme.text }]}>{title}</Text>
     </View>
   );
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={currentTheme.primary} /></View>;
+  if (loading) {
+    return (
+      <View style={[styles.center, { backgroundColor: currentTheme.background }]}>
+        <ActivityIndicator size="large" color={currentTheme.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+      <ScreenHeader title={i18n.t('petList.title')} showBack />
       {sections.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="paw" size={60} color={currentTheme.textSecondary} />
@@ -92,12 +115,13 @@ export default function PetListScreen({ navigation }) {
         </View>
       ) : (
         <SectionList
+          style={styles.list}
           sections={sections}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           renderSectionHeader={renderSectionHeader}
           contentContainerStyle={{ padding: 10, paddingBottom: 100 }}
-          stickySectionHeadersEnabled={false} // スクロール時に見出しを固定するかどうか
+          stickySectionHeadersEnabled={false}
         />
       )}
       
@@ -110,6 +134,7 @@ export default function PetListScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  list: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { textAlign: 'center', marginTop: 10, lineHeight: 22 },
@@ -119,10 +144,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 5,
+    paddingHorizontal: 12,
     marginTop: 10,
     marginBottom: 5,
     borderBottomWidth: 1,
+    borderRadius: 8,
   },
   sectionHeaderText: {
     fontSize: FONT_SIZES.standard.m,
@@ -130,7 +156,20 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  petCard: { flexDirection: 'row', padding: 15, borderRadius: 15, marginBottom: 10, alignItems: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+  petCard: {
+    flexDirection: 'row',
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderLeftWidth: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
   avatarContainer: { marginRight: 15 },
   avatar: { width: 70, height: 70, borderRadius: 35, borderWidth: 1 },
   noImage: { justifyContent: 'center', alignItems: 'center' },

@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, Button, TouchableOpacity, Alert } from 'react-native';
 import * as Location from 'expo-location';
-import { FONT_SIZES } from '../../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
+import ScreenHeader from '../../components/ScreenHeader';
 import i18n from '../../i18n';
 import MapView, { Polyline, Marker } from 'react-native-maps';
 import * as TaskManager from 'expo-task-manager';
@@ -36,6 +37,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 
 export default function WalkScreen({ navigation }) {
   const { currentTheme } = useTheme();
+  const { userId, familyId } = useAuth();
   const [route, setRoute] = useState([]);
   const [poops, setPoops] = useState([]);
   const [isTracking, setIsTracking] = useState(false);
@@ -162,7 +164,9 @@ export default function WalkScreen({ navigation }) {
       const duration = (endTime - startTime) / 1000 / 60;
 
       const walkData = {
-        petName: "アニー",
+        familyId,
+        userId,
+        petName: 'アニー',
         startTime: startTime,
         endTime: endTime,
         distance: distance,
@@ -207,12 +211,12 @@ export default function WalkScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-      <Text style={[styles.title, { color: currentTheme.text }]}>{i18n.t('walk.title')}</Text>
+      <ScreenHeader title={isTracking ? i18n.t('walk.walking') : i18n.t('walk.title')} showBack />
       <View style={styles.buttonContainer}>
         <Button title={isTracking ? i18n.t('walk.walking') : i18n.t('walk.start')} onPress={startTracking} disabled={isTracking} color={currentTheme.primary} />
         <Button title={i18n.t('walk.end')} onPress={stopTracking} disabled={!isTracking} color={currentTheme.danger} />
       </View>
-      <View style={[styles.mapContainer, { borderColor: currentTheme.border }]}>
+      <View style={[styles.mapContainer, { borderColor: currentTheme.accentBorder }]}>
         <MapView ref={mapRef} style={styles.map} showsUserLocation={true} initialRegion={initialRegion}>
           {route.length > 0 && <Polyline coordinates={route} strokeColor={currentTheme.primary} strokeWidth={5} />}
           {poops.map((poop, index) => (
@@ -220,7 +224,7 @@ export default function WalkScreen({ navigation }) {
           ))}
         </MapView>
         {isTracking && (
-          <TouchableOpacity style={[styles.poopButton, { backgroundColor: currentTheme.card }]} onPress={recordPoop}>
+          <TouchableOpacity style={[styles.poopButton, { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary }]} onPress={recordPoop}>
             <Text style={styles.poopButtonText}>{i18n.t('walk.poopLabel')}</Text>
           </TouchableOpacity>
         )}
@@ -231,8 +235,7 @@ export default function WalkScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  title: { fontSize: FONT_SIZES.standard.xl, fontWeight: 'bold', marginVertical: 10, textAlign: 'center' },
-  buttonContainer: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 10 },
+  buttonContainer: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 10, paddingHorizontal: 12 },
   mapContainer: { flex: 1, borderWidth: 1 },
   map: { width: '100%', height: '100%' },
   poopButton: {
@@ -242,6 +245,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
+    borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,

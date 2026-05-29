@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../../constants/theme';
+import { enrichTheme } from '../utils/enrichTheme';
 
 const THEME_STORAGE_KEY = '@app_theme';
 
@@ -39,7 +40,7 @@ export const ThemeProvider = ({ children }) => {
     }
   };
 
-  const currentTheme = COLORS[themeName];
+  const currentTheme = enrichTheme(COLORS[themeName]);
 
   return (
     <ThemeContext.Provider value={{ themeName, currentTheme, changeTheme, loading }}>

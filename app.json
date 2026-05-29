@@ -2,7 +2,7 @@
   "expo": {
     "name": "AnnieWalkingLog",
     "slug": "AnnieWalkingLog",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -27,6 +27,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
       "package": "com.annieworks.AnnieWalkingLog",
       "permissions": [
@@ -54,11 +55,13 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "アニーちゃんのお散歩ルートを記録するために位置情報を使用します。",
+          "locationAlwaysAndWhenInUsePermission": "ペットのお散歩ルートを記録するために位置情報を使用します。",
           "isAndroidBackgroundLocationEnabled": true
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-localization",
+      "expo-notifications"
     ]
   }
 }

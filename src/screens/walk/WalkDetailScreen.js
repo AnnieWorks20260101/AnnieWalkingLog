@@ -4,6 +4,7 @@ import { StyleSheet, View, Text } from 'react-native';
 import MapView, { Polyline, Marker } from 'react-native-maps';
 import { FONT_SIZES } from '../../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
+import ScreenHeader from '../../components/ScreenHeader';
 import i18n from '../../i18n';
 
 export default function WalkDetailScreen({ route }) {
@@ -29,20 +30,20 @@ export default function WalkDetailScreen({ route }) {
   };
 
   return (
-    <View style={styles.container}>
-      {/* 🌟 統計情報パネル */}
-      <View style={[styles.statsContainer, { backgroundColor: currentTheme.card, borderBottomColor: currentTheme.border }]}>
+    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+      <ScreenHeader title={i18n.t('walk.detailTitle')} showBack />
+      <View style={[styles.statsContainer, { backgroundColor: currentTheme.surface, borderBottomColor: currentTheme.accentBorder }]}>
         <View style={styles.statBox}>
           <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>{i18n.t('walk.distance')}</Text>
-          <Text style={[styles.statValue, { color: currentTheme.text }]}>{distanceStr}<Text style={styles.unit}> km</Text></Text>
+          <Text style={[styles.statValue, { color: currentTheme.primary }]}>{distanceStr}<Text style={[styles.unit, { color: currentTheme.textSecondary }]}> km</Text></Text>
         </View>
         <View style={styles.statBox}>
           <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>{i18n.t('walk.time')}</Text>
-          <Text style={[styles.statValue, { color: currentTheme.text }]}>{durationStr}<Text style={styles.unit}> {i18n.t('common.minute')}</Text></Text>
+          <Text style={[styles.statValue, { color: currentTheme.primary }]}>{durationStr}<Text style={[styles.unit, { color: currentTheme.textSecondary }]}> {i18n.t('common.minute')}</Text></Text>
         </View>
         <View style={styles.statBox}>
           <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>{i18n.t('walk.poopLabel')}</Text>
-          <Text style={[styles.statValue, { color: currentTheme.text }]}>{poops.length}<Text style={styles.unit}> 回</Text></Text>
+          <Text style={[styles.statValue, { color: currentTheme.primary }]}>{poops.length}<Text style={[styles.unit, { color: currentTheme.textSecondary }]}> 回</Text></Text>
         </View>
       </View>
 

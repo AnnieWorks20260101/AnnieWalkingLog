@@ -1,0 +1,18 @@
+# ビルド生成物（C# / Androidなど）
+bin/
+obj/
+build/
+.gradle/
+
+# 外部ライブラリ群
+node_modules/
+
+# ログや一時ファイル
+*.log
+logs/
+.cache/
+
+# 画像やアセット（AIに見せる必要がない大容量ファイル）
+assets/
+*.png
+*.jpg

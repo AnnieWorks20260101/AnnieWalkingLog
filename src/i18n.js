@@ -1,5 +1,5 @@
 import { I18n } from 'i18n-js';
-import * as Localization from 'expo-localization';
+import { getLocales } from 'expo-localization';
 import ja from './locales/ja.json';
 
 // 言語定義を設定
@@ -10,7 +10,14 @@ const i18n = new I18n({
 });
 
 // アプリ起動時にデバイスの言語設定を取得して設定
-i18n.locale = Localization.locale;
+let deviceLocale = 'ja';
+try {
+  const locales = getLocales();
+  deviceLocale = locales[0]?.languageTag ?? locales[0]?.languageCode ?? 'ja';
+} catch (error) {
+  console.warn('Failed to read device locale, falling back to ja', error);
+}
+i18n.locale = deviceLocale;
 
 // デバイスの言語が設定されていない言語の場合はフォールバックする
 i18n.enableFallback = true;

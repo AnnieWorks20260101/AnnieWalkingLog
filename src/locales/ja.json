@@ -16,6 +16,72 @@
     "alertNoPet": "先にペットを登録・選択してください🐾",
     "alertComingSoon": "機能は準備中です"
   },
+  "weight": {
+    "title": "体重の記録",
+    "chartTitle": "体重推移",
+    "unit": "kg",
+    "history": "体重履歴",
+    "noRecords": "記録がありません",
+    "recordTitle": "体重の記録",
+    "date": "日付",
+    "weight": "体重",
+    "memo": "メモ (任意)",
+    "weightPlaceholder": "例: 3.5",
+    "memoPlaceholder": "例: 朝食前に測定 など",
+    "datePlaceholder": "日付を選択してください",
+    "save": "記録する",
+    "update": "更新する",
+    "editRecordTitle": "体重の編集",
+    "saveError": "保存に失敗しました。",
+    "weightRequired": "体重を入力してください",
+    "noChartData": "記録を追加するとグラフが表示されます"
+  },
+  "trimming": {
+    "title": "トリミングの記録",
+    "recordTitle": "✂️ トリミングの記録",
+    "history": "📝 トリミング履歴",
+    "noRecords": "記録がありません",
+    "date": "日付",
+    "type": "種類",
+    "memo": "メモ (任意)",
+    "memoPlaceholder": "例: サロン名、カットスタイル など",
+    "save": "記録する",
+    "update": "更新する",
+    "editRecordTitle": "✂️ トリミングの編集",
+    "saveError": "保存に失敗しました。",
+    "typesRequired": "種類を1つ以上選択してください",
+    "types": {
+      "cut": "カット",
+      "shampoo": "シャンプー",
+      "nail": "爪切り",
+      "ear": "耳掃除",
+      "full": "全身",
+      "other": "その他"
+    }
+  },
+  "hospital": {
+    "title": "病院の記録",
+    "recordTitle": "🏥 病院の記録",
+    "history": "📝 通院履歴",
+    "noRecords": "記録がありません",
+    "date": "日付",
+    "type": "種類",
+    "memo": "メモ (任意)",
+    "memoPlaceholder": "例: 診断内容、処方薬 など",
+    "save": "記録する",
+    "update": "更新する",
+    "editRecordTitle": "🏥 病院の編集",
+    "saveError": "保存に失敗しました。",
+    "typesRequired": "種類を1つ以上選択してください",
+    "types": {
+      "checkup": "診察",
+      "vaccine": "ワクチン",
+      "surgery": "手術",
+      "test": "検査",
+      "hospitalization": "入院",
+      "other": "その他"
+    }
+  },
   "medicine": {
     "title": "薬・予防の記録",
     "recordTitle": "💊 薬・予防の記録",
@@ -26,8 +92,11 @@
     "memo": "メモ (任意)",
     "memoPlaceholder": "例: フロントライン滴下、ご飯に混ぜて完食 など",
     "save": "記録する",
+    "update": "更新する",
+    "editRecordTitle": "💊 薬・予防の編集",
     "saveSuccess": "保存完了",
     "saveError": "保存に失敗しました。",
+    "typesRequired": "種類を1つ以上選択してください",
     "types": {
       "fleaTick": "ノミ・ダニ",
       "filaria": "フィラリア",
@@ -73,7 +142,17 @@
     "permissionCardTitle": "権限の確認",
     "permissionCardDesc": "位置情報や通知の設定が正しく行われているか確認します。",
     "petListCardTitle": "ペット登録",
-    "petListCardDesc": "ペットの情報を登録・編集します。"
+    "petListCardDesc": "ペットの情報を登録・編集します。",
+    "familyCardTitle": "家族グループ",
+    "familyCardDesc": "家族IDを共有すると、同じペットと記録を一緒に見られます。",
+    "familyIdLabel": "あなたの家族ID",
+    "userIdLabel": "あなたのユーザーID",
+    "joinFamilyLabel": "家族IDで参加",
+    "joinFamilyPlaceholder": "家族IDを入力",
+    "joinFamilyButton": "参加する",
+    "joinFamilySuccess": "家族グループに参加しました",
+    "joinFamilyNotFound": "家族IDが見つかりません",
+    "joinFamilyInvalid": "家族IDを入力してください"
   },
   "petList": {
     "title": "ペット一覧",
@@ -83,6 +162,7 @@
   },
   "petRegistration": {
     "title": "ペット登録",
+    "editTitle": "ペット編集",
     "addPhoto": "写真を追加",
     "nameLabel": "お名前",
     "namePlaceholder": "例: アニー",
@@ -97,10 +177,13 @@
     "genderGirl": "女の子",
     "genderUnspecified": "未設定",
     "save": "登録する",
+    "update": "更新する",
     "saving": "保存中...",
     "nameRequired": "名前は入力必須です🐾",
     "saveSuccessMsg": "%{name} を登録しました！",
-    "saveError": "保存に失敗しました。"
+    "updateSuccessMsg": "%{name} を更新しました！",
+    "saveError": "保存に失敗しました。",
+    "loadError": "ペット情報の読み込みに失敗しました。"
   },
   "common": {
     "error": "エラー",

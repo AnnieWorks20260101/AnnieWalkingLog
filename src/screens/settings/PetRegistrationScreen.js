@@ -1,20 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { FONT_SIZES } from '../../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import ScreenHeader from '../../components/ScreenHeader';
 import i18n from '../../i18n';
 
 // 🌟 getDocs と getDoc などを追加
 import { db, storage } from '../../services/firebase';
-import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore'; 
+import { collection, addDoc, doc, getDoc, updateDoc, query, where, serverTimestamp, getDocs } from 'firebase/firestore';
+import { useAuth } from '../../contexts/AuthContext';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-export default function PetRegistrationScreen({ navigation }) {
+function parseBirthdayToDate(birthdayStr) {
+  if (!birthdayStr) return new Date();
+  const normalized = birthdayStr.replace(/\//g, '-');
+  const parsed = new Date(normalized);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+export default function PetRegistrationScreen({ navigation, route }) {
   const { currentTheme } = useTheme();
+  const { userId, familyId } = useAuth();
+  const petId = route.params?.petId;
+  const isEditMode = !!petId;
+
+  const [loadingPet, setLoadingPet] = useState(isEditMode);
   const [photo, setPhoto] = useState(null);
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState('');
   const [gender, setGender] = useState(''); 
@@ -28,11 +43,56 @@ export default function PetRegistrationScreen({ navigation }) {
   
   const [uploading, setUploading] = useState(false);
 
-  // 🌟 画面を開いた時に「既存のグループ一覧」を取得する
+  const headerTitle = isEditMode ? i18n.t('petRegistration.editTitle') : i18n.t('petRegistration.title');
+
   useEffect(() => {
+    if (!petId || !familyId) {
+      setLoadingPet(false);
+      return;
+    }
+
+    const loadPet = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'pets', petId));
+        if (!snap.exists()) {
+          Alert.alert(i18n.t('common.error'), i18n.t('petRegistration.loadError'));
+          navigation.goBack();
+          return;
+        }
+
+        const data = snap.data();
+        if (data.familyId !== familyId) {
+          Alert.alert(i18n.t('common.error'), i18n.t('petRegistration.loadError'));
+          navigation.goBack();
+          return;
+        }
+
+        setName(data.name || '');
+        setType(data.type || '');
+        setGender(data.gender || '');
+        setGroup(data.group || '');
+        setBirthdayStr(data.birthday || '');
+        setDate(parseBirthdayToDate(data.birthday));
+        setExistingPhotoUrl(data.photoUrl || '');
+        setPhoto(null);
+      } catch (error) {
+        console.error(error);
+        Alert.alert(i18n.t('common.error'), i18n.t('petRegistration.loadError'));
+        navigation.goBack();
+      } finally {
+        setLoadingPet(false);
+      }
+    };
+
+    loadPet();
+  }, [petId, familyId, navigation]);
+
+  useEffect(() => {
+    if (!familyId) return;
     const fetchGroups = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "pets"));
+        const q = query(collection(db, 'pets'), where('familyId', '==', familyId));
+        const querySnapshot = await getDocs(q);
         const groups = new Set(); // 重複を許さないリスト（Set）
         querySnapshot.forEach((doc) => {
           const data = doc.data();
@@ -44,7 +104,7 @@ export default function PetRegistrationScreen({ navigation }) {
       }
     };
     fetchGroups();
-  }, []);
+  }, [familyId]);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -74,31 +134,47 @@ export default function PetRegistrationScreen({ navigation }) {
       Alert.alert(i18n.t('common.error'), i18n.t('petRegistration.nameRequired'));
       return;
     }
+    if (!familyId || !userId) {
+      Alert.alert(i18n.t('common.error'), i18n.t('petRegistration.saveError'));
+      return;
+    }
     setUploading(true);
 
     try {
-      let photoUrl = "";
+      let photoUrl = existingPhotoUrl;
       if (photo) {
         const response = await fetch(photo);
         const blob = await response.blob();
-        const storageRef = ref(storage, `pets/${Date.now()}.jpg`);
+        const storageRef = ref(storage, `families/${familyId}/pets/${Date.now()}.jpg`);
         await uploadBytes(storageRef, blob);
         photoUrl = await getDownloadURL(storageRef);
       }
 
-      await addDoc(collection(db, "pets"), {
+      const petData = {
         name,
         type,
         birthday: birthdayStr,
         gender,
-        group: group.trim(), // 🌟 追加：前後の空白を消して保存
+        group: group.trim(),
         photoUrl,
-        createdAt: serverTimestamp(),
-      });
+      };
 
-      Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('petRegistration.saveSuccessMsg', { name }), [
-        { text: i18n.t('common.ok'), onPress: () => navigation.goBack() }
-      ]);
+      if (isEditMode) {
+        await updateDoc(doc(db, 'pets', petId), petData);
+        Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('petRegistration.updateSuccessMsg', { name }), [
+          { text: i18n.t('common.ok'), onPress: () => navigation.goBack() },
+        ]);
+      } else {
+        await addDoc(collection(db, 'pets'), {
+          ...petData,
+          familyId,
+          createdBy: userId,
+          createdAt: serverTimestamp(),
+        });
+        Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('petRegistration.saveSuccessMsg', { name }), [
+          { text: i18n.t('common.ok'), onPress: () => navigation.goBack() },
+        ]);
+      }
     } catch (error) {
       console.error(error);
       Alert.alert(i18n.t('common.error'), i18n.t('petRegistration.saveError'));
@@ -107,14 +183,28 @@ export default function PetRegistrationScreen({ navigation }) {
     }
   };
 
+  const displayPhotoUri = photo || existingPhotoUrl;
+
+  if (loadingPet) {
+    return (
+      <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+        <ScreenHeader title={headerTitle} showBack />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={currentTheme.primary} />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: currentTheme.background }]} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScreenHeader title={headerTitle} showBack />
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         
         <View style={styles.photoContainer}>
-          <TouchableOpacity style={[styles.photoButton, { backgroundColor: currentTheme.background, borderColor: currentTheme.border }]} onPress={pickImage}>
-            {photo ? (
-              <Image source={{ uri: photo }} style={styles.photo} />
+          <TouchableOpacity style={[styles.photoButton, { backgroundColor: currentTheme.primaryMuted, borderColor: currentTheme.accentBorder }]} onPress={pickImage}>
+            {displayPhotoUri ? (
+              <Image source={{ uri: displayPhotoUri }} style={styles.photo} />
             ) : (
               <View style={styles.photoPlaceholder}>
                 <Ionicons name="camera" size={40} color={currentTheme.textSecondary} />
@@ -147,7 +237,7 @@ export default function PetRegistrationScreen({ navigation }) {
                   key={index} 
                   style={[
                     styles.chip, 
-                    { backgroundColor: currentTheme.background, borderColor: currentTheme.border },
+                    { backgroundColor: currentTheme.chipBackground, borderColor: currentTheme.accentBorder },
                     group === g && { backgroundColor: currentTheme.primary, borderColor: currentTheme.primary }
                   ]} 
                   onPress={() => setGroup(g)}
@@ -202,7 +292,9 @@ export default function PetRegistrationScreen({ navigation }) {
           onPress={handleSave}
           disabled={uploading}
         >
-          <Text style={[styles.saveButtonText, { color: currentTheme.card }]}>{uploading ? i18n.t('petRegistration.saving') : i18n.t('petRegistration.save')}</Text>
+          <Text style={[styles.saveButtonText, { color: currentTheme.card }]}>
+            {uploading ? i18n.t('petRegistration.saving') : isEditMode ? i18n.t('petRegistration.update') : i18n.t('petRegistration.save')}
+          </Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -212,6 +304,8 @@ export default function PetRegistrationScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scroll: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollContent: { padding: 20, paddingBottom: 50 },
   photoContainer: { alignItems: 'center', marginVertical: 20 },
   photoButton: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 2 },
