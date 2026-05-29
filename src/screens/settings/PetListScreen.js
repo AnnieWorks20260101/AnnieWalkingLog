@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, SectionList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import { db } from '../../services/firebase';
+import React from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { FONT_SIZES } from '../../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
+import { useFamilyPets } from '../../hooks/useFamilyPets';
+import { movePetInOrder } from '../../utils/petOrder';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
 import i18n from '../../i18n';
@@ -12,90 +21,79 @@ import i18n from '../../i18n';
 export default function PetListScreen({ navigation }) {
   const { currentTheme } = useTheme();
   const { familyId } = useAuth();
-  const [sections, setSections] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { pets, petOrder, loading, savePetOrder } = useFamilyPets(familyId);
 
-  useEffect(() => {
-    if (!familyId) return;
-    const q = query(
-      collection(db, 'pets'),
-      where('familyId', '==', familyId),
-      orderBy('createdAt', 'desc')
-    );
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const petData = [];
-      querySnapshot.forEach((doc) => {
-        petData.push({ id: doc.id, ...doc.data() });
-      });
+  const handleMove = async (petId, direction) => {
+    const newOrder = movePetInOrder(petOrder, petId, direction);
+    if (newOrder === petOrder) return;
 
-      // 🌟 ここで「グループごと」のデータ構造に変換します
-      const groupedData = petData.reduce((acc, pet) => {
-        // グループが未入力の場合は「その他のペット」という枠に入れる
-        const groupName = pet.group ? pet.group : i18n.t('petList.otherPets');
-        if (!acc[groupName]) {
-          acc[groupName] = [];
-        }
-        acc[groupName].push(pet);
-        return acc;
-      }, {});
+    try {
+      await savePetOrder(newOrder);
+    } catch (error) {
+      console.error(error);
+      Alert.alert(i18n.t('common.error'), i18n.t('petList.reorderError'));
+    }
+  };
 
-      // SectionList用の配列に整形する
-      const sectionArray = Object.keys(groupedData).map(key => ({
-        title: key,
-        data: groupedData[key]
-      }));
+  const renderItem = ({ item, index }) => {
+    const canMoveUp = index > 0;
+    const canMoveDown = index < pets.length - 1;
+    const groupLabel = item.group || i18n.t('petList.otherPets');
 
-      // 「その他のペット」を一番下に持っていくための並び替え
-      sectionArray.sort((a, b) => {
-        if (a.title === i18n.t('petList.otherPets')) return 1;
-        if (b.title === i18n.t('petList.otherPets')) return -1;
-        return a.title.localeCompare(b.title);
-      });
+    return (
+      <View
+        style={[
+          styles.petCard,
+          { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.accentBorder, borderLeftColor: currentTheme.primary },
+        ]}
+      >
+        <View style={styles.reorderColumn}>
+          <TouchableOpacity
+            onPress={() => handleMove(item.id, 'up')}
+            disabled={!canMoveUp}
+            style={[styles.reorderButton, !canMoveUp && styles.reorderButtonDisabled]}
+          >
+            <Ionicons name="chevron-up" size={22} color={canMoveUp ? currentTheme.primary : currentTheme.border} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleMove(item.id, 'down')}
+            disabled={!canMoveDown}
+            style={[styles.reorderButton, !canMoveDown && styles.reorderButtonDisabled]}
+          >
+            <Ionicons name="chevron-down" size={22} color={canMoveDown ? currentTheme.primary : currentTheme.border} />
+          </TouchableOpacity>
+        </View>
 
-      setSections(sectionArray);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [familyId]);
-
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.petCard,
-        { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.accentBorder, borderLeftColor: currentTheme.primary },
-      ]}
-      onPress={() => navigation.navigate('PetRegistration', { petId: item.id })}
-      activeOpacity={0.7}
-    >
-      <View style={styles.avatarContainer}>
-        {item.photoUrl ? (
-          <Image source={{ uri: item.photoUrl }} style={[styles.avatar, { borderColor: currentTheme.border }]} />
-        ) : (
-          <View style={[styles.avatar, styles.noImage, { backgroundColor: currentTheme.background, borderColor: currentTheme.border }]}>
-            <Ionicons name="paw" size={30} color={currentTheme.textSecondary} />
+        <TouchableOpacity
+          style={styles.petMain}
+          onPress={() => navigation.navigate('PetRegistration', { petId: item.id })}
+          activeOpacity={0.7}
+        >
+          <View style={styles.avatarContainer}>
+            {item.photoUrl ? (
+              <Image source={{ uri: item.photoUrl }} style={[styles.avatar, { borderColor: currentTheme.border }]} />
+            ) : (
+              <View style={[styles.avatar, styles.noImage, { backgroundColor: currentTheme.background, borderColor: currentTheme.border }]}>
+                <Ionicons name="paw" size={30} color={currentTheme.textSecondary} />
+              </View>
+            )}
           </View>
-        )}
-      </View>
-      
-      <View style={styles.infoContainer}>
-        <Text style={[styles.petName, { color: currentTheme.text }]}>{item.name}</Text>
-        <Text style={[styles.petDetails, { color: currentTheme.textSecondary }]}>
-          {item.type} {item.gender ? ` / ${item.gender}` : ''}
-        </Text>
-        <Text style={[styles.birthdayText, { color: currentTheme.textSecondary }]}>🎂 {item.birthday || i18n.t('petList.unspecified')}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={22} color={currentTheme.textSecondary} />
-    </TouchableOpacity>
-  );
 
-  // 🌟 見出し（グループ名）の描画
-  const renderSectionHeader = ({ section: { title } }) => (
-    <View style={[styles.sectionHeader, { backgroundColor: currentTheme.surface, borderBottomColor: currentTheme.accentBorder }]}>
-      <Ionicons name={title === i18n.t('petList.otherPets') ? "paw-outline" : "home-outline"} size={18} color={currentTheme.primary} />
-      <Text style={[styles.sectionHeaderText, { color: currentTheme.headerText || currentTheme.text }]}>{title}</Text>
-    </View>
-  );
+          <View style={styles.infoContainer}>
+            <Text style={[styles.petName, { color: currentTheme.text }]}>{item.name}</Text>
+            <Text style={[styles.groupText, { color: currentTheme.textSecondary }]}>{groupLabel}</Text>
+            <Text style={[styles.petDetails, { color: currentTheme.textSecondary }]}>
+              {item.type} {item.gender ? ` / ${item.gender}` : ''}
+            </Text>
+            <Text style={[styles.birthdayText, { color: currentTheme.textSecondary }]}>
+              🎂 {item.birthday || i18n.t('petList.unspecified')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={22} color={currentTheme.textSecondary} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   if (loading) {
     return (
@@ -108,24 +106,30 @@ export default function PetListScreen({ navigation }) {
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       <ScreenHeader title={i18n.t('petList.title')} showBack />
-      {sections.length === 0 ? (
+
+      {pets.length > 0 && (
+        <Text style={[styles.sortHint, { color: currentTheme.textSecondary }]}>{i18n.t('petList.sortHint')}</Text>
+      )}
+
+      {pets.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="paw" size={60} color={currentTheme.textSecondary} />
           <Text style={[styles.emptyText, { color: currentTheme.textSecondary }]}>{i18n.t('petList.noPets')}</Text>
         </View>
       ) : (
-        <SectionList
+        <FlatList
           style={styles.list}
-          sections={sections}
+          data={pets}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          renderSectionHeader={renderSectionHeader}
           contentContainerStyle={{ padding: 10, paddingBottom: 100 }}
-          stickySectionHeadersEnabled={false}
         />
       )}
-      
-      <TouchableOpacity style={[styles.fab, { backgroundColor: currentTheme.primary }]} onPress={() => navigation.navigate('PetRegistration')}>
+
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: currentTheme.primary }]}
+        onPress={() => navigation.navigate('PetRegistration')}
+      >
         <Ionicons name="add" size={32} color={currentTheme.card} />
       </TouchableOpacity>
     </View>
@@ -138,44 +142,40 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { textAlign: 'center', marginTop: 10, lineHeight: 22 },
-  
-  // 🌟 追加：見出しのスタイル
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginTop: 10,
-    marginBottom: 5,
-    borderBottomWidth: 1,
-    borderRadius: 8,
-  },
-  sectionHeaderText: {
-    fontSize: FONT_SIZES.standard.m,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-
+  sortHint: { fontSize: FONT_SIZES.standard.s, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4, lineHeight: 18 },
   petCard: {
     flexDirection: 'row',
-    padding: 15,
     borderRadius: 15,
     marginBottom: 10,
-    alignItems: 'center',
+    alignItems: 'stretch',
     borderWidth: 1,
     borderLeftWidth: 4,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    overflow: 'hidden',
   },
-  avatarContainer: { marginRight: 15 },
-  avatar: { width: 70, height: 70, borderRadius: 35, borderWidth: 1 },
+  reorderColumn: { justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 8 },
+  reorderButton: { padding: 4 },
+  reorderButtonDisabled: { opacity: 0.35 },
+  petMain: { flex: 1, flexDirection: 'row', padding: 12, alignItems: 'center' },
+  avatarContainer: { marginRight: 12 },
+  avatar: { width: 64, height: 64, borderRadius: 32, borderWidth: 1 },
   noImage: { justifyContent: 'center', alignItems: 'center' },
   infoContainer: { flex: 1 },
   petName: { fontSize: FONT_SIZES.standard.l, fontWeight: 'bold', marginBottom: 2 },
+  groupText: { fontSize: FONT_SIZES.standard.s, marginBottom: 2 },
   petDetails: { fontSize: FONT_SIZES.standard.s },
-  birthdayText: { fontSize: FONT_SIZES.standard.s, marginTop: 5 },
-  fab: { position: 'absolute', right: 25, bottom: 30, width: 65, height: 65, borderRadius: 32.5, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5 },
+  birthdayText: { fontSize: FONT_SIZES.standard.s, marginTop: 4 },
+  fab: {
+    position: 'absolute',
+    right: 25,
+    bottom: 30,
+    width: 65,
+    height: 65,
+    borderRadius: 32.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
 });

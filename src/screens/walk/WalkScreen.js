@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, Button, TouchableOpacity, Alert } from 'react-native';
+import { useFamilyPets } from '../../hooks/useFamilyPets';
+import PetSelector from '../../components/PetSelector';
 import * as Location from 'expo-location';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -38,6 +40,8 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 export default function WalkScreen({ navigation }) {
   const { currentTheme } = useTheme();
   const { userId, familyId } = useAuth();
+  const { pets } = useFamilyPets(familyId);
+  const [selectedPetIds, setSelectedPetIds] = useState([]);
   const [route, setRoute] = useState([]);
   const [poops, setPoops] = useState([]);
   const [isTracking, setIsTracking] = useState(false);
@@ -45,6 +49,28 @@ export default function WalkScreen({ navigation }) {
   const [initialRegion, setInitialRegion] = useState(null);
   const mapRef = useRef(null);
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (pets.length === 0) {
+      setSelectedPetIds([]);
+      return;
+    }
+    setSelectedPetIds((prev) => {
+      const valid = prev.filter((id) => pets.some((p) => p.id === id));
+      if (valid.length > 0) return valid;
+      return [pets[0].id];
+    });
+  }, [pets]);
+
+  const togglePetSelection = (petId) => {
+    setSelectedPetIds((prev) => {
+      if (prev.includes(petId)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((id) => id !== petId);
+      }
+      return [...prev, petId];
+    });
+  };
 
   // 初期位置取得
   useEffect(() => {
@@ -101,6 +127,11 @@ export default function WalkScreen({ navigation }) {
   }, [isTracking]);
 
   const startTracking = async () => {
+    if (selectedPetIds.length === 0) {
+      Alert.alert(i18n.t('record.alertNoPet'));
+      return;
+    }
+
     try {
       // バックグラウンド権限を聞く（または確認する）
       let { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
@@ -163,10 +194,17 @@ export default function WalkScreen({ navigation }) {
       const distance = calculateTotalDistance(finalRoute); // 🌟 ここで距離計算！
       const duration = (endTime - startTime) / 1000 / 60;
 
+      const selectedPets = pets.filter((p) => selectedPetIds.includes(p.id));
+      const petNames = selectedPets.map((p) => p.name);
+      const petNameLabel = petNames.length > 0 ? petNames.join('、') : i18n.t('walk.defaultPetName');
+
       const walkData = {
         familyId,
         userId,
-        petName: 'アニー',
+        petIds: selectedPetIds,
+        petNames,
+        petId: selectedPetIds[0] ?? null,
+        petName: petNameLabel,
         startTime: startTime,
         endTime: endTime,
         distance: distance,
@@ -212,8 +250,27 @@ export default function WalkScreen({ navigation }) {
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       <ScreenHeader title={isTracking ? i18n.t('walk.walking') : i18n.t('walk.title')} showBack />
+
+      {!isTracking && (
+        <View style={[styles.petSection, { borderBottomColor: currentTheme.accentBorder }]}>
+          <Text style={[styles.petSectionLabel, { color: currentTheme.textSecondary }]}>{i18n.t('walk.selectPet')}</Text>
+          <PetSelector
+            pets={pets}
+            multiple
+            selectedPetIds={selectedPetIds}
+            onTogglePet={togglePetSelection}
+            emptyMessage={i18n.t('walk.noPetForWalk')}
+          />
+        </View>
+      )}
+
       <View style={styles.buttonContainer}>
-        <Button title={isTracking ? i18n.t('walk.walking') : i18n.t('walk.start')} onPress={startTracking} disabled={isTracking} color={currentTheme.primary} />
+        <Button
+          title={isTracking ? i18n.t('walk.walking') : i18n.t('walk.start')}
+          onPress={startTracking}
+          disabled={isTracking || selectedPetIds.length === 0}
+          color={currentTheme.primary}
+        />
         <Button title={i18n.t('walk.end')} onPress={stopTracking} disabled={!isTracking} color={currentTheme.danger} />
       </View>
       <View style={[styles.mapContainer, { borderColor: currentTheme.accentBorder }]}>
@@ -235,7 +292,9 @@ export default function WalkScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  buttonContainer: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 10, paddingHorizontal: 12 },
+  petSection: { paddingTop: 8, paddingBottom: 12, borderBottomWidth: 1 },
+  petSectionLabel: { fontSize: 14, fontWeight: '600', paddingHorizontal: 20, marginBottom: 8 },
+  buttonContainer: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 10, paddingHorizontal: 12, marginTop: 8 },
   mapContainer: { flex: 1, borderWidth: 1 },
   map: { width: '100%', height: '100%' },
   poopButton: {

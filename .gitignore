@@ -27,6 +27,7 @@ build/
 *.ipa
 *.tar.gz
 local.properties
+android/keystore.properties
 annieworks.keystore
 credentials.json
 # Firebase Android（Firebase Console から取得。EndingNote と同様）

@@ -10,7 +10,7 @@ import i18n from '../../i18n';
 
 // 🌟 getDocs と getDoc などを追加
 import { db, storage } from '../../services/firebase';
-import { collection, addDoc, doc, getDoc, updateDoc, query, where, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, updateDoc, query, where, serverTimestamp, getDocs, arrayUnion } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -165,12 +165,17 @@ export default function PetRegistrationScreen({ navigation, route }) {
           { text: i18n.t('common.ok'), onPress: () => navigation.goBack() },
         ]);
       } else {
-        await addDoc(collection(db, 'pets'), {
+        const newPetRef = await addDoc(collection(db, 'pets'), {
           ...petData,
           familyId,
           createdBy: userId,
           createdAt: serverTimestamp(),
         });
+        if (familyId) {
+          await updateDoc(doc(db, 'families', familyId), {
+            petOrder: arrayUnion(newPetRef.id),
+          });
+        }
         Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('petRegistration.saveSuccessMsg', { name }), [
           { text: i18n.t('common.ok'), onPress: () => navigation.goBack() },
         ]);

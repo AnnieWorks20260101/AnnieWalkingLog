@@ -15,6 +15,10 @@ import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { setupCalendarLocale } from './src/utils/calendarLocale';
 import i18n from './src/i18n';
 
+import LoginScreen from './src/screens/auth/LoginScreen';
+import RegisterScreen from './src/screens/auth/RegisterScreen';
+import FamilySetupScreen from './src/screens/auth/FamilySetupScreen';
+
 setupCalendarLocale();
 
 import HistoryScreen from './src/screens/walk/HistoryScreen';
@@ -25,11 +29,12 @@ import RecordScreen from './src/screens/record/RecordScreen';
 import SettingsScreen from './src/screens/settings/SettingsScreen';
 import PetListScreen from './src/screens/settings/PetListScreen';
 import PetRegistrationScreen from './src/screens/settings/PetRegistrationScreen';
+import GuestUpgradeScreen from './src/screens/settings/GuestUpgradeScreen';
 
 const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator(); // 🌟 1. これが抜けていました！
+const Tab = createBottomTabNavigator();
+const AuthStack = createStackNavigator();
 
-// 🌟 2. お散歩画面のスタック（これが消えていました！）
 function WalkStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -46,11 +51,11 @@ function SettingsStack() {
       <Stack.Screen name="SettingsMain" component={SettingsScreen} />
       <Stack.Screen name="PetList" component={PetListScreen} />
       <Stack.Screen name="PetRegistration" component={PetRegistrationScreen} />
+      <Stack.Screen name="GuestUpgrade" component={GuestUpgradeScreen} />
     </Stack.Navigator>
   );
 }
 
-// 飼育記録（1画面に統合）
 function RecordStack() {
   return (
     <Stack.Navigator>
@@ -59,18 +64,18 @@ function RecordStack() {
   );
 }
 
+function AuthNavigator() {
+  return (
+    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+      <AuthStack.Screen name="Login" component={LoginScreen} />
+      <AuthStack.Screen name="Register" component={RegisterScreen} />
+    </AuthStack.Navigator>
+  );
+}
+
 function MainApp() {
   const { currentTheme } = useTheme();
-  const { loading } = useAuth();
   useNotificationObserver();
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: currentTheme.background }}>
-        <ActivityIndicator size="large" color={currentTheme.primary} />
-      </View>
-    );
-  }
 
   return (
     <NavigationContainer>
@@ -91,7 +96,7 @@ function MainApp() {
             backgroundColor: currentTheme.surface,
             borderTopColor: currentTheme.accentBorder,
           },
-          headerShown: false, // Stack側でヘッダーを出すのでTab側は消す
+          headerShown: false,
         })}
       >
         <Tab.Screen name={i18n.t('tabs.record')} component={RecordStack} />
@@ -102,12 +107,45 @@ function MainApp() {
   );
 }
 
+function RootNavigator() {
+  const { currentTheme } = useTheme();
+  const { loading, userId, needsFamilySetup } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: currentTheme.background }}>
+        <ActivityIndicator size="large" color={currentTheme.primary} />
+      </View>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <NavigationContainer>
+        <ThemedStatusBar />
+        <AuthNavigator />
+      </NavigationContainer>
+    );
+  }
+
+  if (needsFamilySetup) {
+    return (
+      <View style={{ flex: 1, backgroundColor: currentTheme.background }}>
+        <ThemedStatusBar />
+        <FamilySetupScreen />
+      </View>
+    );
+  }
+
+  return <MainApp />;
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
         <AuthProvider>
-          <MainApp />
+          <RootNavigator />
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>

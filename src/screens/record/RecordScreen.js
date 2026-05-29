@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  Image,
   Modal,
   TextInput,
   Alert,
@@ -24,9 +23,66 @@ import { useAuth } from '../../contexts/AuthContext';
 import { collection, addDoc, doc, updateDoc, query, where, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import SimpleWeightChart from '../../components/SimpleWeightChart';
 import ScreenHeader from '../../components/ScreenHeader';
+import PetSelector from '../../components/PetSelector';
+import { useFamilyPets } from '../../hooks/useFamilyPets';
 import i18n from '../../i18n';
 
 const CHART_WIDTH = Dimensions.get('window').width - 72;
+const WINDOW_HEIGHT = Dimensions.get('window').height;
+/** 13 mini など縦が狭い端末向けにカレンダー高さを抑える */
+const COMPACT_CALENDAR_HEIGHT = WINDOW_HEIGHT < 820 ? 258 : 288;
+
+function buildCalendarTheme(currentTheme) {
+  return {
+    selectedDayBackgroundColor: currentTheme.primary,
+    todayTextColor: currentTheme.primary,
+    arrowColor: currentTheme.primary,
+    calendarBackground: currentTheme.cardTinted,
+    textSectionTitleColor: currentTheme.textSecondary,
+    dayTextColor: currentTheme.text,
+    textDisabledColor: currentTheme.border,
+    monthTextColor: currentTheme.text,
+    textDayFontSize: 13,
+    textMonthFontSize: 15,
+    textDayHeaderFontSize: 11,
+    'stylesheet.calendar.main': {
+      week: {
+        marginTop: 1,
+        marginBottom: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+      },
+    },
+    'stylesheet.calendar.header': {
+      header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingLeft: 8,
+        paddingRight: 8,
+        marginTop: 2,
+        marginBottom: 2,
+        alignItems: 'center',
+      },
+      monthText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: currentTheme.text,
+      },
+    },
+    'stylesheet.day.basic': {
+      base: {
+        width: 32,
+        height: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      text: {
+        fontSize: 13,
+        fontWeight: '500',
+      },
+    },
+  };
+}
 
 const CATEGORIES = [
   { id: 'weight', emoji: '⚖️', labelKey: 'record.menuWeight', collection: 'weight_records', main: 'chart', recordEmoji: '⚖️' },
@@ -116,10 +172,9 @@ function getTypeOptions(categoryId) {
 export default function RecordScreen() {
   const { currentTheme } = useTheme();
   const { userId, familyId } = useAuth();
-  const [pets, setPets] = useState([]);
+  const { pets, loading: petsLoading } = useFamilyPets(familyId);
   const [selectedPetId, setSelectedPetId] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('weight');
-  const [loading, setLoading] = useState(true);
 
   const [selectedDate, setSelectedDate] = useState(formatDateToYMD(new Date()));
   const [records, setRecords] = useState([]);
@@ -145,6 +200,8 @@ export default function RecordScreen() {
   const isMultiSelectCategory =
     selectedCategory === 'trimming' || selectedCategory === 'medicine' || selectedCategory === 'hospital';
 
+  const calendarTheme = useMemo(() => buildCalendarTheme(currentTheme), [currentTheme]);
+
   const weightChartData = useMemo(() => {
     if (selectedCategory !== 'weight') return null;
     const withWeight = records
@@ -159,25 +216,12 @@ export default function RecordScreen() {
   }, [records, selectedCategory]);
 
   useEffect(() => {
-    if (!familyId) return;
-    const q = query(
-      collection(db, 'pets'),
-      where('familyId', '==', familyId),
-      orderBy('createdAt', 'desc')
-    );
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const petData = [];
-      querySnapshot.forEach((doc) => {
-        petData.push({ id: doc.id, ...doc.data() });
-      });
-      setPets(petData);
-      if (petData.length > 0) {
-        setSelectedPetId((prev) => prev ?? petData[0].id);
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [familyId]);
+    if (pets.length === 0) {
+      setSelectedPetId(null);
+      return;
+    }
+    setSelectedPetId((prev) => (prev && pets.some((p) => p.id === prev) ? prev : pets[0].id));
+  }, [pets]);
 
   useEffect(() => {
     if (isMultiSelectCategory) {
@@ -373,40 +417,6 @@ export default function RecordScreen() {
     }
   };
 
-  const renderPetItem = ({ item }) => {
-    const isSelected = item.id === selectedPetId;
-    return (
-      <TouchableOpacity
-        style={[styles.petIconContainer, isSelected && styles.petIconContainerSelected]}
-        onPress={() => setSelectedPetId(item.id)}
-      >
-        {item.photoUrl ? (
-          <Image
-            source={{ uri: item.photoUrl }}
-            style={[styles.petIcon, isSelected && { borderColor: currentTheme.primary, borderWidth: 3 }]}
-          />
-        ) : (
-          <View
-            style={[
-              styles.petIcon,
-              styles.noImageIcon,
-              { backgroundColor: currentTheme.primaryMuted, borderColor: isSelected ? currentTheme.primary : currentTheme.accentBorder },
-              isSelected && { borderWidth: 3 },
-            ]}
-          >
-            <Ionicons name="paw" size={24} color={isSelected ? currentTheme.primary : currentTheme.border} />
-          </View>
-        )}
-        <Text
-          style={[styles.petName, { color: currentTheme.textSecondary }, isSelected && { color: currentTheme.primary, fontWeight: 'bold' }]}
-          numberOfLines={1}
-        >
-          {item.name}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
   const renderRecordItem = ({ item }) => (
     <TouchableOpacity
       style={[
@@ -440,7 +450,7 @@ export default function RecordScreen() {
     ? i18n.t(`${selectedCategory}.editRecordTitle`)
     : i18n.t(`${selectedCategory}.recordTitle`);
 
-  if (loading) {
+  if (petsLoading) {
     return (
       <View style={[styles.center, { backgroundColor: currentTheme.background }]}>
         <ActivityIndicator size="large" color={currentTheme.primary} />
@@ -454,18 +464,11 @@ export default function RecordScreen() {
 
       {/* 段①: ペット選択 */}
       <View style={[styles.petSelectorWrapper, { borderBottomColor: currentTheme.accentBorder }]}>
-        {pets.length === 0 ? (
-          <Text style={[styles.noPetText, { color: currentTheme.textSecondary }]}>{i18n.t('record.noPet')}</Text>
-        ) : (
-          <FlatList
-            data={pets}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            renderItem={renderPetItem}
-            contentContainerStyle={styles.petSelectorList}
-          />
-        )}
+        <PetSelector
+          pets={pets}
+          selectedPetId={selectedPetId}
+          onSelectPet={setSelectedPetId}
+        />
       </View>
 
       {/* 段②: 項目選択 */}
@@ -513,20 +516,21 @@ export default function RecordScreen() {
           )}
         </View>
       ) : (
-        <Calendar
-          onDayPress={(day) => setSelectedDate(day.dateString)}
-          markedDates={getMarkedDates()}
-          theme={{
-            selectedDayBackgroundColor: currentTheme.primary,
-            todayTextColor: currentTheme.primary,
-            arrowColor: currentTheme.primary,
-            calendarBackground: currentTheme.cardTinted,
-            textSectionTitleColor: currentTheme.textSecondary,
-            dayTextColor: currentTheme.text,
-            textDisabledColor: currentTheme.border,
-            monthTextColor: currentTheme.text,
-          }}
-        />
+        <View
+          style={[
+            styles.calendarWrapper,
+            { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.accentBorder },
+          ]}
+        >
+          <Calendar
+            style={[styles.calendar, { height: COMPACT_CALENDAR_HEIGHT }]}
+            onDayPress={(day) => setSelectedDate(day.dateString)}
+            markedDates={getMarkedDates()}
+            hideExtraDays
+            enableSwipeMonths
+            theme={calendarTheme}
+          />
+        </View>
       )}
 
       {/* 段④: 直近の記録 */}
@@ -640,33 +644,36 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  petSelectorWrapper: { borderBottomWidth: 1, marginTop: 12, paddingTop: 16, paddingBottom: 16, marginBottom: 8 },
-  petSelectorList: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 4 },
-  petIconContainer: { alignItems: 'center', marginRight: 15, opacity: 0.5 },
-  petIconContainerSelected: { opacity: 1 },
-  petIcon: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: 'transparent' },
-  noImageIcon: { borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  petName: { fontSize: FONT_SIZES.standard.s, marginTop: 5, maxWidth: 70 },
-  noPetText: { fontStyle: 'italic', paddingHorizontal: 20 },
-
-  categoryWrapper: { borderBottomWidth: 1, paddingBottom: 12, marginBottom: 4 },
+  petSelectorWrapper: { borderBottomWidth: 1, marginTop: 8, paddingTop: 12, paddingBottom: 12, marginBottom: 4 },
+  categoryWrapper: { borderBottomWidth: 1, paddingBottom: 8, marginBottom: 2 },
   menuGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 20 },
-  menuItem: { width: '23%', padding: 12, borderRadius: 12, alignItems: 'center', marginBottom: 8, borderWidth: 1 },
+  menuItem: { width: '23%', padding: 10, borderRadius: 12, alignItems: 'center', marginBottom: 6, borderWidth: 1 },
   menuEmoji: { fontSize: FONT_SIZES.standard.xl, marginBottom: 4 },
   menuText: { fontSize: FONT_SIZES.standard.s, fontWeight: '600' },
 
-  chartSection: {
-    marginHorizontal: 20,
-    marginVertical: 8,
+  calendarWrapper: {
+    marginHorizontal: 16,
+    marginTop: 2,
+    marginBottom: 4,
     borderRadius: 12,
-    paddingVertical: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  calendar: {
+    width: '100%',
+  },
+  chartSection: {
+    marginHorizontal: 16,
+    marginVertical: 4,
+    borderRadius: 12,
+    paddingVertical: 8,
     alignItems: 'center',
     borderWidth: 1,
   },
   sectionTitle: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold', marginBottom: 8, alignSelf: 'flex-start', marginLeft: 8 },
   chartEmptyText: { fontSize: FONT_SIZES.standard.s, textAlign: 'center', paddingVertical: 24, paddingHorizontal: 16 },
 
-  listContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
+  listContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 4, minHeight: 120 },
   listTitle: { fontSize: FONT_SIZES.standard.l, fontWeight: 'bold', marginBottom: 10 },
   emptyText: { textAlign: 'center', marginTop: 20, lineHeight: 22 },
   recordCard: {
