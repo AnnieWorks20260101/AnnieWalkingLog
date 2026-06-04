@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 export const GROUP_FILTER_ALL = 'all';
 export const GROUP_FILTER_UNASSIGNED = '__unassigned__';
 
@@ -15,7 +17,8 @@ export function collectPetGroupNames(pets) {
       names.add(group);
     }
   });
-  return [...names].sort((a, b) => a.localeCompare(b, 'ja'));
+  const sortLocale = i18n.locale === 'en' ? 'en' : 'ja';
+  return [...names].sort((a, b) => a.localeCompare(b, sortLocale));
 }
 
 export function filterPetsByGroup(pets, filterKey) {

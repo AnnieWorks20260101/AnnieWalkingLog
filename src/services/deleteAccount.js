@@ -9,6 +9,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { deleteFamilyStorageAssets } from './storageFamilyCleanup';
 
 /**
  * ログイン中ユーザーのアカウントと、家族の最後の1人なら家族データも削除する。
@@ -46,17 +47,23 @@ export async function deleteCurrentUserAccount() {
     const remaining = await getDocs(membersQuery);
 
     if (remaining.empty) {
-      await deleteDoc(doc(db, 'families', activeFamilyId));
+      try {
+        await deleteFamilyStorageAssets(activeFamilyId);
+      } catch (error) {
+        console.warn('deleteFamilyStorageAssets failed:', error);
+      }
+
+      const walksSnap = await getDocs(
+        query(collection(db, 'walks'), where('familyId', '==', activeFamilyId))
+      );
+      await Promise.all(walksSnap.docs.map((d) => deleteDoc(d.ref)));
 
       const petsSnap = await getDocs(
         query(collection(db, 'pets'), where('familyId', '==', activeFamilyId))
       );
       await Promise.all(petsSnap.docs.map((d) => deleteDoc(d.ref)));
 
-      const walksSnap = await getDocs(
-        query(collection(db, 'walks'), where('familyId', '==', activeFamilyId))
-      );
-      await Promise.all(walksSnap.docs.map((d) => deleteDoc(d.ref)));
+      await deleteDoc(doc(db, 'families', activeFamilyId));
     }
   }
 

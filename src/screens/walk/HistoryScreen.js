@@ -8,16 +8,16 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../services/firebase';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { deleteWalkRecord } from '../../services/deleteWalk';
 import { useAuth } from '../../contexts/AuthContext';
-import { useFamilyWalks } from '../../hooks/useFamilyWalks';
+import { useFamilyWalksFromPlan } from '../../hooks/useFamilyWalksFromPlan';
+import { usePlanTier } from '../../hooks/usePlanTier';
 import { useFamilyPets } from '../../hooks/useFamilyPets';
+import PlanTierNotice from '../../components/PlanTierNotice';
 import ScreenHeader from '../../components/ScreenHeader';
-import { SCREEN_WALK_DETAIL } from '../../navigation/screenNames';
 import PetFilterRow, { PET_FILTER_ALL } from '../../components/PetFilterRow';
 import i18n from '../../i18n';
 import { useDisplayPreferences } from '../../contexts/DisplayPreferencesContext';
@@ -26,15 +26,20 @@ import { getWalkPetNamesLabel, filterWalksByPet } from '../../utils/walkPets';
 import WalkStartWeather, { hasStartWeatherDisplay } from '../../components/WalkStartWeather';
 import { WalkHistoryStatsText, WalkHistoryPoopText } from '../../components/walk/WalkHistoryEntryMetrics';
 import { blendColors } from '../../utils/enrichTheme';
+import { walkHasMemos } from '../../services/walkMemos';
+import { walkHasPhotos, getWalkPhotos } from '../../utils/walkPhotos';
+import { SCREEN_WALK_DETAIL, SCREEN_WALK_PHOTOS } from '../../navigation/screenNames';
+import { serializeWalkForNavigation } from '../../utils/walkNavigationParams';
 
 export default function HistoryScreen({ navigation }) {
-  const { currentTheme } = useTheme();
+  const { currentTheme, fontSizes } = useTheme();
   const styles = useThemedStyles(createStyles);
   const historySurroundBg = blendColors(currentTheme.background, currentTheme.primary, 0.03);
   const { familyId, userId } = useAuth();
-  const { timeFormat } = useDisplayPreferences();
+  const { timeFormat, language } = useDisplayPreferences();
+  const { tier, entitlements } = usePlanTier();
   const { pets, loading: petsLoading } = useFamilyPets(familyId, userId);
-  const { walks, loading: walksLoading } = useFamilyWalks(familyId);
+  const { walks, loading: walksLoading } = useFamilyWalksFromPlan(familyId);
   const [filterPetId, setFilterPetId] = useState(PET_FILTER_ALL);
 
   const filteredWalks = useMemo(
@@ -47,10 +52,11 @@ export default function HistoryScreen({ navigation }) {
   const formatDate = (timestamp) => {
     if (!timestamp) return '';
     const date = timestamp.toDate();
-    return `${date.getMonth() + 1}月${date.getDate()}日`;
+    const locale = language === 'en' ? 'en-US' : 'ja-JP';
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (walk) => {
     Alert.alert(
       i18n.t('walk.deleteConfirm'),
       i18n.t('walk.deleteConfirmMsg'),
@@ -61,7 +67,10 @@ export default function HistoryScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteDoc(doc(db, 'walks', id));
+              await deleteWalkRecord({
+                id: walk.id,
+                familyId: walk.familyId ?? familyId,
+              });
             } catch (error) {
               console.error('削除エラー:', error);
               Alert.alert(i18n.t('common.error'), i18n.t('walk.saveError'));
@@ -77,6 +86,9 @@ export default function HistoryScreen({ navigation }) {
       index === 0 || formatDate(item.startTime) !== formatDate(filteredWalks[index - 1].startTime);
 
     const showWeather = hasStartWeatherDisplay(item.startWeather);
+    const hasMemo = walkHasMemos(item);
+    const hasPhotos = walkHasPhotos(item);
+    const photoCount = getWalkPhotos(item).length;
     const valueColor = { color: currentTheme.text };
     const mutedColor = { color: currentTheme.textSecondary };
 
@@ -95,7 +107,9 @@ export default function HistoryScreen({ navigation }) {
 
         <TouchableOpacity
           style={[styles.card, { backgroundColor: historySurroundBg }]}
-          onPress={() => navigation.navigate(SCREEN_WALK_DETAIL, { walk: item })}
+          onPress={() =>
+            navigation.navigate(SCREEN_WALK_DETAIL, { walk: serializeWalkForNavigation(item) })
+          }
         >
           <View style={styles.timelineContainer}>
             <View style={[styles.timelineDot, { backgroundColor: currentTheme.primary }]} />
@@ -125,7 +139,7 @@ export default function HistoryScreen({ navigation }) {
                   />
                 ) : null}
               </View>
-              <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.id)}>
+              <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item)}>
                 <Text style={{ fontSize: 18 }}>🗑️</Text>
               </TouchableOpacity>
             </View>
@@ -147,6 +161,26 @@ export default function HistoryScreen({ navigation }) {
                 />
               </View>
             </View>
+            {hasMemo ? (
+              <Text style={[styles.memoBadge, { color: currentTheme.textSecondary }]}>
+                {i18n.t('walk.historyHasMemo')}
+              </Text>
+            ) : null}
+            {hasPhotos ? (
+              <TouchableOpacity
+                style={styles.photosLinkRow}
+                onPress={() =>
+                  navigation.navigate(SCREEN_WALK_PHOTOS, {
+                    walk: serializeWalkForNavigation(item),
+                  })
+                }
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.photosLinkText, { color: currentTheme.primary, fontSize: fontSizes.m }]}>
+                  {i18n.t('walk.historyPhotosLink', { count: photoCount })}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </TouchableOpacity>
       </View>
@@ -154,7 +188,15 @@ export default function HistoryScreen({ navigation }) {
   };
 
   const listHeader = () => (
-    <PetFilterRow pets={pets} filterPetId={filterPetId} onFilterChange={setFilterPetId} />
+    <View>
+      <PlanTierNotice tier={tier} variant="history" />
+      <PetFilterRow
+        pets={pets}
+        filterPetId={filterPetId}
+        onFilterChange={setFilterPetId}
+        entitlements={entitlements}
+      />
+    </View>
   );
 
   if (loading) {
@@ -243,5 +285,16 @@ const createStyles = (fs) => ({
     alignItems: 'flex-end',
     minWidth: 72,
   },
+  memoBadge: {
+    fontSize: fs.s,
+    marginTop: 8,
+  },
+  photosLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  photosLinkText: { fontWeight: '600' },
   deleteButton: { padding: 10, marginTop: -5, marginRight: -5 },
 });

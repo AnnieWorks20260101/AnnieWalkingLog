@@ -2,7 +2,7 @@
   "expo": {
     "name": "AnnieWalkingLog",
     "slug": "AnnieWalkingLog",
-    "version": "0.2.0",
+    "version": "0.8.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -19,7 +19,10 @@
         "UIBackgroundModes": [
           "location",
           "fetch"
-        ]
+        ],
+        "NSCameraUsageDescription": "お散歩の記録のためにカメラを使用します。",
+        "NSPhotoLibraryUsageDescription": "お散歩の写真をフォトに保存するために使用します。",
+        "NSPhotoLibraryAddUsageDescription": "お散歩の写真をフォトアルバムに保存します。"
       }
     },
     "android": {
@@ -35,13 +38,11 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_LOCATION"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyBXwoxT__x0iG8-7cAlsArsvU-neNs3PxM"
-        }
-      }
+        "FOREGROUND_SERVICE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -49,8 +50,7 @@
     "extra": {
       "eas": {
         "projectId": "7718817f-9965-453a-a6a4-4b5b6223a22e"
-      },
-      "openWeatherApiKey": "4de7cabc1d0c573bab84c855e1022be2"
+      }
     },
     "plugins": [
       [
@@ -62,7 +62,20 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-localization",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "お散歩の記録のためにカメラを使用します。"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "お散歩の写真をフォトに保存するために使用します。",
+          "savePhotosPermission": "お散歩の写真をフォトアルバムに保存します。"
+        }
+      ]
     ]
   }
 }

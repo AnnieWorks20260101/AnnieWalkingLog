@@ -22,8 +22,13 @@ import {
   serverTimestamp,
   getDocs,
   arrayUnion,
+  arrayRemove,
+  deleteDoc,
 } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePlanTier } from '../../hooks/usePlanTier';
+import { canAddPet } from '../../constants/planEntitlements';
+import { showPlanLimitAlert } from '../../utils/planLimitAlert';
 
 import { uploadPetPhotoFromUri } from '../../services/petPhotoUpload';
 
@@ -47,6 +52,7 @@ export default function PetRegistrationScreen({ navigation, route }) {
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { userId, familyId } = useAuth();
+  const { tier, entitlements } = usePlanTier();
   const petId = route.params?.petId;
   const isEditMode = !!petId;
 
@@ -211,6 +217,15 @@ export default function PetRegistrationScreen({ navigation, route }) {
           { text: i18n.t('common.ok'), onPress: () => navigation.goBack() },
         ]);
       } else {
+        const existingPets = await getDocs(
+          query(collection(db, 'pets'), where('familyId', '==', familyId))
+        );
+        if (!canAddPet(existingPets.size, entitlements)) {
+          setUploading(false);
+          showPlanLimitAlert({ navigation, limitKey: 'pet', tier });
+          return;
+        }
+
         const newPetRef = await addDoc(collection(db, 'pets'), {
           ...petData,
           familyId,
@@ -240,6 +255,49 @@ export default function PetRegistrationScreen({ navigation, route }) {
     } finally {
       setUploading(false);
     }
+  };
+
+  const performDeletePet = async () => {
+    if (!petId || !userId) {
+      return;
+    }
+    setUploading(true);
+    try {
+      await deleteDoc(doc(db, 'pets', petId));
+      await setDoc(
+        doc(db, 'users', userId),
+        { petOrder: arrayRemove(petId) },
+        { merge: true }
+      );
+      const displayName = name?.trim() || i18n.t('walk.defaultPetName');
+      Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('petRegistration.deleteSuccessMsg', { name: displayName }), [
+        { text: i18n.t('common.ok'), onPress: () => navigation.goBack() },
+      ]);
+    } catch (error) {
+      console.error('pet delete error:', error);
+      Alert.alert(i18n.t('common.error'), i18n.t('petRegistration.deleteError'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeletePet = () => {
+    if (!isEditMode || !petId || uploading) {
+      return;
+    }
+    const displayName = name?.trim() || i18n.t('walk.defaultPetName');
+    Alert.alert(
+      i18n.t('petRegistration.deleteConfirmTitle'),
+      i18n.t('petRegistration.deleteConfirmMsg', { name: displayName }),
+      [
+        { text: i18n.t('walk.cancel'), style: 'cancel' },
+        {
+          text: i18n.t('petRegistration.delete'),
+          style: 'destructive',
+          onPress: performDeletePet,
+        },
+      ]
+    );
   };
 
   const displayPhotoUri = photo || existingPhotoUrl;
@@ -398,8 +456,12 @@ export default function PetRegistrationScreen({ navigation, route }) {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.saveButton, { backgroundColor: currentTheme.primary }, uploading && { backgroundColor: currentTheme.textSecondary }]} 
+        <TouchableOpacity
+          style={[
+            styles.saveButton,
+            { backgroundColor: currentTheme.primary },
+            uploading && { backgroundColor: currentTheme.textSecondary },
+          ]}
           onPress={handleSave}
           disabled={uploading}
         >
@@ -407,6 +469,23 @@ export default function PetRegistrationScreen({ navigation, route }) {
             {uploading ? i18n.t('petRegistration.saving') : isEditMode ? i18n.t('petRegistration.update') : i18n.t('petRegistration.save')}
           </Text>
         </TouchableOpacity>
+
+        {isEditMode ? (
+          <TouchableOpacity
+            style={[
+              styles.deleteButton,
+              { borderColor: currentTheme.danger },
+              uploading && styles.deleteButtonDisabled,
+            ]}
+            onPress={handleDeletePet}
+            disabled={uploading}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.deleteButtonText, { color: currentTheme.danger }]}>
+              {i18n.t('petRegistration.delete')}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
 
       </ScrollView>
     </KeyboardAvoidingView>
@@ -445,4 +524,13 @@ const createStyles = (fs) => ({
   genderTextActiveGirl: { color: '#fff' },
   saveButton: { borderRadius: 25, paddingVertical: 15, alignItems: 'center', marginTop: 30, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5 },
   saveButtonText: { fontSize: fs.l, fontWeight: 'bold' },
+  deleteButton: {
+    borderRadius: 25,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 16,
+    borderWidth: 2,
+  },
+  deleteButtonDisabled: { opacity: 0.5 },
+  deleteButtonText: { fontWeight: 'bold', fontSize: fs.m },
 });

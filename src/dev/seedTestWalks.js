@@ -13,6 +13,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { deleteWalkRecord } from '../services/deleteWalk';
 
 const BATCH_SIZE = 400;
 const SEED_YEARS = 2;
@@ -173,4 +174,52 @@ export async function seedTestWalksForFamily({ familyId, userId, defaultPetName,
   }
 
   return { created: total, petCount: pets.length };
+}
+
+function testWalksQuery(familyId) {
+  return query(
+    collection(db, 'walks'),
+    where('familyId', '==', familyId),
+    where(TEST_SEED_FLAG, '==', true)
+  );
+}
+
+/** 削除対象のテストお散歩件数 */
+export async function countTestWalksForFamily(familyId) {
+  if (!familyId) {
+    return 0;
+  }
+  const snap = await getDocs(testWalksQuery(familyId));
+  return snap.size;
+}
+
+const DELETE_CHUNK_SIZE = 15;
+
+/**
+ * isTestSeed のお散歩だけ削除（Storage 写真含む）
+ * @param {{ familyId: string, onProgress?: (done: number, total: number) => void }} params
+ */
+export async function deleteTestWalksForFamily({ familyId, onProgress }) {
+  if (!familyId) {
+    throw new Error('deleteTestWalks: familyId is required');
+  }
+
+  const snap = await getDocs(testWalksQuery(familyId));
+  const walks = snap.docs.map((d) => ({ id: d.id, familyId }));
+  const total = walks.length;
+
+  if (total === 0) {
+    onProgress?.(0, 0);
+    return { deleted: 0 };
+  }
+
+  let done = 0;
+  for (let offset = 0; offset < walks.length; offset += DELETE_CHUNK_SIZE) {
+    const chunk = walks.slice(offset, offset + DELETE_CHUNK_SIZE);
+    await Promise.all(chunk.map((walk) => deleteWalkRecord(walk)));
+    done += chunk.length;
+    onProgress?.(done, total);
+  }
+
+  return { deleted: total };
 }

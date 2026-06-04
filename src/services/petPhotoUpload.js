@@ -55,7 +55,7 @@ export async function resolveReadableImageUri(localUri) {
   return dest;
 }
 
-async function readImageBytes(localUri) {
+export async function readImageBytes(localUri) {
   const readableUri = await resolveReadableImageUri(localUri);
   const base64 = await FileSystem.readAsStringAsync(readableUri, {
     encoding: FileSystem.EncodingType.Base64,

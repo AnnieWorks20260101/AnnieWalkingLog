@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { showPremiumLockedAlert } from '../../utils/premiumLockedAlert';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import WalkHistoryLineChart from '../WalkHistoryLineChart';
@@ -56,6 +58,7 @@ export default function WalkGraphPanel({
   defaultAggregation = GRAPH_AGGREGATION.none,
   defaultCursor = defaultCursorDate(),
 }) {
+  const navigation = useNavigation();
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
   const [period, setPeriod] = useState(defaultPeriod);
@@ -221,11 +224,15 @@ export default function WalkGraphPanel({
 
       <View style={styles.chartBody}>
         {locked ? (
-          <View
+          <TouchableOpacity
             style={[
               styles.lockedOverlay,
               { backgroundColor: blendColors(currentTheme.background, currentTheme.text, 0.12) },
             ]}
+            onPress={() => showPremiumLockedAlert(navigation)}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('walk.graphPremiumLockedAlertTitle')}
           >
             <View style={[styles.lockCircle, { backgroundColor: currentTheme.cardTinted }]}>
               <Ionicons name="lock-closed" size={36} color={currentTheme.textSecondary} />
@@ -236,7 +243,7 @@ export default function WalkGraphPanel({
             <Text style={[styles.lockedHint, { color: currentTheme.textSecondary }]}>
               {i18n.t('walk.graphPremiumLockedHint')}
             </Text>
-          </View>
+          </TouchableOpacity>
         ) : loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={currentTheme.primary} />

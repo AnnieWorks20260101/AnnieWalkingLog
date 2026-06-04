@@ -1,3 +1,5 @@
+import { toWalkStartDate } from './walkGraphMetrics';
+
 /** @typedef {'auto' | 'h12' | 'h24'} TimeFormat */
 
 /**
@@ -23,11 +25,8 @@ export function formatTimeOfDay(date, format = 'auto') {
  * @param {TimeFormat} format
  */
 export function formatTimestampTime(value, format = 'auto') {
-  if (!value) {
-    return '';
-  }
-  const date = typeof value.toDate === 'function' ? value.toDate() : value;
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+  const date = toWalkStartDate(value);
+  if (!date || Number.isNaN(date.getTime())) {
     return '';
   }
   return formatTimeOfDay(date, format);

@@ -1,13 +1,13 @@
-/** 設定画面のテーマ選択モーダル用表示名 */
-export const THEME_DISPLAY_NAMES = {
-  light: '🌿 ライト',
-  dark: '🕶️ ダーク',
-  warm: '☕ ウォーム',
-  mint: '🌿 ミント',
-  midnight: '🌙 ミッドナイト',
-  sakura: '🌸 サクラ',
-  ocean: '🌊 オーシャン',
-  lemon: '🍋 レモン',
-  lavender: '🪻 ラベンダー',
-  forest: '🌲 フォレスト',
-};
+/** テーマ ID 一覧（表示名は settings.themes.* の i18n を使用） */
+export const THEME_IDS = [
+  'light',
+  'dark',
+  'warm',
+  'mint',
+  'midnight',
+  'sakura',
+  'ocean',
+  'lemon',
+  'lavender',
+  'forest',
+];

@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import ja from '../locales/ja.json';
+import i18n from '../i18n';
 
 /**
  * Android メーカー別のバックグラウンド案内文言キー用カテゴリ
@@ -66,9 +66,10 @@ export function getManufacturerDisplayName() {
 }
 
 export function getDeviceGuideBodyKey(category) {
-  const suffix = `deviceGuideBody_${category}`;
-  if (ja.walk[suffix]) {
-    return `walk.${suffix}`;
+  const key = `walk.deviceGuideBody_${category}`;
+  const translated = i18n.t(key);
+  if (translated && translated !== key) {
+    return key;
   }
   return 'walk.deviceGuideBody_generic';
 }

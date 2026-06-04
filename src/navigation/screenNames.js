@@ -2,6 +2,7 @@
 
 export const SCREEN_HISTORY = 'History';
 export const SCREEN_WALK_DETAIL = 'WalkDetail';
+export const SCREEN_WALK_PHOTOS = 'WalkPhotos';
 export const SCREEN_WALK_MAIN = 'WalkMain';
 
 export const SCREEN_PET_LIST = 'PetList';

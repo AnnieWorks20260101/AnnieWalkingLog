@@ -14,12 +14,15 @@ import {
   Linking,
   Dimensions,
   ActivityIndicator,
+  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { COLORS } from '../../../constants/theme';
-import { THEME_DISPLAY_NAMES } from '../../../constants/themeNames';
-import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeDisplayName } from '../../utils/themeDisplayName';
+import { useTheme, FONT_SIZE_OPTIONS } from '../../contexts/ThemeContext';
+import { useWalkPreferences } from '../../contexts/WalkPreferencesContext';
+import { WALK_CUSTOM_BUTTON_OPTIONS } from '../../constants/walkCustomButtonOptions';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePremium } from '../../hooks/usePremium';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -37,7 +40,12 @@ import {
 import { getTimeFormatLabel } from '../../utils/formatTime';
 import i18n from '../../i18n';
 import { deleteCurrentUserAccount } from '../../services/deleteAccount';
-import { seedTestWalksForFamily, estimateTestWalkSeedCount } from '../../dev/seedTestWalks';
+import {
+  seedTestWalksForFamily,
+  estimateTestWalkSeedCount,
+  countTestWalksForFamily,
+  deleteTestWalksForFamily,
+} from '../../dev/seedTestWalks';
 
 function SettingRow({ children, onPress, style }) {
   if (onPress) {
@@ -57,15 +65,27 @@ export default function SettingsScreen({ navigation }) {
   const { isPremium } = usePremium();
   const { language, languageLabel, timeFormat, timeFormatLabel, setLanguage, setTimeFormat } =
     useDisplayPreferences();
+  const {
+    customButtonId,
+    customButtonIcon,
+    customButtonLabel,
+    setCustomButtonId,
+    uploadPhotosOnCellular,
+    setUploadPhotosOnCellular,
+    savePhotoToLibrary,
+    setSavePhotoToLibrary,
+  } = useWalkPreferences();
 
   const [isFamilyModalVisible, setIsFamilyModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
   const [isThemeModalVisible, setIsThemeModalVisible] = useState(false);
   const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
   const [isTimeFormatModalVisible, setIsTimeFormatModalVisible] = useState(false);
+  const [isFontSizeModalVisible, setIsFontSizeModalVisible] = useState(false);
+  const [isCustomButtonModalVisible, setIsCustomButtonModalVisible] = useState(false);
   const [editFamilyId, setEditFamilyId] = useState('');
-  const [testSeedRunning, setTestSeedRunning] = useState(false);
-  const [testSeedProgress, setTestSeedProgress] = useState({ done: 0, total: 0 });
+  const [testDevRunning, setTestDevRunning] = useState(false);
+  const [testDevProgress, setTestDevProgress] = useState({ done: 0, total: 0 });
 
   const appVersion = Constants.expoConfig?.version || '1.0.0';
 
@@ -162,21 +182,70 @@ export default function SettingsScreen({ navigation }) {
         {
           text: i18n.t('settings.testSeedCardTitle'),
           onPress: async () => {
-            setTestSeedRunning(true);
-            setTestSeedProgress({ done: 0, total: approxCount });
+            setTestDevRunning(true);
+            setTestDevProgress({ done: 0, total: approxCount });
             try {
               const { created } = await seedTestWalksForFamily({
                 familyId,
                 userId,
                 defaultPetName: i18n.t('walk.defaultPetName'),
-                onProgress: (done, total) => setTestSeedProgress({ done, total }),
+                onProgress: (done, total) => setTestDevProgress({ done, total }),
               });
               Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('settings.testSeedSuccess', { count: created }));
             } catch (error) {
               console.error('test seed error:', error);
               Alert.alert(i18n.t('common.error'), i18n.t('settings.testSeedError'));
             } finally {
-              setTestSeedRunning(false);
+              setTestDevRunning(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteTestWalks = async () => {
+    if (!familyId) {
+      Alert.alert(i18n.t('common.error'), i18n.t('settings.testSeedNoFamily'));
+      return;
+    }
+
+    let count = 0;
+    try {
+      count = await countTestWalksForFamily(familyId);
+    } catch (error) {
+      console.error('count test walks error:', error);
+      Alert.alert(i18n.t('common.error'), i18n.t('settings.testDeleteError'));
+      return;
+    }
+
+    if (count === 0) {
+      Alert.alert(i18n.t('settings.testDeleteEmptyTitle'), i18n.t('settings.testDeleteEmptyMsg'));
+      return;
+    }
+
+    Alert.alert(
+      i18n.t('settings.testDeleteConfirmTitle'),
+      i18n.t('settings.testDeleteConfirmMsg', { count }),
+      [
+        { text: i18n.t('walk.cancel'), style: 'cancel' },
+        {
+          text: i18n.t('settings.testDeleteCardTitle'),
+          style: 'destructive',
+          onPress: async () => {
+            setTestDevRunning(true);
+            setTestDevProgress({ done: 0, total: count });
+            try {
+              const { deleted } = await deleteTestWalksForFamily({
+                familyId,
+                onProgress: (done, total) => setTestDevProgress({ done, total }),
+              });
+              Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('settings.testDeleteSuccess', { count: deleted }));
+            } catch (error) {
+              console.error('delete test walks error:', error);
+              Alert.alert(i18n.t('common.error'), i18n.t('settings.testDeleteError'));
+            } finally {
+              setTestDevRunning(false);
             }
           },
         },
@@ -218,20 +287,9 @@ export default function SettingsScreen({ navigation }) {
     ]);
   };
 
-  const renderFontSizeRow = (optionKey, labelKey) => {
-    const selected = activeFontSizeOption === optionKey;
-    return (
-      <SettingRow onPress={() => changeFontSize(optionKey)}>
-        <View style={styles.settingLeft}>
-          <Ionicons name="text" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
-          <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
-            {i18n.t(labelKey)}
-          </Text>
-        </View>
-        {selected ? <Ionicons name="checkmark" size={24} color={currentTheme.primary} /> : null}
-      </SettingRow>
-    );
-  };
+  const fontSizeLabel = i18n.t(`settings.fontSizeOption_${activeFontSizeOption}`);
+  const currentThemeLabel = getThemeDisplayName(themeName, i18n);
+  const fontSizeOptionKeys = Object.keys(FONT_SIZE_OPTIONS);
 
   const sectionCardStyle = [
     styles.sectionCard,
@@ -297,6 +355,66 @@ export default function SettingsScreen({ navigation }) {
         </View>
 
         <Text style={[styles.sectionTitle, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+          {i18n.t('settings.walkSectionTitle')}
+        </Text>
+        <View style={sectionCardStyle}>
+          <SettingRow onPress={() => setIsCustomButtonModalVisible(true)}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="ellipse-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+              <View style={styles.settingTextBlock}>
+                <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                  {i18n.t('settings.customButtonLabel')}
+                </Text>
+                <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                  {customButtonIcon} {customButtonLabel}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
+          </SettingRow>
+          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
+          <SettingRow>
+            <View style={styles.settingLeft}>
+              <Ionicons name="cellular-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+              <View style={styles.settingTextBlock}>
+                <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                  {i18n.t('settings.uploadPhotosOnCellular')}
+                </Text>
+                <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                  {i18n.t('settings.uploadPhotosOnCellularDesc')}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={uploadPhotosOnCellular}
+              onValueChange={setUploadPhotosOnCellular}
+              trackColor={{ false: currentTheme.border, true: currentTheme.primary }}
+              thumbColor={currentTheme.card}
+            />
+          </SettingRow>
+          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
+          <SettingRow>
+            <View style={styles.settingLeft}>
+              <Ionicons name="images-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+              <View style={styles.settingTextBlock}>
+                <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                  {i18n.t('settings.savePhotoToLibrary')}
+                </Text>
+                <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                  {i18n.t('settings.savePhotoToLibraryDesc')}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={savePhotoToLibrary}
+              onValueChange={setSavePhotoToLibrary}
+              trackColor={{ false: currentTheme.border, true: currentTheme.primary }}
+              thumbColor={currentTheme.card}
+            />
+          </SettingRow>
+        </View>
+
+        <Text style={[styles.sectionTitle, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
           {i18n.t('settings.displaySectionTitle')}
         </Text>
         <View style={sectionCardStyle}>
@@ -330,11 +448,20 @@ export default function SettingsScreen({ navigation }) {
             <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
           </SettingRow>
           <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
-          {renderFontSizeRow('small', 'settings.fontSizeSmall')}
-          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
-          {renderFontSizeRow('medium', 'settings.fontSizeMedium')}
-          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
-          {renderFontSizeRow('large', 'settings.fontSizeLarge')}
+          <SettingRow onPress={() => setIsFontSizeModalVisible(true)}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="text" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+              <View style={styles.settingTextBlock}>
+                <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                  {i18n.t('settings.fontSizeLabel')}
+                </Text>
+                <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                  {fontSizeLabel}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
+          </SettingRow>
           <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
           <SettingRow onPress={() => setIsThemeModalVisible(true)}>
             <View style={styles.settingLeft}>
@@ -344,7 +471,7 @@ export default function SettingsScreen({ navigation }) {
                   {i18n.t('settings.themeChangeLabel')}
                 </Text>
                 <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-                  {THEME_DISPLAY_NAMES[themeName] || themeName}
+                  {currentThemeLabel}
                 </Text>
               </View>
             </View>
@@ -452,7 +579,7 @@ export default function SettingsScreen({ navigation }) {
                 { backgroundColor: currentTheme.card, borderColor: '#E6A800' },
               ]}
               onPress={handleSeedTestWalks}
-              disabled={testSeedRunning}
+              disabled={testDevRunning}
               activeOpacity={0.7}
             >
               <View style={styles.settingLeft}>
@@ -466,13 +593,48 @@ export default function SettingsScreen({ navigation }) {
                   </Text>
                 </View>
               </View>
-              {testSeedRunning ? (
+              {testDevRunning ? (
                 <View style={styles.testSeedProgressRow}>
                   <ActivityIndicator size="small" color={currentTheme.primary} />
                   <Text style={[styles.testSeedProgressText, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
                     {i18n.t('settings.testSeedRunning', {
-                      done: testSeedProgress.done,
-                      total: testSeedProgress.total,
+                      done: testDevProgress.done,
+                      total: testDevProgress.total,
+                    })}
+                  </Text>
+                </View>
+              ) : (
+                <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.testSeedCard,
+                styles.testDeleteCard,
+                { backgroundColor: currentTheme.card, borderColor: '#FF3B30' },
+              ]}
+              onPress={handleDeleteTestWalks}
+              disabled={testDevRunning}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <Ionicons name="trash-outline" size={22} color="#FF3B30" style={styles.settingIcon} />
+                <View style={styles.settingTextBlock}>
+                  <Text style={[styles.settingText, styles.dangerText, { fontSize: fontSizes.m }]}>
+                    {i18n.t('settings.testDeleteCardTitle')}
+                  </Text>
+                  <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                    {i18n.t('settings.testDeleteCardDesc')}
+                  </Text>
+                </View>
+              </View>
+              {testDevRunning ? (
+                <View style={styles.testSeedProgressRow}>
+                  <ActivityIndicator size="small" color={currentTheme.primary} />
+                  <Text style={[styles.testSeedProgressText, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                    {i18n.t('settings.testDeleteRunning', {
+                      done: testDevProgress.done,
+                      total: testDevProgress.total,
                     })}
                   </Text>
                 </View>
@@ -566,6 +728,100 @@ export default function SettingsScreen({ navigation }) {
             <TouchableOpacity onPress={() => setIsInviteModalVisible(false)} style={styles.modalClose}>
               <Text style={{ color: currentTheme.textSecondary, fontSize: fontSizes.m }}>{i18n.t('walk.cancel')}</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={isFontSizeModalVisible} animationType="slide" transparent>
+        <View style={[styles.modalOverlay, styles.themeModalOverlay]}>
+          <View style={[styles.themeModalContent, { backgroundColor: currentTheme.card }]}>
+            <View style={styles.themeModalHeader}>
+              <Text style={[styles.modalTitle, { color: currentTheme.text, fontSize: fontSizes.l, marginBottom: 0 }]}>
+                {i18n.t('settings.fontSizeModalTitle')}
+              </Text>
+              <TouchableOpacity onPress={() => setIsFontSizeModalVisible(false)} hitSlop={12}>
+                <Ionicons name="close-circle" size={28} color={currentTheme.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            {fontSizeOptionKeys.map((optionKey) => {
+              const selected = activeFontSizeOption === optionKey;
+              return (
+                <TouchableOpacity
+                  key={optionKey}
+                  style={[styles.themeOptionRow, { borderBottomColor: currentTheme.border }]}
+                  onPress={() => {
+                    changeFontSize(optionKey);
+                    setIsFontSizeModalVisible(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.themeOptionLabel,
+                      {
+                        color: currentTheme.text,
+                        fontSize: fontSizes.m,
+                        fontWeight: selected ? 'bold' : 'normal',
+                      },
+                    ]}
+                  >
+                    {i18n.t(`settings.fontSizeOption_${optionKey}`)}
+                  </Text>
+                  {selected ? <Ionicons name="checkmark" size={24} color={currentTheme.primary} /> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={isCustomButtonModalVisible} animationType="slide" transparent>
+        <View style={[styles.modalOverlay, styles.themeModalOverlay]}>
+          <View style={[styles.themeModalContent, { backgroundColor: currentTheme.card }]}>
+            <View style={styles.themeModalHeader}>
+              <Text style={[styles.modalTitle, { color: currentTheme.text, fontSize: fontSizes.l, marginBottom: 0 }]}>
+                {i18n.t('settings.customButtonModalTitle')}
+              </Text>
+              <TouchableOpacity onPress={() => setIsCustomButtonModalVisible(false)} hitSlop={12}>
+                <Ionicons name="close-circle" size={28} color={currentTheme.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.modalDesc, { color: currentTheme.textSecondary, fontSize: fontSizes.s, marginBottom: 12 }]}>
+              {i18n.t('settings.customButtonModalDesc')}
+            </Text>
+            <ScrollView style={{ maxHeight: Dimensions.get('window').height * 0.5 }}>
+              <View style={styles.customButtonGrid}>
+                {WALK_CUSTOM_BUTTON_OPTIONS.map((option) => {
+                  const selected = customButtonId === option.id;
+                  return (
+                    <TouchableOpacity
+                      key={option.id}
+                      style={[
+                        styles.customButtonCell,
+                        {
+                          borderColor: selected ? currentTheme.primary : currentTheme.border,
+                          backgroundColor: selected ? currentTheme.cardTinted : currentTheme.background,
+                        },
+                      ]}
+                      onPress={() => {
+                        setCustomButtonId(option.id);
+                        setIsCustomButtonModalVisible(false);
+                      }}
+                    >
+                      <Text style={styles.customButtonCellIcon}>{option.icon}</Text>
+                      <Text
+                        style={[
+                          styles.customButtonCellLabel,
+                          { color: currentTheme.textSecondary, fontSize: fontSizes.s },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {i18n.t(option.labelKey)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -694,7 +950,7 @@ export default function SettingsScreen({ navigation }) {
                           },
                         ]}
                       >
-                        {THEME_DISPLAY_NAMES[themeKey] || themeKey}
+                        {getThemeDisplayName(themeKey, i18n)}
                       </Text>
                     </View>
                     {selected ? <Ionicons name="checkmark" size={24} color={currentTheme.primary} /> : null}
@@ -754,6 +1010,7 @@ const styles = StyleSheet.create({
   dangerText: { color: '#FF3B30', fontWeight: 'bold' },
   divider: { height: 1, marginLeft: 50 },
   versionText: {},
+  testDeleteCard: { marginTop: 10 },
   testSeedCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -812,4 +1069,24 @@ const styles = StyleSheet.create({
   themeOptionLeft: { flexDirection: 'row', alignItems: 'center' },
   themeSwatch: { width: 24, height: 24, borderRadius: 12, marginRight: 16, borderWidth: 1 },
   themeOptionLabel: {},
+  customButtonGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'flex-start',
+    paddingBottom: 8,
+  },
+  customButtonCell: {
+    width: '30%',
+    minWidth: 96,
+    flexGrow: 1,
+    maxWidth: 120,
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    borderWidth: 2,
+  },
+  customButtonCellIcon: { fontSize: 36, marginBottom: 6 },
+  customButtonCellLabel: { textAlign: 'center' },
 });

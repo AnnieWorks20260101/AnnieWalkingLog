@@ -13,6 +13,11 @@ web-build/
 # 🟢 ローカルモジュールは除外しない（エラー解決の要！）
 !modules/
 
+# 🚫 環境変数（APIキーなど）
+.env
+.env.local
+.env.*.local
+
 # 🚫 ビルド一時ファイルや環境設定
 build/
 .idea/

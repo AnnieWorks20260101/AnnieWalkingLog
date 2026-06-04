@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 Notifications.setNotificationHandler({
@@ -51,7 +51,8 @@ export async function registerForPushNotificationsAsync(userId) {
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
 
     if (userId) {
-      await updateDoc(doc(db, 'users', userId), { expoPushToken: token });
+      // merge: ゲスト初回など users ドキュメント未作成時もエラーにしない
+      await setDoc(doc(db, 'users', userId), { expoPushToken: token }, { merge: true });
       console.log('[push] トークンを保存しました');
     } else {
       console.log('[push] ログイン前のためトークンの保存を保留しました');

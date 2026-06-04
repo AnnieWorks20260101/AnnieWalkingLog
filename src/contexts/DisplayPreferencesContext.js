@@ -1,12 +1,17 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getLocales } from 'expo-localization';
 import i18n from '../i18n';
+import { normalizeAppLocale, resolveInitialLocale } from '../i18n/localeConfig';
 import { getTimeFormatLabel } from '../utils/formatTime';
 
 const LANGUAGE_STORAGE_KEY = '@app_language';
 const TIME_FORMAT_STORAGE_KEY = '@app_time_format';
 
-export const LANGUAGE_OPTIONS = [{ id: 'ja', labelKey: 'settings.languageJa' }];
+export const LANGUAGE_OPTIONS = [
+  { id: 'ja', labelKey: 'settings.languageJa' },
+  { id: 'en', labelKey: 'settings.languageEn' },
+];
 export const TIME_FORMAT_OPTIONS = ['auto', 'h12', 'h24'];
 
 const DisplayPreferencesContext = createContext(null);
@@ -23,9 +28,22 @@ export function DisplayPreferencesProvider({ children }) {
           AsyncStorage.getItem(LANGUAGE_STORAGE_KEY),
           AsyncStorage.getItem(TIME_FORMAT_STORAGE_KEY),
         ]);
-        if (savedLang && LANGUAGE_OPTIONS.some((o) => o.id === savedLang)) {
-          setLanguageState(savedLang);
-          i18n.locale = savedLang;
+        if (savedLang) {
+          const lang = normalizeAppLocale(savedLang);
+          if (LANGUAGE_OPTIONS.some((o) => o.id === lang)) {
+            setLanguageState(lang);
+            i18n.locale = lang;
+          }
+        } else {
+          try {
+            const locales = getLocales();
+            const deviceCode = locales[0]?.languageCode ?? locales[0]?.languageTag ?? 'ja';
+            const initial = resolveInitialLocale(deviceCode);
+            setLanguageState(initial);
+            i18n.locale = initial;
+          } catch {
+            // keep default ja
+          }
         }
         if (savedTimeFormat && TIME_FORMAT_OPTIONS.includes(savedTimeFormat)) {
           setTimeFormatState(savedTimeFormat);
@@ -40,13 +58,14 @@ export function DisplayPreferencesProvider({ children }) {
   }, []);
 
   const setLanguage = useCallback(async (lang) => {
-    if (!LANGUAGE_OPTIONS.some((o) => o.id === lang)) {
+    const normalized = normalizeAppLocale(lang);
+    if (!LANGUAGE_OPTIONS.some((o) => o.id === normalized)) {
       return;
     }
-    setLanguageState(lang);
-    i18n.locale = lang;
+    setLanguageState(normalized);
+    i18n.locale = normalized;
     try {
-      await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+      await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, normalized);
     } catch (error) {
       console.error('Failed to save language', error);
     }
@@ -69,7 +88,10 @@ export function DisplayPreferencesProvider({ children }) {
     return option ? i18n.t(option.labelKey) : language;
   }, [language]);
 
-  const timeFormatLabel = useMemo(() => getTimeFormatLabel(timeFormat, i18n), [timeFormat]);
+  const timeFormatLabel = useMemo(
+    () => getTimeFormatLabel(timeFormat, i18n),
+    [timeFormat, language]
+  );
 
   return (
     <DisplayPreferencesContext.Provider

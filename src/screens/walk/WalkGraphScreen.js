@@ -3,9 +3,10 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
-import { useFamilyWalks } from '../../hooks/useFamilyWalks';
+import { useFamilyWalksFromPlan } from '../../hooks/useFamilyWalksFromPlan';
 import { useFamilyPets } from '../../hooks/useFamilyPets';
-import { usePremium } from '../../hooks/usePremium';
+import { usePlanTier } from '../../hooks/usePlanTier';
+import PlanTierNotice from '../../components/PlanTierNotice';
 import ScreenHeader from '../../components/ScreenHeader';
 import PetFilterRow, { PET_FILTER_ALL } from '../../components/PetFilterRow';
 import WalkGraphPanel from '../../components/walk/WalkGraphPanel';
@@ -23,9 +24,9 @@ export default function WalkGraphScreen() {
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { familyId, userId } = useAuth();
-  const { isPremium } = usePremium();
+  const { tier, isPremium, entitlements } = usePlanTier();
   const { pets, loading: petsLoading } = useFamilyPets(familyId, userId);
-  const { walks, loading: walksLoading } = useFamilyWalks(familyId);
+  const { walks, loading: walksLoading } = useFamilyWalksFromPlan(familyId);
   const [metric, setMetric] = useState('distance');
   const [filterPetId, setFilterPetId] = useState(PET_FILTER_ALL);
 
@@ -76,11 +77,14 @@ export default function WalkGraphScreen() {
         filterPetId={filterPetId}
         onFilterChange={setFilterPetId}
         showTitle={false}
+        entitlements={entitlements}
       />
 
       <View style={[styles.metricTabRow, { borderBottomColor: currentTheme.accentBorder }]}>
         {GRAPH_METRICS.map(renderMetricTab)}
       </View>
+
+      <PlanTierNotice tier={tier} variant="graph" style={styles.graphPlanNotice} />
 
       <ScrollView
         style={styles.scroll}
@@ -126,6 +130,10 @@ const createStyles = (fs) => ({
     paddingHorizontal: 12,
     paddingVertical: 12,
     borderBottomWidth: 1,
+  },
+  graphPlanNotice: {
+    marginTop: 4,
+    marginBottom: 0,
   },
   metricTab: {
     flexGrow: 1,

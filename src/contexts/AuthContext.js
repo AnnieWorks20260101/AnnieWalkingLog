@@ -112,6 +112,7 @@ export function AuthProvider({ children }) {
         setUserId(user.uid);
         setIsGuest(user.isAnonymous);
         await refreshUserProfile(user.uid, user.isAnonymous);
+        registerForPushNotificationsAsync(user.uid);
       } catch (error) {
         console.error('Auth initialization failed:', error);
       } finally {
@@ -121,11 +122,6 @@ export function AuthProvider({ children }) {
 
     return () => unsubscribe();
   }, [refreshUserProfile]);
-
-  useEffect(() => {
-    if (!userId) return;
-    registerForPushNotificationsAsync(userId);
-  }, [userId]);
 
   const signInAsGuest = useCallback(async () => {
     const credential = await signInAnonymously(auth);

@@ -2,15 +2,52 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
+import PlanComparisonTable from '../../components/PlanComparisonTable';
 import { useTheme } from '../../contexts/ThemeContext';
 import i18n from '../../i18n';
 
 const FAQ_ITEMS = [
   { id: 'family', icon: 'people-outline' },
   { id: 'guest', icon: 'person-outline' },
+  { id: 'plans', icon: 'layers-outline', tableVariant: 'freeVsPremium' },
+  { id: 'premium', icon: 'star-outline', tableVariant: 'full' },
   { id: 'walk', icon: 'walk-outline' },
   { id: 'graph', icon: 'stats-chart-outline' },
 ];
+
+function FaqAnswer({ item, fontSizes, currentTheme }) {
+  if (item.tableVariant) {
+    return (
+      <View style={styles.answerBlock}>
+        <Text style={[styles.answer, { color: currentTheme.textSecondary, fontSize: fontSizes.m }]}>
+          {i18n.t(`settings.faq.${item.id}.aIntro`)}
+        </Text>
+        <PlanComparisonTable
+          variant={item.tableVariant}
+          titleKey={item.id === 'plans' ? 'plan.comparison.title' : null}
+        />
+        {item.id === 'premium' ? (
+          <View style={styles.answerNotes}>
+            <Text style={[styles.answerNote, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+              {i18n.t('settings.faq.premium.aDowngrade')}
+            </Text>
+            <Text style={[styles.answerNote, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+              {i18n.t('settings.faq.premium.aNote')}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.answerPlain}>
+      <Text style={[styles.answer, { color: currentTheme.textSecondary, fontSize: fontSizes.m }]}>
+        {i18n.t(`settings.faq.${item.id}.a`)}
+      </Text>
+    </View>
+  );
+}
 
 export default function FaqScreen() {
   const { currentTheme, fontSizes } = useTheme();
@@ -46,9 +83,7 @@ export default function FaqScreen() {
                 />
               </TouchableOpacity>
               {open ? (
-                <Text style={[styles.answer, { color: currentTheme.textSecondary, fontSize: fontSizes.m }]}>
-                  {i18n.t(`settings.faq.${item.id}.a`)}
-                </Text>
+                <FaqAnswer item={item} fontSizes={fontSizes} currentTheme={currentTheme} />
               ) : null}
             </View>
           );
@@ -66,5 +101,17 @@ const styles = StyleSheet.create({
   questionRow: { flexDirection: 'row', alignItems: 'center', padding: 16 },
   qIcon: { marginRight: 10 },
   question: { flex: 1, fontWeight: 'bold', lineHeight: 22 },
-  answer: { paddingHorizontal: 16, paddingBottom: 16, lineHeight: 24 },
+  answerBlock: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 16,
+  },
+  answerPlain: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 16,
+  },
+  answer: { lineHeight: 24 },
+  answerNotes: { marginTop: 4 },
+  answerNote: { paddingTop: 12, lineHeight: 22 },
 });

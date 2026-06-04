@@ -9,7 +9,11 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
-import { DisplayPreferencesProvider } from './src/contexts/DisplayPreferencesContext';
+import {
+  DisplayPreferencesProvider,
+  useDisplayPreferences,
+} from './src/contexts/DisplayPreferencesContext';
+import { WalkPreferencesProvider } from './src/contexts/WalkPreferencesContext';
 import ThemedStatusBar from './src/components/ThemedStatusBar';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import i18n from './src/i18n';
@@ -17,6 +21,7 @@ import { TAB_WALK_LOG, TAB_WALK_GRAPH, TAB_WALK, TAB_PETS, TAB_SETTINGS } from '
 import {
   SCREEN_HISTORY,
   SCREEN_WALK_DETAIL,
+  SCREEN_WALK_PHOTOS,
   SCREEN_WALK_MAIN,
   SCREEN_PET_LIST,
   SCREEN_PET_REGISTRATION,
@@ -38,6 +43,7 @@ import HistoryScreen from './src/screens/walk/HistoryScreen';
 import WalkGraphScreen from './src/screens/walk/WalkGraphScreen';
 import WalkScreen from './src/screens/walk/WalkScreen';
 import WalkDetailScreen from './src/screens/walk/WalkDetailScreen';
+import WalkPhotosGalleryScreen from './src/screens/walk/WalkPhotosGalleryScreen';
 
 import SettingsScreen from './src/screens/settings/SettingsScreen';
 import PermissionsCheckScreen from './src/screens/settings/PermissionsCheckScreen';
@@ -58,6 +64,7 @@ function WalkHistoryStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name={SCREEN_HISTORY} component={HistoryScreen} />
       <Stack.Screen name={SCREEN_WALK_DETAIL} component={WalkDetailScreen} />
+      <Stack.Screen name={SCREEN_WALK_PHOTOS} component={WalkPhotosGalleryScreen} />
     </Stack.Navigator>
   );
 }
@@ -147,6 +154,7 @@ function MainApp() {
 
 function RootNavigator() {
   const { currentTheme } = useTheme();
+  const { language } = useDisplayPreferences();
   const { loading, userId, needsFamilySetup } = useAuth();
 
   if (loading) {
@@ -159,7 +167,7 @@ function RootNavigator() {
 
   if (!userId) {
     return (
-      <NavigationContainer>
+      <NavigationContainer key={language}>
         <ThemedStatusBar />
         <AuthNavigator />
       </NavigationContainer>
@@ -168,14 +176,14 @@ function RootNavigator() {
 
   if (needsFamilySetup) {
     return (
-      <View style={{ flex: 1, backgroundColor: currentTheme.background }}>
+      <View key={language} style={{ flex: 1, backgroundColor: currentTheme.background }}>
         <ThemedStatusBar />
         <FamilySetupScreen />
       </View>
     );
   }
 
-  return <MainApp />;
+  return <MainApp key={language} />;
 }
 
 export default function App() {
@@ -183,9 +191,11 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <DisplayPreferencesProvider>
-          <AuthProvider>
-            <RootNavigator />
-          </AuthProvider>
+          <WalkPreferencesProvider>
+            <AuthProvider>
+              <RootNavigator />
+            </AuthProvider>
+          </WalkPreferencesProvider>
         </DisplayPreferencesProvider>
       </ThemeProvider>
     </SafeAreaProvider>

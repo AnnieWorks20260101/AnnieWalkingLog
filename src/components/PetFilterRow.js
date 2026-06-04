@@ -1,19 +1,44 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useThemedStyles } from '../hooks/useThemedStyles';
 import i18n from '../i18n';
 import { getPetPhotoUrl } from '../services/petPhotoUpload';
+import { isPetUsableByPlanOrder } from '../utils/planPetUsage';
 
 export const PET_FILTER_ALL = 'all';
 
-export default function PetFilterRow({ pets, filterPetId, onFilterChange, showTitle = true }) {
+export default function PetFilterRow({
+  pets,
+  filterPetId,
+  onFilterChange,
+  showTitle = true,
+  entitlements = null,
+}) {
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
 
+  const isPetFilterable = (petId) => {
+    if (!entitlements) {
+      return true;
+    }
+    return isPetUsableByPlanOrder(petId, pets, entitlements);
+  };
+
+  useEffect(() => {
+    if (!entitlements || filterPetId === PET_FILTER_ALL) {
+      return;
+    }
+    if (!isPetUsableByPlanOrder(filterPetId, pets, entitlements)) {
+      onFilterChange(PET_FILTER_ALL);
+    }
+  }, [pets, entitlements, filterPetId, onFilterChange]);
+
   const renderFilterChip = (id, label, pet) => {
-    const isSelected = filterPetId === id;
+    const isAll = id === PET_FILTER_ALL;
+    const filterable = isAll || isPetFilterable(id);
+    const isSelected = filterable && filterPetId === id;
     const photoUrl = pet ? getPetPhotoUrl(pet) : null;
     return (
       <TouchableOpacity
@@ -26,20 +51,35 @@ export default function PetFilterRow({ pets, filterPetId, onFilterChange, showTi
             borderColor: currentTheme.primary,
             borderWidth: 2,
           },
+          !filterable && styles.filterChipDisabled,
         ]}
-        onPress={() => onFilterChange(id)}
+        onPress={() => {
+          if (!filterable) {
+            Alert.alert(i18n.t('common.notice'), i18n.t('walk.petInactiveForWalk'));
+            return;
+          }
+          onFilterChange(id);
+        }}
+        activeOpacity={filterable ? 0.7 : 1}
       >
         {photoUrl ? (
           <Image source={{ uri: photoUrl }} style={[styles.filterAvatar, { borderColor: currentTheme.border }]} />
-        ) : id !== PET_FILTER_ALL ? (
+        ) : !isAll ? (
           <View
             style={[
               styles.filterAvatar,
               styles.filterAvatarPlaceholder,
-              { backgroundColor: currentTheme.primaryMuted },
+              {
+                backgroundColor: currentTheme.background,
+                borderColor: currentTheme.border,
+              },
             ]}
           >
-            <Ionicons name="paw" size={16} color={currentTheme.primary} />
+            <Ionicons
+              name="paw"
+              size={16}
+              color={filterable ? currentTheme.textSecondary : currentTheme.border}
+            />
           </View>
         ) : null}
         <Text
@@ -47,6 +87,7 @@ export default function PetFilterRow({ pets, filterPetId, onFilterChange, showTi
             styles.filterChipText,
             { color: currentTheme.textSecondary },
             isSelected && { color: currentTheme.primary, fontWeight: 'bold' },
+            !filterable && { color: currentTheme.border },
           ]}
           numberOfLines={1}
         >
@@ -95,6 +136,7 @@ const createStyles = (fs) => ({
     marginHorizontal: 4,
     maxWidth: 140,
   },
+  filterChipDisabled: { opacity: 0.38 },
   filterChipText: {
     fontSize: fs.s,
     fontWeight: '600',
@@ -109,5 +151,6 @@ const createStyles = (fs) => ({
   filterAvatarPlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
 });

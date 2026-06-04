@@ -1,11 +1,38 @@
 rules_version = '2';
 
 // Firebase Console → Storage → ルール に貼り付けて公開してください。
-// Firestore のルールとは別です。Storage がデフォルトのままだとアップロードが拒否されます。
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if request.time < timestamp.date(2026, 9, 14);
+    function isFamilyMember(familyId) {
+      return request.auth != null
+        && firestore.exists(
+          /databases/(default)/documents/family_members/$(familyId + '_' + request.auth.uid)
+        );
+    }
+
+    function isRegisteredUser() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    // お散歩写真（ゲスト=匿名はアップロード不可）
+    match /families/{familyId}/walks/{walkId}/{fileName} {
+      allow read: if isFamilyMember(familyId);
+      allow create, update: if isFamilyMember(familyId)
+        && isRegisteredUser()
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      // delete 時は request.resource が null のため write 条件と分離
+      allow delete: if isFamilyMember(familyId);
+    }
+
+    // ペットプロフィール写真
+    match /families/{familyId}/pets/{fileName} {
+      allow read: if isFamilyMember(familyId);
+      allow create, update: if isFamilyMember(familyId)
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isFamilyMember(familyId);
     }
   }
 }

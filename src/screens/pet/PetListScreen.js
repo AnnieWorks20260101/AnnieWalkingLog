@@ -32,17 +32,37 @@ import { getPetPhotoUrl } from '../../services/petPhotoUpload';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
 import { SCREEN_PET_REGISTRATION } from '../../navigation/screenNames';
+import { usePlanTier } from '../../hooks/usePlanTier';
+import { canAddPet } from '../../constants/planEntitlements';
+import { showPlanLimitAlert } from '../../utils/planLimitAlert';
+import {
+  getPetSortIndex,
+  isPetUsableByPlanOrder,
+  canReorderPetAtPlanIndex,
+} from '../../utils/planPetUsage';
 import i18n from '../../i18n';
 
 export default function PetListScreen({ navigation }) {
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { familyId, userId } = useAuth();
+  const { tier, entitlements } = usePlanTier();
   const { pets, petOrder, loading, savePetOrder } = useFamilyPets(familyId, userId);
+
+  const handleAddPet = () => {
+    if (!canAddPet(pets.length, entitlements)) {
+      showPlanLimitAlert({ navigation, limitKey: 'pet', tier });
+      return;
+    }
+    navigation.navigate(SCREEN_PET_REGISTRATION);
+  };
   const [groupFilter, setGroupFilter] = useState(GROUP_FILTER_ALL);
 
   const groupNames = useMemo(() => collectPetGroupNames(pets), [pets]);
   const canReorder = groupFilter === GROUP_FILTER_ALL;
+  const maxUsablePets = entitlements.maxPets ?? null;
+  const showPlanSortHint =
+    canReorder && maxUsablePets != null && pets.length > maxUsablePets;
   const filteredPets = useMemo(
     () => filterPetsByGroup(pets, groupFilter),
     [pets, groupFilter]
@@ -125,9 +145,14 @@ export default function PetListScreen({ navigation }) {
     );
   };
 
-  const renderItem = ({ item, index }) => {
-    const canMoveUp = canReorder && index > 0;
-    const canMoveDown = canReorder && index < filteredPets.length - 1;
+  const renderItem = ({ item }) => {
+    const globalIndex = getPetSortIndex(item.id, pets);
+    const isUsable = isPetUsableByPlanOrder(item.id, pets, entitlements);
+    const showReorder = canReorder && isUsable;
+    const canMoveUp =
+      showReorder && canReorderPetAtPlanIndex(globalIndex, 'up', entitlements, pets.length);
+    const canMoveDown =
+      showReorder && canReorderPetAtPlanIndex(globalIndex, 'down', entitlements, pets.length);
     const photoUrl = getPetPhotoUrl(item);
     const ageLabel = formatPetAgeYearsMonthsLabel(item.birthday, i18n, item.farewellDate);
     const genderSymbol = getPetGenderSymbol(item.gender);
@@ -142,11 +167,12 @@ export default function PetListScreen({ navigation }) {
           {
             backgroundColor: currentTheme.cardTinted,
             borderColor: currentTheme.accentBorder,
-            borderLeftColor: currentTheme.primary,
+            borderLeftColor: isUsable ? currentTheme.primary : currentTheme.border,
           },
+          !isUsable && styles.petCardInactive,
         ]}
       >
-        {canReorder ? (
+        {showReorder ? (
           <View style={styles.reorderColumn}>
             <TouchableOpacity
               onPress={() => handleMove(item.id, 'up')}
@@ -210,6 +236,11 @@ export default function PetListScreen({ navigation }) {
                 {breedGenderLine}
               </Text>
             ) : null}
+            {!isUsable ? (
+              <Text style={[styles.planInactiveLabel, { color: currentTheme.textSecondary }]}>
+                {i18n.t('petList.planInactivePet')}
+              </Text>
+            ) : null}
             {renderDateSection('gift-outline', 'petList.birthdayRowLabel', item.birthday, item.farewellDate)}
             {renderDateSection('home-outline', 'petList.welcomeDateRowLabel', item.welcomeDate, item.farewellDate)}
           </View>
@@ -232,7 +263,11 @@ export default function PetListScreen({ navigation }) {
       </ScrollView>
       {pets.length > 0 ? (
         <Text style={[styles.sortHint, { color: currentTheme.textSecondary }]}>
-          {canReorder ? i18n.t('petList.sortHint') : i18n.t('petList.sortHintDisabled')}
+          {canReorder
+            ? showPlanSortHint
+              ? i18n.t('petList.sortHintPlanLimited', { max: maxUsablePets })
+              : i18n.t('petList.sortHint')
+            : i18n.t('petList.sortHintDisabled')}
         </Text>
       ) : null}
     </View>
@@ -275,7 +310,7 @@ export default function PetListScreen({ navigation }) {
 
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: currentTheme.primary }]}
-        onPress={() => navigation.navigate(SCREEN_PET_REGISTRATION)}
+        onPress={handleAddPet}
       >
         <Ionicons name="add" size={32} color={currentTheme.card} />
       </TouchableOpacity>
@@ -335,6 +370,8 @@ const createStyles = (fs) => ({
     borderLeftWidth: 4,
     overflow: 'hidden',
   },
+  petCardInactive: { opacity: 0.52 },
+  planInactiveLabel: { fontSize: fs.s, marginBottom: 4, fontWeight: '600' },
   reorderColumn: { justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 8 },
   reorderButton: { padding: 4 },
   reorderButtonDisabled: { opacity: 0.35 },

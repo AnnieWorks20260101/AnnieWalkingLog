@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,15 +8,19 @@ import {
   Linking,
   Platform,
   AppState,
+  ActivityIndicator,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useFamilyPets } from '../../hooks/useFamilyPets';
 import PetSelector from '../../components/PetSelector';
 import BackgroundLocationDisclosureModal from '../../components/BackgroundLocationDisclosureModal';
 import BackgroundActivityGuideModal from '../../components/BackgroundActivityGuideModal';
 import * as Location from 'expo-location';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useWalkPreferences } from '../../contexts/WalkPreferencesContext';
 import { useAuth } from '../../contexts/AuthContext';
 import ScreenHeader from '../../components/ScreenHeader';
+import { Ionicons } from '@expo/vector-icons';
 import i18n from '../../i18n';
 import MapView, { Polyline, Marker } from 'react-native-maps';
 import * as TaskManager from 'expo-task-manager';
@@ -29,13 +33,27 @@ import { hasCompletedLocationSetup, setCompletedLocationSetup } from '../../util
 import { getDeviceManufacturerCategory } from '../../utils/deviceManufacturer';
 
 import { db } from '../../services/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { calculateTotalDistance } from '../../utils/locationUtils';
 import { fetchCurrentWeather } from '../../services/openWeather';
 import { navigateToWalkDetail } from '../../navigation/walkNavigation';
 import { setWalkTrackingActive } from '../../navigation/walkSessionFlag';
+import { getCurrentWalkMapCoordinate } from '../../utils/walkMapMarks';
+import { getWalkPhotoLimits } from '../../constants/walkPhotoLimits';
+import { createPendingWalkPhoto } from '../../utils/walkPhotos';
+import { resolveWalkPhotoUploadPolicy } from '../../utils/walkPhotoUploadPolicy';
+import { uploadWalkPhotoFromUri } from '../../services/walkPhotoUpload';
+import { saveWalkPhotoToDeviceLibrary } from '../../utils/saveWalkPhotoToLibrary';
+import { notifyFamilyMembersWalkEnded } from '../../services/notifyFamilyWalkEnded';
+import { usePlanTier } from '../../hooks/usePlanTier';
+import { canUseWalkPhotos } from '../../constants/planEntitlements';
+import { showPlanLimitAlert } from '../../utils/planLimitAlert';
+import {
+  getUsablePetIds,
+  isPetUsableByPlanOrder,
+} from '../../utils/planPetUsage';
 
 const LOCATION_TASK_NAME = 'background-location-task';
 const TEMP_ROUTE_KEY = 'temp_route';
@@ -65,12 +83,24 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 
 export default function WalkScreen({ navigation }) {
   const { currentTheme } = useTheme();
+  const { customButtonId, customButtonIcon, customButtonLabel, uploadPhotosOnCellular, savePhotoToLibrary } =
+    useWalkPreferences();
+  const { tier, entitlements } = usePlanTier();
+  const walkPhotosEnabled = canUseWalkPhotos(entitlements);
   const styles = useThemedStyles(createStyles);
   const { userId, familyId } = useAuth();
   const { pets } = useFamilyPets(familyId, userId);
+  const maxSelectable = entitlements.maxPets ?? Number.POSITIVE_INFINITY;
+  const usablePetIds = useMemo(
+    () => getUsablePetIds(pets, entitlements),
+    [pets, entitlements]
+  );
   const [selectedPetIds, setSelectedPetIds] = useState([]);
   const [route, setRoute] = useState([]);
   const [poops, setPoops] = useState([]);
+  const [customMarks, setCustomMarks] = useState([]);
+  const [pendingPhotos, setPendingPhotos] = useState([]);
+  const [isSavingWalk, setIsSavingWalk] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
   const [startTime, setStartTime] = useState(null);
   const [initialRegion, setInitialRegion] = useState(null);
@@ -94,11 +124,11 @@ export default function WalkScreen({ navigation }) {
       return;
     }
     setSelectedPetIds((prev) => {
-      const valid = prev.filter((id) => pets.some((p) => p.id === id));
+      const valid = prev.filter((id) => usablePetIds.includes(id));
       if (valid.length > 0) return valid;
-      return [pets[0].id];
+      return usablePetIds.length ? [usablePetIds[0]] : [];
     });
-  }, [pets]);
+  }, [pets, usablePetIds]);
 
   const togglePetSelection = (petId) => {
     setSelectedPetIds((prev) => {
@@ -106,8 +136,20 @@ export default function WalkScreen({ navigation }) {
         if (prev.length === 1) return prev;
         return prev.filter((id) => id !== petId);
       }
+      if (!isPetUsableByPlanOrder(petId, pets, entitlements)) {
+        Alert.alert(i18n.t('common.notice'), i18n.t('walk.petInactiveForWalk'));
+        return prev;
+      }
+      if (prev.length >= maxSelectable) {
+        Alert.alert(i18n.t('common.notice'), i18n.t('walk.petSelectLimit', { max: maxSelectable }));
+        return prev;
+      }
       return [...prev, petId];
     });
+  };
+
+  const handleDisabledPetPress = () => {
+    Alert.alert(i18n.t('common.notice'), i18n.t('walk.petInactiveForWalk'));
   };
 
   const refreshMapToCurrentLocation = async () => {
@@ -265,6 +307,8 @@ export default function WalkScreen({ navigation }) {
       setIsTracking(true);
       setRoute([]);
       setPoops([]);
+      setCustomMarks([]);
+      setPendingPhotos([]);
       setStartTime(new Date());
       await AsyncStorage.removeItem(TEMP_ROUTE_KEY);
 
@@ -339,6 +383,23 @@ export default function WalkScreen({ navigation }) {
     await finishLocationSetup();
   };
 
+  const promptEndWalkSave = (finalRoute) => {
+    Alert.alert(i18n.t('walk.endConfirm'), i18n.t('walk.endConfirmMsg'), [
+      {
+        text: i18n.t('walk.discard'),
+        style: 'destructive',
+        onPress: () => {
+          startWeatherRef.current = null;
+          setRoute([]);
+          setPoops([]);
+          setCustomMarks([]);
+          setPendingPhotos([]);
+        },
+      },
+      { text: i18n.t('walk.save'), onPress: () => saveWalkData(finalRoute) },
+    ]);
+  };
+
   const stopTracking = async () => {
     try {
       await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
@@ -350,23 +411,15 @@ export default function WalkScreen({ navigation }) {
     const saved = await AsyncStorage.getItem(TEMP_ROUTE_KEY);
     const finalRoute = saved ? JSON.parse(saved) : [];
 
-    Alert.alert(i18n.t('walk.endConfirm'), i18n.t('walk.endConfirmMsg'), [
-      {
-        text: i18n.t('walk.discard'),
-        style: 'destructive',
-        onPress: () => {
-          startWeatherRef.current = null;
-          setRoute([]);
-        },
-      },
-      { text: i18n.t('walk.save'), onPress: () => saveWalkData(finalRoute) },
-    ]);
+    promptEndWalkSave(finalRoute);
   };
 
   const resetWalkSession = () => {
     startWeatherRef.current = null;
     setRoute([]);
     setPoops([]);
+    setCustomMarks([]);
+    setPendingPhotos([]);
     setIsTracking(false);
     setStartTime(null);
     if (timerRef.current) {
@@ -376,6 +429,10 @@ export default function WalkScreen({ navigation }) {
   };
 
   const saveWalkData = async (finalRoute) => {
+    if (isSavingWalk) {
+      return;
+    }
+    setIsSavingWalk(true);
     try {
       const endTime = new Date();
       const distance = calculateTotalDistance(finalRoute);
@@ -384,6 +441,40 @@ export default function WalkScreen({ navigation }) {
       const selectedPets = pets.filter((p) => selectedPetIds.includes(p.id));
       const petNames = selectedPets.map((p) => p.name);
       const petNameLabel = petNames.length > 0 ? petNames.join('、') : i18n.t('walk.defaultPetName');
+
+      const walkRef = doc(collection(db, 'walks'));
+      const walkId = walkRef.id;
+
+      let photos = [];
+      if (walkPhotosEnabled && pendingPhotos.length > 0) {
+        const { upload, skippedReason } = await resolveWalkPhotoUploadPolicy(
+          uploadPhotosOnCellular,
+          pendingPhotos.length
+        );
+
+        if (skippedReason === 'user_declined_skip' || skippedReason === 'user_cancelled') {
+          promptEndWalkSave(finalRoute);
+          return;
+        }
+
+        if (upload) {
+          for (const pending of pendingPhotos) {
+            const storageUrl = await uploadWalkPhotoFromUri(
+              pending.localUri,
+              familyId,
+              walkId,
+              pending.id
+            );
+            photos.push({
+              id: pending.id,
+              storageUrl,
+              takenAt: pending.takenAt,
+              latitude: pending.latitude,
+              longitude: pending.longitude,
+            });
+          }
+        }
+      }
 
       const walkData = {
         familyId,
@@ -398,15 +489,27 @@ export default function WalkScreen({ navigation }) {
         duration: duration,
         route: finalRoute,
         poops: poops,
+        customMarks: customMarks,
+        photos,
+        memos: [],
         ...(startWeatherRef.current ? { startWeather: startWeatherRef.current } : {}),
         createdAt: serverTimestamp(),
       };
 
-      const docRef = await addDoc(collection(db, 'walks'), walkData);
+      await setDoc(walkRef, walkData);
       await AsyncStorage.removeItem(TEMP_ROUTE_KEY);
       resetWalkSession();
 
-      const savedWalk = { ...walkData, id: docRef.id };
+      notifyFamilyMembersWalkEnded({
+        familyId,
+        senderUserId: userId,
+        petNameLabel,
+        walkId,
+      }).catch((error) => {
+        console.warn('notifyFamilyMembersWalkEnded failed:', error);
+      });
+
+      const savedWalk = { ...walkData, id: walkId };
       Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('walk.saveSuccessMsg'), [
         {
           text: i18n.t('walk.viewResult'),
@@ -418,16 +521,70 @@ export default function WalkScreen({ navigation }) {
     } catch (e) {
       console.error(e);
       Alert.alert(i18n.t('common.error'), i18n.t('walk.saveError'));
+    } finally {
+      setIsSavingWalk(false);
+    }
+  };
+
+  const captureWalkPhoto = async () => {
+    if (!walkPhotosEnabled) {
+      showPlanLimitAlert({ navigation, limitKey: 'photo', tier });
+      return;
+    }
+
+    const limits = getWalkPhotoLimits(tier);
+    if (limits.maxPerWalk === 0) {
+      showPlanLimitAlert({ navigation, limitKey: 'photo', tier });
+      return;
+    }
+    if (pendingPhotos.length >= limits.maxPerWalk) {
+      Alert.alert(i18n.t('common.error'), i18n.t('walk.photoLimitReached', { max: limits.maxPerWalk }));
+      return;
+    }
+
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(i18n.t('common.error'), i18n.t('walk.photoPermissionDenied'));
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: limits.quality,
+    });
+
+    if (result.canceled || !result.assets[0]?.uri) {
+      return;
+    }
+
+    const localUri = result.assets[0].uri;
+
+    try {
+      if (savePhotoToLibrary) {
+        await saveWalkPhotoToDeviceLibrary(localUri);
+      }
+
+      const coordinate = await getCurrentWalkMapCoordinate();
+      setPendingPhotos((prev) => [...prev, createPendingWalkPhoto(localUri, coordinate)]);
+    } catch (error) {
+      console.error('walk photo capture error:', error);
+      Alert.alert(i18n.t('common.error'), i18n.t('walk.photoCaptureError'));
     }
   };
 
   const recordPoop = async () => {
-    const location = await Location.getCurrentPositionAsync({});
-    setPoops((prev) => [
+    const coordinate = await getCurrentWalkMapCoordinate();
+    setPoops((prev) => [...prev, coordinate]);
+  };
+
+  const recordCustomMark = async () => {
+    const coordinate = await getCurrentWalkMapCoordinate();
+    setCustomMarks((prev) => [
       ...prev,
       {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
+        ...coordinate,
+        icon: customButtonIcon,
+        buttonId: customButtonId,
       },
     ]);
   };
@@ -470,6 +627,8 @@ export default function WalkScreen({ navigation }) {
             selectedPetIds={selectedPetIds}
             onTogglePet={togglePetSelection}
             emptyMessage={i18n.t('walk.noPetForWalk')}
+            isPetUsable={(petId) => isPetUsableByPlanOrder(petId, pets, entitlements)}
+            onDisabledPetPress={handleDisabledPetPress}
           />
         </View>
       )}
@@ -505,19 +664,69 @@ export default function WalkScreen({ navigation }) {
       <View style={[styles.mapContainer, { borderColor: currentTheme.accentBorder }]}>
         <MapView ref={mapRef} style={styles.map} showsUserLocation={true} initialRegion={initialRegion}>
           {route.length > 0 && <Polyline coordinates={route} strokeColor={currentTheme.primary} strokeWidth={5} />}
+          {customMarks.map((mark, index) => (
+            <Marker key={`custom-${index}`} coordinate={mark}>
+              <Text style={{ fontSize: 30 }}>{mark.icon}</Text>
+            </Marker>
+          ))}
+          {pendingPhotos.map((photo, index) => (
+            <Marker key={`photo-${index}`} coordinate={photo}>
+              <Text style={{ fontSize: 30 }}>📷</Text>
+            </Marker>
+          ))}
           {poops.map((poop, index) => (
-            <Marker key={index} coordinate={poop}>
+            <Marker key={`poop-${index}`} coordinate={poop}>
               <Text style={{ fontSize: 30 }}>💩</Text>
             </Marker>
           ))}
         </MapView>
+        {isSavingWalk ? (
+          <View style={styles.savingOverlay}>
+            <ActivityIndicator size="large" color={currentTheme.primary} />
+            <Text style={[styles.savingOverlayText, { color: currentTheme.text }]}>
+              {i18n.t('walk.photoUploading')}
+            </Text>
+          </View>
+        ) : null}
         {isTracking && (
-          <TouchableOpacity
-            style={[styles.poopButton, { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary }]}
-            onPress={recordPoop}
-          >
-            <Text style={styles.poopButtonText}>{i18n.t('walk.poopLabel')}</Text>
-          </TouchableOpacity>
+          <View style={styles.trackingActionsColumn}>
+            <TouchableOpacity
+              style={[
+                styles.trackingActionButton,
+                { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary },
+              ]}
+              onPress={recordCustomMark}
+              activeOpacity={0.85}
+              accessibilityLabel={customButtonLabel}
+            >
+              <Text style={styles.trackingActionEmoji}>{customButtonIcon}</Text>
+            </TouchableOpacity>
+            {walkPhotosEnabled ? (
+              <TouchableOpacity
+                style={[
+                  styles.trackingActionButton,
+                  { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary },
+                ]}
+                onPress={captureWalkPhoto}
+                activeOpacity={0.85}
+                accessibilityLabel={i18n.t('walk.photoButton')}
+                disabled={isSavingWalk}
+              >
+                <Ionicons name="camera" size={32} color={currentTheme.primary} />
+              </TouchableOpacity>
+            ) : null}
+            <TouchableOpacity
+              style={[
+                styles.trackingActionButton,
+                { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary },
+              ]}
+              onPress={recordPoop}
+              activeOpacity={0.85}
+              accessibilityLabel={i18n.t('walk.poopLabel')}
+            >
+              <Text style={styles.trackingActionEmoji}>{i18n.t('walk.poopLabel')}</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </View>
@@ -558,13 +767,17 @@ const createStyles = (fs) => ({
   },
   mapContainer: { flex: 1, borderWidth: 1 },
   map: { width: '100%', height: '100%' },
-  poopButton: {
+  trackingActionsColumn: {
     position: 'absolute',
-    bottom: 100,
-    right: 30,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    bottom: 88,
+    right: 20,
+    gap: 12,
+    alignItems: 'center',
+  },
+  trackingActionButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
@@ -574,5 +787,13 @@ const createStyles = (fs) => ({
     shadowOpacity: 0.3,
     shadowRadius: 3,
   },
-  poopButtonText: { fontSize: 35 },
+  trackingActionEmoji: { fontSize: 32 },
+  savingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  savingOverlayText: { marginTop: 12, fontWeight: '600' },
 });

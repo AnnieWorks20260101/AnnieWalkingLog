@@ -14,6 +14,9 @@ export default function PetSelector({
   selectedPetIds = [],
   onTogglePet,
   emptyMessage,
+  /** @param {string} petId */
+  isPetUsable = () => true,
+  onDisabledPetPress,
 }) {
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -28,8 +31,13 @@ export default function PetSelector({
 
   const renderItem = ({ item }) => {
     const photoUrl = getPetPhotoUrl(item);
+    const usable = isPetUsable(item.id);
     const isSelected = multiple ? selectedPetIds.includes(item.id) : item.id === selectedPetId;
     const handlePress = () => {
+      if (!usable) {
+        onDisabledPetPress?.(item);
+        return;
+      }
       if (multiple) {
         onTogglePet?.(item.id);
       } else {
@@ -39,27 +47,41 @@ export default function PetSelector({
 
     return (
       <TouchableOpacity
-        style={[styles.petIconContainer, isSelected && styles.petIconContainerSelected]}
+        style={[styles.petIconContainer, !usable && styles.petIconContainerDisabled]}
         onPress={handlePress}
+        activeOpacity={usable ? 0.7 : 1}
       >
         {photoUrl ? (
           <Image
             source={{ uri: photoUrl }}
-            style={[styles.petIcon, isSelected && { borderColor: currentTheme.primary, borderWidth: 3 }]}
+            style={[
+              styles.petIcon,
+              {
+                borderColor: isSelected && usable ? currentTheme.primary : currentTheme.border,
+                borderWidth: isSelected && usable ? 3 : 2,
+              },
+            ]}
           />
         ) : (
           <View
             style={[
               styles.petIcon,
               styles.noImageIcon,
-              { backgroundColor: currentTheme.primaryMuted, borderColor: isSelected ? currentTheme.primary : currentTheme.accentBorder },
-              isSelected && { borderWidth: 3 },
+              {
+                backgroundColor: currentTheme.background,
+                borderColor: isSelected && usable ? currentTheme.primary : currentTheme.border,
+                borderWidth: isSelected && usable ? 3 : 1,
+              },
             ]}
           >
-            <Ionicons name="paw" size={24} color={isSelected ? currentTheme.primary : currentTheme.border} />
+            <Ionicons
+              name="paw"
+              size={28}
+              color={isSelected && usable ? currentTheme.primary : currentTheme.textSecondary}
+            />
           </View>
         )}
-        {multiple && isSelected && (
+        {multiple && isSelected && usable && (
           <View style={[styles.checkBadge, { backgroundColor: currentTheme.primary }]}>
             <Ionicons name="checkmark" size={12} color={currentTheme.card} />
           </View>
@@ -68,7 +90,8 @@ export default function PetSelector({
           style={[
             styles.petName,
             { color: currentTheme.textSecondary },
-            isSelected && { color: currentTheme.primary, fontWeight: 'bold' },
+            isSelected && usable && { color: currentTheme.primary, fontWeight: 'bold' },
+            !usable && { color: currentTheme.border },
           ]}
           numberOfLines={1}
         >
@@ -92,8 +115,8 @@ export default function PetSelector({
 
 const createStyles = (fs) => ({
   list: { alignItems: 'center', paddingHorizontal: 20 },
-  petIconContainer: { alignItems: 'center', marginRight: 15, opacity: 0.5, position: 'relative' },
-  petIconContainerSelected: { opacity: 1 },
+  petIconContainer: { alignItems: 'center', marginRight: 15, position: 'relative' },
+  petIconContainerDisabled: { opacity: 0.38 },
   checkBadge: {
     position: 'absolute',
     top: 0,
@@ -105,8 +128,8 @@ const createStyles = (fs) => ({
     alignItems: 'center',
     zIndex: 1,
   },
-  petIcon: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: 'transparent' },
-  noImageIcon: { borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  petIcon: { width: 60, height: 60, borderRadius: 30 },
+  noImageIcon: { justifyContent: 'center', alignItems: 'center' },
   petName: { fontSize: fs.s, marginTop: 5, maxWidth: 70 },
   noPetText: { fontSize: fs.m, fontStyle: 'italic', paddingHorizontal: 20 },
 });
