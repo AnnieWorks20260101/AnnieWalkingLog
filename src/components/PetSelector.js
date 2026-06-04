@@ -1,9 +1,10 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Image, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FONT_SIZES } from '../../constants/theme';
 import { useTheme } from '../contexts/ThemeContext';
+import { useThemedStyles } from '../hooks/useThemedStyles';
 import i18n from '../i18n';
+import { getPetPhotoUrl } from '../services/petPhotoUpload';
 
 export default function PetSelector({
   pets,
@@ -15,16 +16,18 @@ export default function PetSelector({
   emptyMessage,
 }) {
   const { currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   if (pets.length === 0) {
     return (
       <Text style={[styles.noPetText, { color: currentTheme.textSecondary }]}>
-        {emptyMessage || i18n.t('record.noPet')}
+        {emptyMessage || i18n.t('walk.noPetForWalk')}
       </Text>
     );
   }
 
   const renderItem = ({ item }) => {
+    const photoUrl = getPetPhotoUrl(item);
     const isSelected = multiple ? selectedPetIds.includes(item.id) : item.id === selectedPetId;
     const handlePress = () => {
       if (multiple) {
@@ -39,9 +42,9 @@ export default function PetSelector({
         style={[styles.petIconContainer, isSelected && styles.petIconContainerSelected]}
         onPress={handlePress}
       >
-        {item.photoUrl ? (
+        {photoUrl ? (
           <Image
-            source={{ uri: item.photoUrl }}
+            source={{ uri: photoUrl }}
             style={[styles.petIcon, isSelected && { borderColor: currentTheme.primary, borderWidth: 3 }]}
           />
         ) : (
@@ -87,7 +90,7 @@ export default function PetSelector({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (fs) => ({
   list: { alignItems: 'center', paddingHorizontal: 20 },
   petIconContainer: { alignItems: 'center', marginRight: 15, opacity: 0.5, position: 'relative' },
   petIconContainerSelected: { opacity: 1 },
@@ -104,6 +107,6 @@ const styles = StyleSheet.create({
   },
   petIcon: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: 'transparent' },
   noImageIcon: { borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  petName: { fontSize: FONT_SIZES.standard.s, marginTop: 5, maxWidth: 70 },
-  noPetText: { fontStyle: 'italic', paddingHorizontal: 20 },
+  petName: { fontSize: fs.s, marginTop: 5, maxWidth: 70 },
+  noPetText: { fontSize: fs.m, fontStyle: 'italic', paddingHorizontal: 20 },
 });

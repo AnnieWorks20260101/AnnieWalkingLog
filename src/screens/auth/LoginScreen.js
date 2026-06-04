@@ -12,13 +12,15 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FONT_SIZES } from '../../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import i18n from '../../i18n';
+import { SCREEN_REGISTER } from '../../navigation/screenNames';
 
 export default function LoginScreen({ navigation }) {
   const { currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { signInAsGuest, signInWithEmail, sendPasswordReset } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -140,7 +142,7 @@ export default function LoginScreen({ navigation }) {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.outlineButton, { borderColor: currentTheme.primary }]}
-                onPress={() => navigation.navigate('Register')}
+                onPress={() => navigation.navigate(SCREEN_REGISTER)}
               >
                 <Text style={[styles.outlineButtonText, { color: currentTheme.primary }]}>
                   {i18n.t('auth.goRegister')}
@@ -179,19 +181,19 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (fs) => ({
   container: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24, paddingBottom: 40 },
   hero: { alignItems: 'center', marginBottom: 28 },
-  title: { fontSize: FONT_SIZES.standard.xl, fontWeight: 'bold', marginTop: 12 },
-  subtitle: { fontSize: FONT_SIZES.standard.m, marginTop: 8, textAlign: 'center', lineHeight: 22 },
+  title: { fontSize: fs.xl, fontWeight: 'bold', marginTop: 12 },
+  subtitle: { fontSize: fs.m, marginTop: 8, textAlign: 'center', lineHeight: 22 },
   section: { marginBottom: 8 },
-  sectionLabel: { fontSize: FONT_SIZES.standard.s, fontWeight: '600', marginBottom: 10 },
+  sectionLabel: { fontSize: fs.s, fontWeight: '600', marginBottom: 10 },
   input: {
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    fontSize: FONT_SIZES.standard.m,
+    fontSize: fs.m,
     marginBottom: 10,
   },
   primaryButton: {
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  primaryButtonText: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold' },
+  primaryButtonText: { fontSize: fs.m, fontWeight: 'bold' },
   outlineButton: {
     borderWidth: 2,
     borderRadius: 12,
@@ -208,12 +210,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  outlineButtonText: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold' },
+  outlineButtonText: { fontSize: fs.m, fontWeight: 'bold' },
   linkButton: { alignItems: 'center', paddingVertical: 8 },
-  linkText: { fontSize: FONT_SIZES.standard.s, textDecorationLine: 'underline' },
+  linkText: { fontSize: fs.s, textDecorationLine: 'underline' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
   dividerLine: { flex: 1, height: 1 },
-  dividerText: { marginHorizontal: 12, fontSize: FONT_SIZES.standard.s },
+  dividerText: { marginHorizontal: 12, fontSize: fs.s },
   socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -224,5 +226,5 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   socialIcon: { marginRight: 8 },
-  socialText: { fontSize: FONT_SIZES.standard.m, fontWeight: '600' },
+  socialText: { fontSize: fs.m, fontWeight: '600' },
 });

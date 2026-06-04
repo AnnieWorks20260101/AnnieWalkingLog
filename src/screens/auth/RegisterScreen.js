@@ -12,14 +12,15 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FONT_SIZES } from '../../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import ScreenHeader from '../../components/ScreenHeader';
 import i18n from '../../i18n';
 
 export default function RegisterScreen({ navigation }) {
   const { currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { signUpWithEmail } = useAuth();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -127,17 +128,17 @@ export default function RegisterScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (fs) => ({
   container: { flex: 1 },
   flex: { flex: 1 },
   scroll: { padding: 20, paddingBottom: 40 },
-  desc: { fontSize: FONT_SIZES.standard.m, lineHeight: 22, marginBottom: 20 },
-  label: { fontSize: FONT_SIZES.standard.s, fontWeight: '600', marginBottom: 6, marginTop: 8 },
+  desc: { fontSize: fs.m, lineHeight: 22, marginBottom: 20 },
+  label: { fontSize: fs.s, fontWeight: '600', marginBottom: 6, marginTop: 8 },
   input: {
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    fontSize: FONT_SIZES.standard.m,
+    fontSize: fs.m,
     marginBottom: 8,
   },
   primaryButton: {
@@ -146,5 +147,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
-  primaryButtonText: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold' },
+  primaryButtonText: { fontSize: fs.m, fontWeight: 'bold' },
 });

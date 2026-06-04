@@ -12,14 +12,15 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FONT_SIZES } from '../../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import ScreenHeader from '../../components/ScreenHeader';
 import i18n from '../../i18n';
 
 export default function GuestUpgradeScreen({ navigation }) {
   const { currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { upgradeGuestWithEmail } = useAuth();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -167,19 +168,19 @@ export default function GuestUpgradeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (fs) => ({
   container: { flex: 1 },
   flex: { flex: 1 },
   scroll: { padding: 20, paddingBottom: 40 },
   hero: { alignItems: 'center', marginBottom: 24 },
-  heroTitle: { fontSize: FONT_SIZES.standard.l, fontWeight: 'bold', marginTop: 16, textAlign: 'center' },
-  heroDesc: { fontSize: FONT_SIZES.standard.m, marginTop: 12, textAlign: 'center', lineHeight: 22 },
-  label: { fontSize: FONT_SIZES.standard.s, fontWeight: '600', marginBottom: 6, marginTop: 8 },
+  heroTitle: { fontSize: fs.l, fontWeight: 'bold', marginTop: 16, textAlign: 'center' },
+  heroDesc: { fontSize: fs.m, marginTop: 12, textAlign: 'center', lineHeight: 22 },
+  label: { fontSize: fs.s, fontWeight: '600', marginBottom: 6, marginTop: 8 },
   input: {
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    fontSize: FONT_SIZES.standard.m,
+    fontSize: fs.m,
     marginBottom: 8,
   },
   primaryButton: {
@@ -188,10 +189,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
-  primaryButtonText: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold' },
+  primaryButtonText: { fontSize: fs.m, fontWeight: 'bold' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
   dividerLine: { flex: 1, height: 1 },
-  dividerText: { marginHorizontal: 12, fontSize: FONT_SIZES.standard.s },
+  dividerText: { marginHorizontal: 12, fontSize: fs.s },
   socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -202,5 +203,5 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   socialIcon: { marginRight: 8 },
-  socialText: { fontSize: FONT_SIZES.standard.m, fontWeight: '600' },
+  socialText: { fontSize: fs.m, fontWeight: '600' },
 });

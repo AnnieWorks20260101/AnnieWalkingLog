@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Firebase Console → Storage → ルール に貼り付けて公開してください。
+// Firestore のルールとは別です。Storage がデフォルトのままだとアップロードが拒否されます。
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if request.time < timestamp.date(2026, 9, 14);
+    }
+  }
+}

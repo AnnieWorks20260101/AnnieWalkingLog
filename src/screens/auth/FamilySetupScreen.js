@@ -12,13 +12,14 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FONT_SIZES } from '../../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import i18n from '../../i18n';
 
 export default function FamilySetupScreen() {
   const { currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { completeFamilySetup } = useAuth();
   const [familyIdInput, setFamilyIdInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -121,18 +122,18 @@ export default function FamilySetupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (fs) => ({
   container: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24, paddingBottom: 40 },
   hero: { alignItems: 'center', marginBottom: 28 },
-  title: { fontSize: FONT_SIZES.standard.xl, fontWeight: 'bold', marginTop: 12, textAlign: 'center' },
-  desc: { fontSize: FONT_SIZES.standard.m, marginTop: 12, textAlign: 'center', lineHeight: 22 },
-  label: { fontSize: FONT_SIZES.standard.s, fontWeight: '600', marginBottom: 8 },
+  title: { fontSize: fs.xl, fontWeight: 'bold', marginTop: 12, textAlign: 'center' },
+  desc: { fontSize: fs.m, marginTop: 12, textAlign: 'center', lineHeight: 22 },
+  label: { fontSize: fs.s, fontWeight: '600', marginBottom: 8 },
   input: {
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    fontSize: FONT_SIZES.standard.m,
+    fontSize: fs.m,
     marginBottom: 16,
   },
   primaryButton: {
@@ -140,7 +141,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     alignItems: 'center',
   },
-  primaryButtonText: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold' },
+  primaryButtonText: { fontSize: fs.m, fontWeight: 'bold' },
   outlineButton: {
     borderWidth: 2,
     borderRadius: 12,
@@ -148,8 +149,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 4,
   },
-  outlineButtonText: { fontSize: FONT_SIZES.standard.m, fontWeight: 'bold' },
+  outlineButtonText: { fontSize: fs.m, fontWeight: 'bold' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
   dividerLine: { flex: 1, height: 1 },
-  dividerText: { marginHorizontal: 12, fontSize: FONT_SIZES.standard.s },
+  dividerText: { marginHorizontal: 12, fontSize: fs.s },
 });

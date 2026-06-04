@@ -1,59 +1,101 @@
-// src/screens/walk/WalkDetailScreen.js
-import React from 'react';
+import React, { useMemo, useRef, useCallback } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import MapView, { Polyline, Marker } from 'react-native-maps';
-import { FONT_SIZES } from '../../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
 import ScreenHeader from '../../components/ScreenHeader';
 import i18n from '../../i18n';
+import { formatAverageSpeedKmh, formatDurationMinutes } from '../../utils/walkFormat';
+import WalkStartWeather, { hasStartWeatherDisplay } from '../../components/WalkStartWeather';
+import { fitMapToCoordinates, getRegionForCoordinates } from '../../utils/mapRegion';
+
+const DEFAULT_REGION = {
+  latitude: 35.681236,
+  longitude: 139.767125,
+  latitudeDelta: 0.005,
+  longitudeDelta: 0.005,
+};
 
 export default function WalkDetailScreen({ route }) {
   const { currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { walk } = route.params;
   const walkRoute = walk.route || [];
   const poops = walk.poops || [];
+  const mapRef = useRef(null);
 
-  // 表示用のフォーマット
-  const distanceStr = walk.distance ? walk.distance.toFixed(2) : "0.00";
-  const durationStr = walk.duration ? Math.floor(walk.duration) : "0";
+  const mapCoordinates = useMemo(
+    () => [...walkRoute, ...poops],
+    [walkRoute, poops]
+  );
 
-  const initialRegion = walkRoute.length > 0 ? {
-    latitude: walkRoute[0].latitude,
-    longitude: walkRoute[0].longitude,
-    latitudeDelta: 0.005,
-    longitudeDelta: 0.005,
-  } : {
-    latitude: 35.681236,
-    longitude: 139.767125,
-    latitudeDelta: 0.005,
-    longitudeDelta: 0.005,
-  };
+  const initialRegion = useMemo(
+    () => getRegionForCoordinates(mapCoordinates) ?? DEFAULT_REGION,
+    [mapCoordinates]
+  );
+
+  const handleMapReady = useCallback(() => {
+    fitMapToCoordinates(mapRef, mapCoordinates);
+  }, [mapCoordinates]);
+
+  const distanceStr = `${(walk.distance ?? 0).toFixed(2)}km`;
+  const durationStr = formatDurationMinutes(walk.duration, i18n);
+  const poopCountStr = i18n.t('walk.poopCountShort', { count: poops.length });
+  const speedStr = formatAverageSpeedKmh(walk.distance, walk.duration);
+  const speedDisplay = speedStr != null ? i18n.t('walk.speedValue', { speed: speedStr }) : i18n.t('walk.speedValue', { speed: '—' });
+  const showWeather = hasStartWeatherDisplay(walk.startWeather);
+
+  const renderStatColumn = (label, value) => (
+    <View style={styles.statColumn}>
+      <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>{label}</Text>
+      <Text style={[styles.statValue, { color: currentTheme.primary }]}>{value}</Text>
+    </View>
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       <ScreenHeader title={i18n.t('walk.detailTitle')} showBack />
-      <View style={[styles.statsContainer, { backgroundColor: currentTheme.surface, borderBottomColor: currentTheme.accentBorder }]}>
-        <View style={styles.statBox}>
-          <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>{i18n.t('walk.distance')}</Text>
-          <Text style={[styles.statValue, { color: currentTheme.primary }]}>{distanceStr}<Text style={[styles.unit, { color: currentTheme.textSecondary }]}> km</Text></Text>
+      <View
+        style={[
+          styles.statsContainer,
+          { backgroundColor: currentTheme.primaryMuted, borderBottomColor: currentTheme.accentBorder },
+        ]}
+      >
+        <View style={styles.statsRow}>
+          {renderStatColumn(i18n.t('walk.distance'), distanceStr)}
+          {renderStatColumn(i18n.t('walk.time'), durationStr)}
+          {renderStatColumn(i18n.t('walk.poopLabel'), poopCountStr)}
         </View>
-        <View style={styles.statBox}>
-          <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>{i18n.t('walk.time')}</Text>
-          <Text style={[styles.statValue, { color: currentTheme.primary }]}>{durationStr}<Text style={[styles.unit, { color: currentTheme.textSecondary }]}> {i18n.t('common.minute')}</Text></Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>{i18n.t('walk.poopLabel')}</Text>
-          <Text style={[styles.statValue, { color: currentTheme.primary }]}>{poops.length}<Text style={[styles.unit, { color: currentTheme.textSecondary }]}> 回</Text></Text>
+
+        <View style={[styles.speedWeatherRow, { borderTopColor: currentTheme.accentBorder }]}>
+          <View style={styles.speedBlock}>
+            <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>{i18n.t('walk.averageSpeed')}</Text>
+            <Text style={[styles.speedValue, { color: currentTheme.primary }]}>{speedDisplay}</Text>
+          </View>
+          {showWeather ? (
+            <View style={styles.weatherBlock}>
+              <WalkStartWeather
+                startWeather={walk.startWeather}
+                iconSize={40}
+                textStyle={[styles.weatherValue, { color: currentTheme.primary }]}
+              />
+            </View>
+          ) : null}
         </View>
       </View>
 
-      <MapView style={styles.map} initialRegion={initialRegion}>
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        initialRegion={initialRegion}
+        onMapReady={handleMapReady}
+      >
         {walkRoute.length > 0 && (
           <Polyline coordinates={walkRoute} strokeColor={currentTheme.primary} strokeWidth={5} />
         )}
         {poops.map((poop, index) => (
           <Marker key={index} coordinate={poop}>
-            <Text style={{fontSize: 30}}>💩</Text>
+            <Text style={{ fontSize: 30 }}>💩</Text>
           </Marker>
         ))}
       </MapView>
@@ -61,19 +103,62 @@ export default function WalkDetailScreen({ route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (fs) => ({
   container: { flex: 1 },
   map: { flex: 1 },
   statsContainer: {
-    flexDirection: 'row',
-    paddingVertical: 20,
-    justifyContent: 'space-around',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
     elevation: 3,
     zIndex: 10,
   },
-  statBox: { alignItems: 'center' },
-  statLabel: { fontSize: FONT_SIZES.standard.s, marginBottom: 5 },
-  statValue: { fontSize: FONT_SIZES.standard.xl, fontWeight: 'bold' },
-  unit: { fontSize: FONT_SIZES.standard.s, fontWeight: 'normal' },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+  },
+  statColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: fs.s,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  statValue: {
+    fontSize: fs.l,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  speedWeatherRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  speedBlock: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  speedValue: {
+    fontSize: fs.xl,
+    fontWeight: 'bold',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  weatherBlock: {
+    flex: 1,
+    alignItems: 'flex-end',
+    paddingLeft: 12,
+  },
+  weatherValue: {
+    fontSize: fs.l,
+    fontWeight: 'bold',
+    marginTop: 6,
+    textAlign: 'right',
+  },
 });

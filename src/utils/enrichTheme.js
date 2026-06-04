@@ -33,5 +33,7 @@ export function enrichTheme(theme) {
     selectedFill: blendColors(theme.background, theme.primary, 0.24),
     accentBorder: blendColors(theme.border, theme.primary, 0.45),
     chipBackground: blendColors(theme.inputBackground || theme.card, theme.primary, 0.08),
+    /** タブ選択時のアイコン背面（カプセル） */
+    tabBarPill: blendColors(theme.card, theme.primary, 0.16),
   };
 }

@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { collection, doc, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { mergePetOrderWithPets, sortPetsByOrder } from '../utils/petOrder';
 
-export function useFamilyPets(familyId) {
+export function useFamilyPets(familyId, userId) {
   const [pets, setPets] = useState([]);
   const [petOrder, setPetOrder] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +13,7 @@ export function useFamilyPets(familyId) {
       setPets([]);
       setPetOrder([]);
       setLoading(false);
-      return;
+      return undefined;
     }
 
     setLoading(true);
@@ -34,46 +34,75 @@ export function useFamilyPets(familyId) {
       }
     );
 
-    const unsubFamily = onSnapshot(
-      doc(db, 'families', familyId),
-      (snap) => {
-        setPetOrder(snap.exists() ? snap.data().petOrder ?? [] : []);
-      },
-      (error) => console.error('family snapshot error:', error)
-    );
-
     return () => {
       unsubPets();
-      unsubFamily();
     };
   }, [familyId]);
 
+  useEffect(() => {
+    if (!userId) {
+      setPetOrder([]);
+      return undefined;
+    }
+
+    const unsubUser = onSnapshot(
+      doc(db, 'users', userId),
+      (snap) => {
+        setPetOrder(snap.exists() ? snap.data().petOrder ?? [] : []);
+      },
+      (error) => console.error('user petOrder snapshot error:', error)
+    );
+
+    return () => unsubUser();
+  }, [userId]);
+
   const sortedPets = useMemo(
-    () => sortPetsByOrder(pets, petOrder),
-    [pets, petOrder]
+    () => sortPetsByOrder(pets, userId ? petOrder : []),
+    [pets, petOrder, userId]
   );
 
   const mergedOrder = useMemo(
-    () => mergePetOrderWithPets(pets, petOrder),
-    [pets, petOrder]
+    () => mergePetOrderWithPets(pets, userId ? petOrder : []),
+    [pets, petOrder, userId]
   );
 
   const savePetOrder = useCallback(
     async (newOrder) => {
-      if (!familyId) return;
-      await updateDoc(doc(db, 'families', familyId), { petOrder: newOrder });
+      if (!userId) {
+        return;
+      }
+      await setDoc(doc(db, 'users', userId), { petOrder: newOrder }, { merge: true });
     },
-    [familyId]
+    [userId]
   );
 
-  // 初回: petOrder 未設定の家族に現在のペット ID 順を保存
+  // 初回: ユーザーごとの petOrder。旧 families.petOrder があれば一度だけ引き継ぐ
   useEffect(() => {
-    if (!familyId || loading || pets.length === 0) return;
-    if (petOrder.length > 0) return;
+    if (!familyId || !userId || loading || pets.length === 0) {
+      return;
+    }
+    if (petOrder.length > 0) {
+      return;
+    }
 
-    const initialOrder = pets.map((p) => p.id);
-    savePetOrder(initialOrder).catch((e) => console.error('init petOrder failed:', e));
-  }, [familyId, loading, pets, petOrder.length, savePetOrder]);
+    const initPetOrder = async () => {
+      let seedOrder = pets.map((p) => p.id);
+
+      try {
+        const familySnap = await getDoc(doc(db, 'families', familyId));
+        const legacyOrder = familySnap.exists() ? familySnap.data().petOrder : null;
+        if (Array.isArray(legacyOrder) && legacyOrder.length > 0) {
+          seedOrder = mergePetOrderWithPets(pets, legacyOrder);
+        }
+      } catch (error) {
+        console.error('legacy petOrder read failed:', error);
+      }
+
+      await savePetOrder(seedOrder);
+    };
+
+    initPetOrder().catch((e) => console.error('init user petOrder failed:', e));
+  }, [familyId, userId, loading, pets, petOrder.length, savePetOrder]);
 
   return {
     pets: sortedPets,

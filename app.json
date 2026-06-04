@@ -49,7 +49,8 @@
     "extra": {
       "eas": {
         "projectId": "7718817f-9965-453a-a6a4-4b5b6223a22e"
-      }
+      },
+      "openWeatherApiKey": "4de7cabc1d0c573bab84c855e1022be2"
     },
     "plugins": [
       [

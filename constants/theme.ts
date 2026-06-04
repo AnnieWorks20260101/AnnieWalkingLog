@@ -3,11 +3,11 @@
 // 🎨 カラーパレットの定義
 export const COLORS = {
   light: {
-    background: '#F5F9FF',
+    background: '#F8FCFA',    // MINTより淡いミント寄り背景
     card: '#FFFFFF',
     text: '#333333',
     textSecondary: '#888888',
-    primary: '#007AFF',     // アニーのメインブルー
+    primary: '#4AA882',     // ヘッダー緑と揃えたソフトグリーン（MINTより控えめ）
     border: '#F0F0F0',
     danger: '#FF3B30',
     headerBackground: '#E8F5E9', 

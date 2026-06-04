@@ -1,23 +1,30 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { FONT_SIZES } from '../../constants/theme';
 import { useTheme } from '../contexts/ThemeContext';
+import { NavigationRefContext } from '../navigation/NavigationRefContext';
+import { handleAppBackPress } from '../navigation/appBackNavigation';
 
 export default function ScreenHeader({ title, showBack = false, onBackPress }) {
-  const { currentTheme } = useTheme();
+  const { currentTheme, fontSizes } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const navigationRef = useContext(NavigationRefContext);
 
   const handleBack = () => {
     if (onBackPress) {
       onBackPress();
       return;
     }
+    // 設定スタック内のペット編集など：同一タブ内の前画面へ
     if (navigation.canGoBack()) {
       navigation.goBack();
+      return;
+    }
+    if (navigationRef) {
+      handleAppBackPress(navigationRef);
     }
   };
 
@@ -47,7 +54,13 @@ export default function ScreenHeader({ title, showBack = false, onBackPress }) {
             <Ionicons name="chevron-back" size={28} color={accentColor} />
           </TouchableOpacity>
         ) : null}
-        <Text style={[styles.title, { color: titleColor }, showBack && styles.titleWithBack]} numberOfLines={1}>
+        <Text
+          style={[
+            styles.title,
+            { color: titleColor, fontSize: showBack ? fontSizes.l : fontSizes.xl },
+          ]}
+          numberOfLines={1}
+        >
           {title}
         </Text>
       </View>
@@ -70,11 +83,7 @@ const styles = StyleSheet.create({
     marginLeft: -6,
   },
   title: {
-    fontSize: FONT_SIZES.standard.xl,
     fontWeight: 'bold',
     flex: 1,
-  },
-  titleWithBack: {
-    fontSize: FONT_SIZES.standard.l,
   },
 });

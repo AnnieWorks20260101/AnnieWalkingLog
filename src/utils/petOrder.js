@@ -1,4 +1,4 @@
-/** Firestore families.petOrder と pets 一覧を突き合わせて並べる */
+/** Firestore users.petOrder（ユーザーごと）と pets 一覧を突き合わせて並べる */
 
 export function mergePetOrderWithPets(pets, petOrder = []) {
   const ids = pets.map((p) => p.id);
