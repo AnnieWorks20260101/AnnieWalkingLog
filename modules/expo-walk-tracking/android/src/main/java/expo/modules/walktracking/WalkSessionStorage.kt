@@ -128,6 +128,12 @@ object WalkSessionStorage {
   @Synchronized
   fun readCustomMarksCount(context: Context): Int = readCustomMarks(context).size
 
+  @Synchronized
+  fun readCustomIcon(context: Context): String {
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    return prefs.getString(KEY_CUSTOM_ICON, "💦") ?: "💦"
+  }
+
   private fun readRoute(context: Context): List<WalkCoordinate> {
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     return parseCoordinateArray(prefs.getString(KEY_ROUTE, "[]") ?: "[]")

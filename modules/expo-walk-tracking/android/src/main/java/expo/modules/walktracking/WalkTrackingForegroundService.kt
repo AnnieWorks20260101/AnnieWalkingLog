@@ -27,7 +27,7 @@ class WalkTrackingForegroundService : Service() {
   private var title = "Walking"
   private var body = "🐾"
   private var poopLabel = "💩"
-  private var customLabel = "Custom"
+  private var customIcon = "💦"
 
   override fun onBind(intent: Intent?): IBinder? = null
 
@@ -48,7 +48,7 @@ class WalkTrackingForegroundService : Service() {
         title = intent.getStringExtra(WalkTrackingContracts.EXTRA_TITLE) ?: title
         body = intent.getStringExtra(WalkTrackingContracts.EXTRA_BODY) ?: body
         poopLabel = intent.getStringExtra(WalkTrackingContracts.EXTRA_POOP_LABEL) ?: poopLabel
-        customLabel = intent.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_LABEL) ?: customLabel
+        customIcon = intent.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_ICON) ?: customIcon
         distanceIntervalMeters =
           intent.getFloatExtra(
             WalkTrackingContracts.EXTRA_DISTANCE_INTERVAL_METERS,
@@ -57,13 +57,13 @@ class WalkTrackingForegroundService : Service() {
 
         val customButtonId =
           intent.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_BUTTON_ID) ?: "pee"
-        val customIcon = intent.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_ICON) ?: "💦"
 
         WalkSessionStorage.beginSession(this, customButtonId, customIcon)
         resumeTracking()
       }
       else -> {
         if (WalkSessionStorage.getSnapshot(applicationContext).isTracking) {
+          customIcon = WalkSessionStorage.readCustomIcon(applicationContext)
           resumeTracking()
         } else {
           stopSelf()
@@ -144,7 +144,7 @@ class WalkTrackingForegroundService : Service() {
   private fun notificationBodyText(): String {
     val poopCount = WalkSessionStorage.readPoopsCount(applicationContext)
     val customCount = WalkSessionStorage.readCustomMarksCount(applicationContext)
-    return "$body  💩 $poopCount  •  $customLabel $customCount"
+    return "$body  $poopLabel $poopCount  •  $customIcon $customCount"
   }
 
   private fun updateNotification() {
@@ -195,7 +195,7 @@ class WalkTrackingForegroundService : Service() {
 
     return builder
       .addAction(0, poopLabel, poopPendingIntent)
-      .addAction(0, customLabel, customPendingIntent)
+      .addAction(0, customIcon, customPendingIntent)
       .build()
   }
 
