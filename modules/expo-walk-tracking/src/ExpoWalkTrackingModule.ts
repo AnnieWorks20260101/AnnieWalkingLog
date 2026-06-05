@@ -11,6 +11,7 @@ declare class ExpoWalkTrackingModule extends NativeModule<ExpoWalkTrackingModule
   getWalkSessionSnapshot(): Promise<WalkSessionSnapshot>;
   appendPoopMark(): Promise<WalkCoordinateResult>;
   appendCustomMark(): Promise<WalkCoordinateResult>;
+  setLastKnownCoordinate(latitude: number, longitude: number): void;
   isWalkTrackingActive(): boolean;
 }
 

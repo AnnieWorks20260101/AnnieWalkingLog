@@ -25,6 +25,7 @@ data class WalkSessionSnapshot(
   val poops: List<WalkCoordinate>,
   val customMarks: List<WalkCustomMark>,
   val isTracking: Boolean,
+  val startTimeMs: Long?,
 )
 
 object WalkSessionStorage {
@@ -35,6 +36,7 @@ object WalkSessionStorage {
   private const val KEY_IS_TRACKING = "isTracking"
   private const val KEY_CUSTOM_BUTTON_ID = "customButtonId"
   private const val KEY_CUSTOM_ICON = "customIcon"
+  private const val KEY_START_TIME_MS = "startTimeMs"
 
   @Synchronized
   fun beginSession(context: Context, customButtonId: String, customIcon: String) {
@@ -46,6 +48,7 @@ object WalkSessionStorage {
       .putBoolean(KEY_IS_TRACKING, true)
       .putString(KEY_CUSTOM_BUTTON_ID, customButtonId)
       .putString(KEY_CUSTOM_ICON, customIcon)
+      .putLong(KEY_START_TIME_MS, System.currentTimeMillis())
       .apply()
   }
 
@@ -105,13 +108,25 @@ object WalkSessionStorage {
   @Synchronized
   fun getSnapshot(context: Context): WalkSessionSnapshot {
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    val startTimeMs = if (prefs.contains(KEY_START_TIME_MS)) {
+      prefs.getLong(KEY_START_TIME_MS, 0L)
+    } else {
+      null
+    }
     return WalkSessionSnapshot(
       route = readRoute(context),
       poops = readPoops(context),
       customMarks = readCustomMarks(context),
       isTracking = prefs.getBoolean(KEY_IS_TRACKING, false),
+      startTimeMs = startTimeMs,
     )
   }
+
+  @Synchronized
+  fun readPoopsCount(context: Context): Int = readPoops(context).size
+
+  @Synchronized
+  fun readCustomMarksCount(context: Context): Int = readCustomMarks(context).size
 
   private fun readRoute(context: Context): List<WalkCoordinate> {
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

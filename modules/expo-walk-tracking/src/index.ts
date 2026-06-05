@@ -34,6 +34,10 @@ export function appendCustomMark() {
   return ExpoWalkTracking.appendCustomMark();
 }
 
+export function setLastKnownCoordinate(latitude: number, longitude: number) {
+  return ExpoWalkTracking.setLastKnownCoordinate(latitude, longitude);
+}
+
 export function isWalkTrackingActive() {
   return ExpoWalkTracking.isWalkTrackingActive();
 }

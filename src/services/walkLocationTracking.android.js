@@ -26,7 +26,13 @@ export async function stopWalkLocationTracking() {
 }
 
 export async function fetchWalkSessionSnapshot() {
-  return getWalkSessionSnapshot();
+  const snapshot = await getWalkSessionSnapshot();
+  return snapshot ?? {
+    route: [],
+    poops: [],
+    customMarks: [],
+    isTracking: false,
+  };
 }
 
 export async function recordPoopMarkNative() {
@@ -35,6 +41,10 @@ export async function recordPoopMarkNative() {
 
 export async function recordCustomMarkNative() {
   return appendCustomMark();
+}
+
+export function syncLastKnownCoordinate(_latitude, _longitude) {
+  // Android route updates are handled by the foreground service.
 }
 
 export function isNativeWalkTrackingActive() {

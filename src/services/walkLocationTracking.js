@@ -5,5 +5,6 @@ export {
   recordPoopMarkNative,
   startWalkLocationTracking,
   stopWalkLocationTracking,
+  syncLastKnownCoordinate,
   usesNativeWalkTracking,
 } from './walkLocationTracking.ios';

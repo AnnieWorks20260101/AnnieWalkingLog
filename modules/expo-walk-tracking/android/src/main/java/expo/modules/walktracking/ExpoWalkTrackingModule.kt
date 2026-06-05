@@ -103,6 +103,10 @@ class ExpoWalkTrackingModule : Module() {
       appendMarkFromCurrentLocation(context, isPoop = false, promise)
     }
 
+    Function("setLastKnownCoordinate") { _: Double, _: Double ->
+      // Android route updates are handled by WalkTrackingForegroundService.
+    }
+
     Function("isWalkTrackingActive") {
       val context = appContext.reactContext?.applicationContext ?: return@Function false
       WalkSessionStorage.getSnapshot(context).isTracking
@@ -190,6 +194,7 @@ class ExpoWalkTrackingModule : Module() {
         )
       },
       "isTracking" to snapshot.isTracking,
+      "startTimeMs" to snapshot.startTimeMs,
     )
   }
 }

@@ -5,6 +5,7 @@ import {
   appendPoopMark,
   getWalkSessionSnapshot,
   isWalkTrackingActive,
+  setLastKnownCoordinate,
   startWalkTracking,
   stopWalkTracking,
 } from 'expo-walk-tracking';
@@ -25,6 +26,7 @@ async function mergeRouteIntoSnapshot(snapshot) {
       isTracking: false,
     }),
     route,
+    startTimeMs: snapshot?.startTimeMs,
   };
 }
 
@@ -68,6 +70,14 @@ export async function recordPoopMarkNative() {
 
 export async function recordCustomMarkNative() {
   return appendCustomMark();
+}
+
+export function syncLastKnownCoordinate(latitude, longitude) {
+  try {
+    setLastKnownCoordinate(latitude, longitude);
+  } catch (error) {
+    console.warn('syncLastKnownCoordinate failed:', error);
+  }
 }
 
 export function isNativeWalkTrackingActive() {

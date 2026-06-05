@@ -96,13 +96,17 @@ public class ExpoWalkTrackingModule: Module {
       return ["latitude": coordinate.latitude, "longitude": coordinate.longitude]
     }
 
+    Function("setLastKnownCoordinate") { (latitude: Double, longitude: Double) in
+      WalkSessionStorage.setLastCoordinate(latitude: latitude, longitude: longitude)
+    }
+
     Function("isWalkTrackingActive") { () -> Bool in
       WalkSessionStorage.getSnapshot().isTracking
     }
   }
 
   private static func snapshotToDictionary(_ snapshot: WalkSessionSnapshotPayload) -> [String: Any] {
-    [
+    var payload: [String: Any] = [
       "route": snapshot.route.map { ["latitude": $0.latitude, "longitude": $0.longitude] },
       "poops": snapshot.poops.map { ["latitude": $0.latitude, "longitude": $0.longitude] },
       "customMarks": snapshot.customMarks.map {
@@ -115,6 +119,12 @@ public class ExpoWalkTrackingModule: Module {
       },
       "isTracking": snapshot.isTracking,
     ]
+
+    if let startTimeMs = snapshot.startTimeMs {
+      payload["startTimeMs"] = startTimeMs
+    }
+
+    return payload
   }
 
   private static func resolveCoordinate() async throws -> WalkCoordinatePayload {
@@ -124,10 +134,13 @@ public class ExpoWalkTrackingModule: Module {
 
     let manager = CLLocationManager()
     if let location = manager.location {
-      return WalkCoordinatePayload(
+      let coordinate = WalkCoordinatePayload(
         latitude: location.coordinate.latitude,
         longitude: location.coordinate.longitude
       )
+      if coordinate.isUsable {
+        return coordinate
+      }
     }
 
     throw Exception(name: "ERR_NO_LOCATION", description: "Current location is unavailable")

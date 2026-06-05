@@ -13,6 +13,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "deploymentTarget": "16.2",
       "supportsTablet": true,
       "bundleIdentifier": "com.annieworks.AnnieWalkingLog",
       "appleTeamId": "8AXQGJTA55",

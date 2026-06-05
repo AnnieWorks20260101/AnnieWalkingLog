@@ -10,4 +10,5 @@ enum WalkStorageConstants {
   static let keyCustomIcon = "customIcon"
   static let keyLastLatitude = "lastLatitude"
   static let keyLastLongitude = "lastLongitude"
+  static let keyStartTimeMs = "startTimeMs"
 }

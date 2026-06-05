@@ -3,6 +3,10 @@ import Foundation
 struct WalkCoordinatePayload: Codable {
   let latitude: Double
   let longitude: Double
+
+  var isUsable: Bool {
+    abs(latitude) <= 90 && abs(longitude) <= 180 && !(latitude == 0 && longitude == 0)
+  }
 }
 
 struct WalkCustomMarkPayload: Codable {
@@ -27,10 +31,13 @@ enum WalkSessionStorage {
     guard let defaults else { return nil }
     if defaults.object(forKey: WalkStorageConstants.keyLastLatitude) != nil,
        defaults.object(forKey: WalkStorageConstants.keyLastLongitude) != nil {
-      return WalkCoordinatePayload(
+      let coordinate = WalkCoordinatePayload(
         latitude: defaults.double(forKey: WalkStorageConstants.keyLastLatitude),
         longitude: defaults.double(forKey: WalkStorageConstants.keyLastLongitude)
       )
+      if coordinate.isUsable {
+        return coordinate
+      }
     }
     return nil
   }

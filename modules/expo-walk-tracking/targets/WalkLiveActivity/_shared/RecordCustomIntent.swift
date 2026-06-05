@@ -8,7 +8,10 @@ struct RecordCustomIntent: LiveActivityIntent {
   static var openAppWhenRun: Bool = false
 
   func perform() async throws -> some IntentResult {
-    let coordinate = await Self.resolveCoordinate()
+    guard let coordinate = await Self.resolveCoordinate() else {
+      return .result()
+    }
+
     WalkSessionStorage.appendCustomMark(latitude: coordinate.latitude, longitude: coordinate.longitude)
     if #available(iOS 16.2, *) {
       await WalkLiveActivityUpdater.refreshCounts()
@@ -16,19 +19,22 @@ struct RecordCustomIntent: LiveActivityIntent {
     return .result()
   }
 
-  private static func resolveCoordinate() async -> WalkCoordinatePayload {
+  private static func resolveCoordinate() async -> WalkCoordinatePayload? {
     if let fallback = WalkSessionStorage.fallbackCoordinate() {
       return fallback
     }
 
     let manager = CLLocationManager()
     if let location = manager.location {
-      return WalkCoordinatePayload(
+      let coordinate = WalkCoordinatePayload(
         latitude: location.coordinate.latitude,
         longitude: location.coordinate.longitude
       )
+      if coordinate.isUsable {
+        return coordinate
+      }
     }
 
-    return WalkCoordinatePayload(latitude: 0, longitude: 0)
+    return nil
   }
 }

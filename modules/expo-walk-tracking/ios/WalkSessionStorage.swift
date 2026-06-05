@@ -3,6 +3,10 @@ import Foundation
 struct WalkCoordinatePayload: Codable {
   let latitude: Double
   let longitude: Double
+
+  var isUsable: Bool {
+    abs(latitude) <= 90 && abs(longitude) <= 180 && !(latitude == 0 && longitude == 0)
+  }
 }
 
 struct WalkCustomMarkPayload: Codable {
@@ -17,6 +21,7 @@ struct WalkSessionSnapshotPayload {
   let poops: [WalkCoordinatePayload]
   let customMarks: [WalkCustomMarkPayload]
   let isTracking: Bool
+  let startTimeMs: Double?
 }
 
 enum WalkSessionStorage {
@@ -32,6 +37,7 @@ enum WalkSessionStorage {
     defaults.set(true, forKey: WalkStorageConstants.keyIsTracking)
     defaults.set(customButtonId, forKey: WalkStorageConstants.keyCustomButtonId)
     defaults.set(customIcon, forKey: WalkStorageConstants.keyCustomIcon)
+    defaults.set(Date().timeIntervalSince1970 * 1000, forKey: WalkStorageConstants.keyStartTimeMs)
   }
 
   static func endSession() {
@@ -49,6 +55,7 @@ enum WalkSessionStorage {
       WalkStorageConstants.keyCustomIcon,
       WalkStorageConstants.keyLastLatitude,
       WalkStorageConstants.keyLastLongitude,
+      WalkStorageConstants.keyStartTimeMs,
     ].forEach { defaults.removeObject(forKey: $0) }
   }
 
@@ -62,14 +69,16 @@ enum WalkSessionStorage {
     guard let defaults else { return nil }
     if defaults.object(forKey: WalkStorageConstants.keyLastLatitude) != nil,
        defaults.object(forKey: WalkStorageConstants.keyLastLongitude) != nil {
-      return WalkCoordinatePayload(
+      let coordinate = WalkCoordinatePayload(
         latitude: defaults.double(forKey: WalkStorageConstants.keyLastLatitude),
         longitude: defaults.double(forKey: WalkStorageConstants.keyLastLongitude)
       )
+      if coordinate.isUsable {
+        return coordinate
+      }
     }
 
-    let route = readRoute()
-    return route.last
+    return readRoute().last(where: { $0.isUsable })
   }
 
   static func appendPoop(latitude: Double, longitude: Double) {
@@ -96,11 +105,20 @@ enum WalkSessionStorage {
   }
 
   static func getSnapshot() -> WalkSessionSnapshotPayload {
-    WalkSessionSnapshotPayload(
+    let startTimeMs: Double? = {
+      guard let defaults,
+            defaults.object(forKey: WalkStorageConstants.keyStartTimeMs) != nil else {
+        return nil
+      }
+      return defaults.double(forKey: WalkStorageConstants.keyStartTimeMs)
+    }()
+
+    return WalkSessionSnapshotPayload(
       route: readRoute(),
       poops: readPoops(),
       customMarks: readCustomMarks(),
-      isTracking: defaults?.bool(forKey: WalkStorageConstants.keyIsTracking) ?? false
+      isTracking: defaults?.bool(forKey: WalkStorageConstants.keyIsTracking) ?? false,
+      startTimeMs: startTimeMs
     )
   }
 

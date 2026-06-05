@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   s.homepage       = 'https://docs.expo.dev/modules/'
   s.platforms      = { ios: '16.2' }
   s.swift_version  = '5.9'
-  s.source         = { git: '' }
+  s.source         = { :path => __dir__ }
   s.static_framework = true
 
   s.dependency 'ExpoModulesCore'

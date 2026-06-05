@@ -1,10 +1,35 @@
+const fs = require('fs');
 const path = require('path');
-const { withAndroidManifest, AndroidConfig, withInfoPlist } = require('@expo/config-plugins');
+const {
+  withAndroidManifest,
+  AndroidConfig,
+  withInfoPlist,
+  withPodfileProperties,
+} = require('@expo/config-plugins');
 const withAppleTargets = require('@bacons/apple-targets/app.plugin');
 
 const SERVICE_CLASS = 'expo.modules.walktracking.WalkTrackingForegroundService';
 const RECEIVER_CLASS = 'expo.modules.walktracking.WalkActionReceiver';
 const APPLE_TARGETS_ROOT = path.join(__dirname, 'targets');
+const WALK_LIVE_ACTIVITY_TARGET = 'WalkLiveActivity';
+
+function hasWalkLiveActivityTarget(projectRoot) {
+  const pbxprojPath = path.join(
+    projectRoot,
+    'ios',
+    'AnnieWalkingLog.xcodeproj',
+    'project.pbxproj'
+  );
+  if (!fs.existsSync(pbxprojPath)) {
+    return false;
+  }
+
+  const pbxproj = fs.readFileSync(pbxprojPath, 'utf8');
+  return (
+    pbxproj.includes(`name = ${WALK_LIVE_ACTIVITY_TARGET};`) &&
+    pbxproj.includes('PBXNativeTarget')
+  );
+}
 
 function addWalkTrackingComponents(androidManifest) {
   const application = AndroidConfig.Manifest.getMainApplicationOrThrow(androidManifest);
@@ -46,8 +71,68 @@ function addWalkTrackingComponents(androidManifest) {
   return androidManifest;
 }
 
+const EXPO_WALK_TRACKING_POD = "pod 'ExpoWalkTracking', :path => '../modules/expo-walk-tracking/ios'";
+
+function injectExpoWalkTrackingPod(podfile) {
+  const { mergeContents } = require('@expo/config-plugins/build/utils/generateCode');
+
+  if (podfile.includes(EXPO_WALK_TRACKING_POD)) {
+    return podfile;
+  }
+
+  return mergeContents({
+    tag: 'expo-walk-tracking-pod',
+    src: podfile,
+    newSrc: `  ${EXPO_WALK_TRACKING_POD}`,
+    anchor: /use_expo_modules!/,
+    offset: 1,
+    comment: '#',
+  }).contents;
+}
+
+/** @type {import('@expo/config-plugins').ConfigPlugin} */
+function withExpoWalkTrackingPod(config) {
+  const { withPodfile, withDangerousMod } = require('@expo/config-plugins');
+
+  config = withPodfile(config, (configWithPodfile) => {
+    const podfile = configWithPodfile.modResults;
+    if (typeof podfile !== 'string') {
+      return configWithPodfile;
+    }
+
+    configWithPodfile.modResults = injectExpoWalkTrackingPod(podfile);
+    return configWithPodfile;
+  });
+
+  return withDangerousMod(config, [
+    'ios',
+    async (configWithDangerousMod) => {
+      const podfilePath = path.join(
+        configWithDangerousMod.modRequest.platformProjectRoot,
+        'Podfile'
+      );
+      if (!fs.existsSync(podfilePath)) {
+        return configWithDangerousMod;
+      }
+
+      const podfile = fs.readFileSync(podfilePath, 'utf8');
+      const nextPodfile = injectExpoWalkTrackingPod(podfile);
+      if (nextPodfile !== podfile) {
+        fs.writeFileSync(podfilePath, nextPodfile);
+      }
+
+      return configWithDangerousMod;
+    },
+  ]);
+}
+
 /** @type {import('@expo/config-plugins').ConfigPlugin} */
 module.exports = function withExpoWalkTracking(config) {
+  config = withPodfileProperties(config, (configWithProps) => {
+    configWithProps.modResults['ios.deploymentTarget'] = '16.2';
+    return configWithProps;
+  });
+  config = withExpoWalkTrackingPod(config);
   config = withAndroidManifest(config, (configWithManifest) => {
     configWithManifest.modResults = addWalkTrackingComponents(configWithManifest.modResults);
     return configWithManifest;
@@ -58,9 +143,12 @@ module.exports = function withExpoWalkTracking(config) {
     return configWithPlist;
   });
 
-  config = withAppleTargets(config, {
-    root: APPLE_TARGETS_ROOT,
-  });
+  const projectRoot = config._internal?.projectRoot || process.cwd();
+  if (!hasWalkLiveActivityTarget(projectRoot)) {
+    config = withAppleTargets(config, {
+      root: APPLE_TARGETS_ROOT,
+    });
+  }
 
   return config;
 };

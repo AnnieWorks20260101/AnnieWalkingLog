@@ -1,10 +1,16 @@
 {
   "name": "expo-walk-tracking",
   "version": "0.1.0",
-  "description": "Android walk tracking foreground service with notification actions",
+  "description": "Walk tracking with Android foreground service and iOS Live Activity",
   "main": "src/index.ts",
   "license": "MIT",
+  "expo": {
+    "autolinking": {
+      "nativeModulesDir": "./ios"
+    }
+  },
   "peerDependencies": {
-    "expo": "*"
+    "expo": "*",
+    "expo-modules-core": "*"
   }
 }

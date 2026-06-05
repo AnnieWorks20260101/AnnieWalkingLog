@@ -13,6 +13,7 @@ export type WalkSessionSnapshot = {
   poops: WalkCoordinate[];
   customMarks: WalkCustomMark[];
   isTracking: boolean;
+  startTimeMs?: number;
 };
 
 export type WalkTrackingStartOptions = {

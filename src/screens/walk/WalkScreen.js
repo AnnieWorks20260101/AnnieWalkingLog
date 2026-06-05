@@ -60,10 +60,12 @@ import {
 } from '../../utils/planPetUsage';
 import {
   fetchWalkSessionSnapshot,
+  isNativeWalkTrackingActive,
   recordCustomMarkNative,
   recordPoopMarkNative,
   startWalkLocationTracking,
   stopWalkLocationTracking,
+  syncLastKnownCoordinate,
   usesNativeWalkTracking,
 } from '../../services/walkLocationTracking';
 
@@ -90,6 +92,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
     const route = saved ? JSON.parse(saved) : [];
     route.push(newPoint);
     await AsyncStorage.setItem(TEMP_ROUTE_KEY, JSON.stringify(route));
+    syncLastKnownCoordinate(newPoint.latitude, newPoint.longitude);
   }
 });
 
@@ -198,6 +201,31 @@ export default function WalkScreen({ navigation }) {
       const updated = await refreshMapToCurrentLocation();
       if (!updated) {
         setInitialRegion(DEFAULT_REGION);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      if (!usesNativeWalkTracking || !isNativeWalkTrackingActive()) {
+        return;
+      }
+
+      try {
+        const snapshot = await fetchWalkSessionSnapshot();
+        if (!snapshot?.isTracking) {
+          return;
+        }
+
+        setIsTracking(true);
+        setRoute(snapshot.route ?? []);
+        setPoops(snapshot.poops ?? []);
+        setCustomMarks(snapshot.customMarks ?? []);
+        setStartTime(
+          snapshot.startTimeMs ? new Date(snapshot.startTimeMs) : new Date()
+        );
+      } catch (error) {
+        console.warn('restoreWalkSession failed:', error);
       }
     })();
   }, []);

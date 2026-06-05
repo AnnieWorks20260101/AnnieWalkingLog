@@ -29,6 +29,11 @@ class WalkTrackingForegroundService : Service() {
 
   override fun onBind(intent: Intent?): IBinder? = null
 
+  override fun onCreate() {
+    super.onCreate()
+    runningInstance = this
+  }
+
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     when (intent?.action) {
       WalkTrackingContracts.ACTION_STOP -> {
@@ -60,6 +65,9 @@ class WalkTrackingForegroundService : Service() {
   }
 
   override fun onDestroy() {
+    if (runningInstance === this) {
+      runningInstance = null
+    }
     stopTracking()
     super.onDestroy()
   }
@@ -111,6 +119,17 @@ class WalkTrackingForegroundService : Service() {
     stopForeground(STOP_FOREGROUND_REMOVE)
   }
 
+  private fun notificationBodyText(): String {
+    val poopCount = WalkSessionStorage.readPoopsCount(applicationContext)
+    val customCount = WalkSessionStorage.readCustomMarksCount(applicationContext)
+    return "$body  💩 $poopCount  •  $customLabel $customCount"
+  }
+
+  private fun updateNotification() {
+    val manager = getSystemService(NotificationManager::class.java) ?: return
+    manager.notify(WalkTrackingContracts.NOTIFICATION_ID, buildNotification())
+  }
+
   private fun buildNotification(): Notification {
     val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
     val contentPendingIntent = PendingIntent.getActivity(
@@ -140,7 +159,7 @@ class WalkTrackingForegroundService : Service() {
 
     return NotificationCompat.Builder(this, WalkTrackingContracts.CHANNEL_ID)
       .setContentTitle(title)
-      .setContentText(body)
+      .setContentText(notificationBodyText())
       .setSmallIcon(applicationInfo.icon)
       .setOngoing(true)
       .setOnlyAlertOnce(true)
@@ -171,6 +190,9 @@ class WalkTrackingForegroundService : Service() {
   }
 
   companion object {
+    @Volatile
+    private var runningInstance: WalkTrackingForegroundService? = null
+
     fun start(context: Context, config: WalkTrackingStartConfig) {
       val intent = Intent(context, WalkTrackingForegroundService::class.java).apply {
         action = WalkTrackingContracts.ACTION_START
@@ -198,7 +220,7 @@ class WalkTrackingForegroundService : Service() {
     }
 
     fun refreshNotification(_context: Context) {
-      // v1: notification content stays static; marks are persisted in storage only.
+      runningInstance?.updateNotification()
     }
   }
 }
