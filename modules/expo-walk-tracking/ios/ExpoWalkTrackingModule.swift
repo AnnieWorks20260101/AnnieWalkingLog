@@ -30,7 +30,8 @@ public class ExpoWalkTrackingModule: Module {
 
       let attributes = WalkActivityAttributes(
         poopLabel: options.poopLabel,
-        customLabel: options.customLabel
+        customLabel: options.customLabel,
+        customIcon: options.customIcon
       )
       let state = WalkActivityAttributes.ContentState(
         title: options.title,

@@ -11,4 +11,5 @@ struct WalkActivityAttributes: ActivityAttributes {
 
   var poopLabel: String
   var customLabel: String
+  var customIcon: String
 }

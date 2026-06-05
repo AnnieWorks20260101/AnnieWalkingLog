@@ -16,7 +16,11 @@ struct WalkLiveActivityWidget: Widget {
             .font(.headline)
         }
         DynamicIslandExpandedRegion(.trailing) {
-          Text("💩 \(context.state.poopCount)")
+          HStack(spacing: 8) {
+            Text("\(context.attributes.poopLabel) \(context.state.poopCount)")
+            Text("\(context.attributes.customIcon) \(context.state.customCount)")
+          }
+          .font(.caption)
         }
         DynamicIslandExpandedRegion(.bottom) {
           WalkLiveActivityActionRow(context: context)
@@ -37,16 +41,23 @@ private struct WalkLiveActivityLockScreenView: View {
   let context: ActivityViewContext<WalkActivityAttributes>
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    VStack(alignment: .leading, spacing: 10) {
       Text(context.state.title)
         .font(.headline)
       Text(context.state.body)
         .font(.subheadline)
-      Text("💩 \(context.state.poopCount)  •  \(context.attributes.customLabel) \(context.state.customCount)")
-        .font(.caption)
+        .foregroundStyle(.secondary)
+      HStack(spacing: 16) {
+        Text("\(context.attributes.poopLabel) \(context.state.poopCount)")
+        Text("\(context.attributes.customIcon) \(context.state.customCount)")
+      }
+      .font(.caption)
+      .foregroundStyle(.secondary)
       WalkLiveActivityActionRow(context: context)
     }
-    .padding(.vertical, 4)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.horizontal, 16)
+    .padding(.vertical, 12)
   }
 }
 
@@ -59,16 +70,21 @@ private struct WalkLiveActivityActionRow: View {
       HStack(spacing: 12) {
         Button(intent: RecordPoopIntent()) {
           Text(context.attributes.poopLabel)
+            .font(.title2)
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
         }
         .buttonStyle(.borderedProminent)
 
         Button(intent: RecordCustomIntent()) {
-          Text(context.attributes.customLabel)
+          Text(context.attributes.customIcon)
+            .font(.title2)
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
         }
         .buttonStyle(.bordered)
       }
+      .padding(.top, 4)
     }
   }
 }
