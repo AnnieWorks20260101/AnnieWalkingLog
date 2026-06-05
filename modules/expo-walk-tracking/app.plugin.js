@@ -72,6 +72,37 @@ function addWalkTrackingComponents(androidManifest) {
 }
 
 const EXPO_WALK_TRACKING_POD = "pod 'ExpoWalkTracking', :path => '../modules/expo-walk-tracking/ios'";
+const IOS_DEPLOYMENT_TARGET = '16.2';
+
+/** @type {import('@expo/config-plugins').ConfigPlugin} */
+function withIosDeploymentTarget(config) {
+  const { withDangerousMod } = require('@expo/config-plugins');
+
+  return withDangerousMod(config, [
+    'ios',
+    async (configWithDangerousMod) => {
+      const pbxprojPath = path.join(
+        configWithDangerousMod.modRequest.platformProjectRoot,
+        'AnnieWalkingLog.xcodeproj',
+        'project.pbxproj'
+      );
+      if (!fs.existsSync(pbxprojPath)) {
+        return configWithDangerousMod;
+      }
+
+      const pbxproj = fs.readFileSync(pbxprojPath, 'utf8');
+      const updated = pbxproj.replace(
+        /IPHONEOS_DEPLOYMENT_TARGET = [\d.]+;/g,
+        `IPHONEOS_DEPLOYMENT_TARGET = ${IOS_DEPLOYMENT_TARGET};`
+      );
+      if (updated !== pbxproj) {
+        fs.writeFileSync(pbxprojPath, updated);
+      }
+
+      return configWithDangerousMod;
+    },
+  ]);
+}
 
 function injectExpoWalkTrackingPod(podfile) {
   const { mergeContents } = require('@expo/config-plugins/build/utils/generateCode');
@@ -129,9 +160,10 @@ function withExpoWalkTrackingPod(config) {
 /** @type {import('@expo/config-plugins').ConfigPlugin} */
 module.exports = function withExpoWalkTracking(config) {
   config = withPodfileProperties(config, (configWithProps) => {
-    configWithProps.modResults['ios.deploymentTarget'] = '16.2';
+    configWithProps.modResults['ios.deploymentTarget'] = IOS_DEPLOYMENT_TARGET;
     return configWithProps;
   });
+  config = withIosDeploymentTarget(config);
   config = withExpoWalkTrackingPod(config);
   config = withAndroidManifest(config, (configWithManifest) => {
     configWithManifest.modResults = addWalkTrackingComponents(configWithManifest.modResults);

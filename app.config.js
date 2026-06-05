@@ -47,6 +47,28 @@ module.exports = () => {
         openWeatherApiKey,
         googleMapsApiKeyAndroid,
         googleMapsApiKeyIos,
+        eas: {
+          ...appJson.expo.extra?.eas,
+          build: {
+            ...appJson.expo.extra?.eas?.build,
+            experimental: {
+              ios: {
+                appExtensions: [
+                  {
+                    targetName: 'WalkLiveActivity',
+                    bundleIdentifier:
+                      'com.annieworks.AnnieWalkingLog.walkliveactivity',
+                    entitlements: {
+                      'com.apple.security.application-groups': [
+                        'group.com.annieworks.AnnieWalkingLog.walk',
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
       },
     },
   };
