@@ -58,6 +58,14 @@ import {
   getUsablePetIds,
   isPetUsableByPlanOrder,
 } from '../../utils/planPetUsage';
+import {
+  fetchWalkSessionSnapshot,
+  recordCustomMarkNative,
+  recordPoopMarkNative,
+  startWalkLocationTracking,
+  stopWalkLocationTracking,
+  usesNativeWalkTracking,
+} from '../../services/walkLocationTracking';
 
 const LOCATION_TASK_NAME = 'background-location-task';
 const TEMP_ROUTE_KEY = 'temp_route';
@@ -194,9 +202,45 @@ export default function WalkScreen({ navigation }) {
     })();
   }, []);
 
+  const syncNativeWalkSession = async () => {
+    if (!usesNativeWalkTracking) {
+      return;
+    }
+    const snapshot = await fetchWalkSessionSnapshot();
+    if (!snapshot) {
+      return;
+    }
+    setRoute(snapshot.route ?? []);
+    setPoops(snapshot.poops ?? []);
+    setCustomMarks(snapshot.customMarks ?? []);
+  };
+
   useEffect(() => {
     if (isTracking) {
       timerRef.current = setInterval(async () => {
+        if (usesNativeWalkTracking) {
+          const snapshot = await fetchWalkSessionSnapshot();
+          if (!snapshot) {
+            return;
+          }
+          const currentRoute = snapshot.route ?? [];
+          setRoute(currentRoute);
+          setPoops(snapshot.poops ?? []);
+          setCustomMarks(snapshot.customMarks ?? []);
+
+          if (currentRoute.length > 0 && mapRef.current) {
+            mapRef.current.animateToRegion(
+              {
+                ...currentRoute[currentRoute.length - 1],
+                latitudeDelta: 0.005,
+                longitudeDelta: 0.005,
+              },
+              500
+            );
+          }
+          return;
+        }
+
         const saved = await AsyncStorage.getItem(TEMP_ROUTE_KEY);
         if (saved) {
           const currentRoute = JSON.parse(saved);
@@ -230,6 +274,12 @@ export default function WalkScreen({ navigation }) {
       const returnedToApp =
         (previousState === 'background' || previousState === 'inactive') && nextAppState === 'active';
 
+      if (returnedToApp && isTracking && usesNativeWalkTracking) {
+        syncNativeWalkSession().catch((error) => {
+          console.warn('syncNativeWalkSession failed:', error);
+        });
+      }
+
       if (!returnedToApp || !waitingForSettingsReturnRef.current) {
         return;
       }
@@ -242,7 +292,7 @@ export default function WalkScreen({ navigation }) {
     });
 
     return () => subscription.remove();
-  }, []);
+  }, [isTracking]);
 
   const areWalkPermissionsReady = () => isWalkBackgroundLocationReady();
 
@@ -323,15 +373,27 @@ export default function WalkScreen({ navigation }) {
 
       await captureStartWeather();
 
-      await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-        accuracy: Location.Accuracy.High,
-        distanceInterval: 5,
-        showsBackgroundLocationIndicator: true,
-        foregroundService: {
-          notificationTitle: i18n.t('walk.walking'),
-          notificationBody: '🐾',
-        },
-      });
+      if (usesNativeWalkTracking) {
+        await startWalkLocationTracking({
+          title: i18n.t('walk.walking'),
+          body: '🐾',
+          poopLabel: i18n.t('walk.poopLabel'),
+          customLabel: customButtonLabel,
+          customButtonId,
+          customIcon: customButtonIcon,
+          distanceIntervalMeters: 5,
+        });
+      } else {
+        await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+          accuracy: Location.Accuracy.High,
+          distanceInterval: 5,
+          showsBackgroundLocationIndicator: true,
+          foregroundService: {
+            notificationTitle: i18n.t('walk.walking'),
+            notificationBody: '🐾',
+          },
+        });
+      }
     } catch (error) {
       setIsTracking(false);
       console.error(error);
@@ -410,15 +472,29 @@ export default function WalkScreen({ navigation }) {
   };
 
   const stopTracking = async () => {
-    try {
-      await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
-    } catch (e) {}
-
     setIsTracking(false);
     if (timerRef.current) clearInterval(timerRef.current);
 
-    const saved = await AsyncStorage.getItem(TEMP_ROUTE_KEY);
-    const finalRoute = saved ? JSON.parse(saved) : [];
+    let finalRoute = [];
+
+    if (usesNativeWalkTracking) {
+      try {
+        const session = await stopWalkLocationTracking();
+        finalRoute = session?.route ?? [];
+        setRoute(finalRoute);
+        setPoops(session?.poops ?? []);
+        setCustomMarks(session?.customMarks ?? []);
+      } catch (error) {
+        console.error('stopWalkLocationTracking failed:', error);
+      }
+    } else {
+      try {
+        await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+      } catch (e) {}
+
+      const saved = await AsyncStorage.getItem(TEMP_ROUTE_KEY);
+      finalRoute = saved ? JSON.parse(saved) : [];
+    }
 
     promptEndWalkSave(finalRoute);
   };
@@ -616,11 +692,31 @@ export default function WalkScreen({ navigation }) {
   };
 
   const recordPoop = async () => {
+    if (usesNativeWalkTracking) {
+      try {
+        await recordPoopMarkNative();
+        await syncNativeWalkSession();
+      } catch (error) {
+        console.error('recordPoopMarkNative failed:', error);
+      }
+      return;
+    }
+
     const coordinate = await getCurrentWalkMapCoordinate();
     setPoops((prev) => [...prev, coordinate]);
   };
 
   const recordCustomMark = async () => {
+    if (usesNativeWalkTracking) {
+      try {
+        await recordCustomMarkNative();
+        await syncNativeWalkSession();
+      } catch (error) {
+        console.error('recordCustomMarkNative failed:', error);
+      }
+      return;
+    }
+
     const coordinate = await getCurrentWalkMapCoordinate();
     setCustomMarks((prev) => [
       ...prev,

@@ -1,0 +1,214 @@
+package expo.modules.walktracking
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
+import android.os.IBinder
+import androidx.core.app.NotificationCompat
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+
+class WalkTrackingForegroundService : Service() {
+  private var fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+  private var locationCallback: LocationCallback? = null
+  private var distanceIntervalMeters = WalkTrackingContracts.DEFAULT_DISTANCE_INTERVAL_METERS
+
+  private var title = "Walking"
+  private var body = "🐾"
+  private var poopLabel = "💩"
+  private var customLabel = "Custom"
+
+  override fun onBind(intent: Intent?): IBinder? = null
+
+  override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    when (intent?.action) {
+      WalkTrackingContracts.ACTION_STOP -> {
+        stopTracking()
+        stopSelf()
+        return START_NOT_STICKY
+      }
+      WalkTrackingContracts.ACTION_START, null -> {
+        title = intent?.getStringExtra(WalkTrackingContracts.EXTRA_TITLE) ?: title
+        body = intent?.getStringExtra(WalkTrackingContracts.EXTRA_BODY) ?: body
+        poopLabel = intent?.getStringExtra(WalkTrackingContracts.EXTRA_POOP_LABEL) ?: poopLabel
+        customLabel = intent?.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_LABEL) ?: customLabel
+        distanceIntervalMeters =
+          intent?.getFloatExtra(
+            WalkTrackingContracts.EXTRA_DISTANCE_INTERVAL_METERS,
+            WalkTrackingContracts.DEFAULT_DISTANCE_INTERVAL_METERS
+          ) ?: WalkTrackingContracts.DEFAULT_DISTANCE_INTERVAL_METERS
+
+        val customButtonId =
+          intent?.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_BUTTON_ID) ?: "pee"
+        val customIcon = intent?.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_ICON) ?: "💦"
+
+        WalkSessionStorage.beginSession(this, customButtonId, customIcon)
+        startTracking()
+      }
+    }
+
+    return START_STICKY
+  }
+
+  override fun onDestroy() {
+    stopTracking()
+    super.onDestroy()
+  }
+
+  private fun startTracking() {
+    createNotificationChannel()
+    val notification = buildNotification()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      startForeground(
+        WalkTrackingContracts.NOTIFICATION_ID,
+        notification,
+        ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+      )
+    } else {
+      startForeground(WalkTrackingContracts.NOTIFICATION_ID, notification)
+    }
+
+    val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000L)
+      .setMinUpdateDistanceMeters(distanceIntervalMeters)
+      .setWaitForAccurateLocation(false)
+      .build()
+
+    val callback = object : LocationCallback() {
+      override fun onLocationResult(locationResult: LocationResult) {
+        val location = locationResult.lastLocation ?: return
+        WalkSessionStorage.appendRoutePointIfNeeded(
+          applicationContext,
+          location.latitude,
+          location.longitude,
+          distanceIntervalMeters,
+        )
+      }
+    }
+
+    locationCallback = callback
+    try {
+      fusedLocationClient.requestLocationUpdates(request, callback, mainLooper)
+    } catch (_: SecurityException) {
+      stopSelf()
+    }
+  }
+
+  private fun stopTracking() {
+    locationCallback?.let { callback ->
+      fusedLocationClient.removeLocationUpdates(callback)
+    }
+    locationCallback = null
+    WalkSessionStorage.endSession(applicationContext)
+    stopForeground(STOP_FOREGROUND_REMOVE)
+  }
+
+  private fun buildNotification(): Notification {
+    val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+    val contentPendingIntent = PendingIntent.getActivity(
+      this,
+      0,
+      launchIntent,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    val poopPendingIntent = PendingIntent.getBroadcast(
+      this,
+      1,
+      Intent(this, WalkActionReceiver::class.java).apply {
+        action = WalkTrackingContracts.ACTION_RECORD_POOP
+      },
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    val customPendingIntent = PendingIntent.getBroadcast(
+      this,
+      2,
+      Intent(this, WalkActionReceiver::class.java).apply {
+        action = WalkTrackingContracts.ACTION_RECORD_CUSTOM
+      },
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    return NotificationCompat.Builder(this, WalkTrackingContracts.CHANNEL_ID)
+      .setContentTitle(title)
+      .setContentText(body)
+      .setSmallIcon(applicationInfo.icon)
+      .setOngoing(true)
+      .setOnlyAlertOnce(true)
+      .setContentIntent(contentPendingIntent)
+      .addAction(0, poopLabel, poopPendingIntent)
+      .addAction(0, customLabel, customPendingIntent)
+      .setCategory(NotificationCompat.CATEGORY_SERVICE)
+      .setPriority(NotificationCompat.PRIORITY_LOW)
+      .build()
+  }
+
+  private fun createNotificationChannel() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      return
+    }
+
+    val channel = NotificationChannel(
+      WalkTrackingContracts.CHANNEL_ID,
+      "Walk tracking",
+      NotificationManager.IMPORTANCE_LOW
+    ).apply {
+      description = "Ongoing walk tracking with quick record actions"
+      setShowBadge(false)
+    }
+
+    val manager = getSystemService(NotificationManager::class.java)
+    manager?.createNotificationChannel(channel)
+  }
+
+  companion object {
+    fun start(context: Context, config: WalkTrackingStartConfig) {
+      val intent = Intent(context, WalkTrackingForegroundService::class.java).apply {
+        action = WalkTrackingContracts.ACTION_START
+        putExtra(WalkTrackingContracts.EXTRA_TITLE, config.title)
+        putExtra(WalkTrackingContracts.EXTRA_BODY, config.body)
+        putExtra(WalkTrackingContracts.EXTRA_POOP_LABEL, config.poopLabel)
+        putExtra(WalkTrackingContracts.EXTRA_CUSTOM_LABEL, config.customLabel)
+        putExtra(WalkTrackingContracts.EXTRA_CUSTOM_BUTTON_ID, config.customButtonId)
+        putExtra(WalkTrackingContracts.EXTRA_CUSTOM_ICON, config.customIcon)
+        putExtra(WalkTrackingContracts.EXTRA_DISTANCE_INTERVAL_METERS, config.distanceIntervalMeters)
+      }
+
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        context.startForegroundService(intent)
+      } else {
+        context.startService(intent)
+      }
+    }
+
+    fun stop(context: Context) {
+      val intent = Intent(context, WalkTrackingForegroundService::class.java).apply {
+        action = WalkTrackingContracts.ACTION_STOP
+      }
+      context.startService(intent)
+    }
+
+    fun refreshNotification(_context: Context) {
+      // v1: notification content stays static; marks are persisted in storage only.
+    }
+  }
+}
+
+data class WalkTrackingStartConfig(
+  val title: String,
+  val body: String,
+  val poopLabel: String,
+  val customLabel: String,
+  val customButtonId: String,
+  val customIcon: String,
+  val distanceIntervalMeters: Float,
+)

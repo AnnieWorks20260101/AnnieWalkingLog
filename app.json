@@ -15,6 +15,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.annieworks.AnnieWalkingLog",
+      "appleTeamId": "8AXQGJTA55",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.annieworks.AnnieWalkingLog.walk"
+        ]
+      },
       "infoPlist": {
         "UIBackgroundModes": [
           "location",
@@ -45,6 +51,7 @@
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION",
+        "POST_NOTIFICATIONS",
         "CAMERA",
         "READ_MEDIA_IMAGES",
         "WRITE_EXTERNAL_STORAGE"
@@ -81,7 +88,8 @@
           "photosPermission": "お散歩の写真をフォトに保存するために使用します。",
           "savePhotosPermission": "お散歩の写真をフォトアルバムに保存します。"
         }
-      ]
+      ],
+      "./modules/expo-walk-tracking/app.plugin.js"
     ]
   }
 }

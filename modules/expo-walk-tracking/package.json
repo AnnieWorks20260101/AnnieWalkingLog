@@ -1,0 +1,10 @@
+{
+  "name": "expo-walk-tracking",
+  "version": "0.1.0",
+  "description": "Android walk tracking foreground service with notification actions",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "peerDependencies": {
+    "expo": "*"
+  }
+}
