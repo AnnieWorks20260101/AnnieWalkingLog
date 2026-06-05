@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -57,7 +58,13 @@ class WalkTrackingForegroundService : Service() {
         val customIcon = intent?.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_ICON) ?: "💦"
 
         WalkSessionStorage.beginSession(this, customButtonId, customIcon)
-        startTracking()
+        try {
+          startTracking()
+        } catch (error: Exception) {
+          Log.e(TAG, "Failed to start walk tracking service", error)
+          WalkSessionStorage.endSession(applicationContext)
+          stopSelf()
+        }
       }
     }
 
@@ -130,14 +137,28 @@ class WalkTrackingForegroundService : Service() {
     manager.notify(WalkTrackingContracts.NOTIFICATION_ID, buildNotification())
   }
 
+  private fun resolveSmallIcon(): Int = R.drawable.ic_walk_notification
+
   private fun buildNotification(): Notification {
+    val builder = NotificationCompat.Builder(this, WalkTrackingContracts.CHANNEL_ID)
+      .setContentTitle(title)
+      .setContentText(notificationBodyText())
+      .setSmallIcon(resolveSmallIcon())
+      .setOngoing(true)
+      .setOnlyAlertOnce(true)
+      .setCategory(NotificationCompat.CATEGORY_SERVICE)
+      .setPriority(NotificationCompat.PRIORITY_LOW)
+
     val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-    val contentPendingIntent = PendingIntent.getActivity(
-      this,
-      0,
-      launchIntent,
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
+    if (launchIntent != null) {
+      val contentPendingIntent = PendingIntent.getActivity(
+        this,
+        0,
+        launchIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+      )
+      builder.setContentIntent(contentPendingIntent)
+    }
 
     val poopPendingIntent = PendingIntent.getBroadcast(
       this,
@@ -157,17 +178,9 @@ class WalkTrackingForegroundService : Service() {
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    return NotificationCompat.Builder(this, WalkTrackingContracts.CHANNEL_ID)
-      .setContentTitle(title)
-      .setContentText(notificationBodyText())
-      .setSmallIcon(applicationInfo.icon)
-      .setOngoing(true)
-      .setOnlyAlertOnce(true)
-      .setContentIntent(contentPendingIntent)
+    return builder
       .addAction(0, poopLabel, poopPendingIntent)
       .addAction(0, customLabel, customPendingIntent)
-      .setCategory(NotificationCompat.CATEGORY_SERVICE)
-      .setPriority(NotificationCompat.PRIORITY_LOW)
       .build()
   }
 
@@ -190,6 +203,8 @@ class WalkTrackingForegroundService : Service() {
   }
 
   companion object {
+    private const val TAG = "WalkTrackingFGS"
+
     @Volatile
     private var runningInstance: WalkTrackingForegroundService? = null
 

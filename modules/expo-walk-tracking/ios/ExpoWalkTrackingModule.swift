@@ -41,12 +41,16 @@ public class ExpoWalkTrackingModule: Module {
       )
 
       if ActivityAuthorizationInfo().areActivitiesEnabled {
-        let activity = try Activity.request(
-          attributes: attributes,
-          content: .init(state: state, staleDate: nil),
-          pushType: nil
-        )
-        self.currentActivity = activity
+        do {
+          let activity = try Activity.request(
+            attributes: attributes,
+            content: .init(state: state, staleDate: nil),
+            pushType: nil
+          )
+          self.currentActivity = activity
+        } catch {
+          NSLog("ExpoWalkTracking: Live Activity request failed: \(error.localizedDescription)")
+        }
       }
     }
 

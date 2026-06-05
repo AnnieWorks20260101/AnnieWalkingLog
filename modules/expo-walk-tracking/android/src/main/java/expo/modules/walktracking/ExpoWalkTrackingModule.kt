@@ -48,19 +48,23 @@ class ExpoWalkTrackingModule : Module() {
         return@AsyncFunction
       }
 
-      WalkTrackingForegroundService.start(
-        context,
-        WalkTrackingStartConfig(
-          title = options.title,
-          body = options.body,
-          poopLabel = options.poopLabel,
-          customLabel = options.customLabel,
-          customButtonId = options.customButtonId,
-          customIcon = options.customIcon,
-          distanceIntervalMeters = options.distanceIntervalMeters.toFloat(),
+      try {
+        WalkTrackingForegroundService.start(
+          context,
+          WalkTrackingStartConfig(
+            title = options.title,
+            body = options.body,
+            poopLabel = options.poopLabel,
+            customLabel = options.customLabel,
+            customButtonId = options.customButtonId,
+            customIcon = options.customIcon,
+            distanceIntervalMeters = options.distanceIntervalMeters.toFloat(),
+          )
         )
-      )
-      promise.resolve(null)
+        promise.resolve(null)
+      } catch (error: Exception) {
+        promise.reject("ERR_START_TRACKING", error.message, error)
+      }
     }
 
     AsyncFunction("stopWalkTracking") { promise: Promise ->
