@@ -18,13 +18,12 @@ export default function ScreenHeader({ title, showBack = false, onBackPress }) {
       onBackPress();
       return;
     }
-    // 設定スタック内のペット編集など：同一タブ内の前画面へ
-    if (navigation.canGoBack()) {
-      navigation.goBack();
+    if (navigationRef?.isReady?.()) {
+      handleAppBackPress(navigationRef);
       return;
     }
-    if (navigationRef) {
-      handleAppBackPress(navigationRef);
+    if (navigation.canGoBack()) {
+      navigation.goBack();
     }
   };
 
