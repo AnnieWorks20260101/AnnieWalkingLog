@@ -33,7 +33,7 @@ import { hasCompletedLocationSetup, setCompletedLocationSetup } from '../../util
 import { getDeviceManufacturerCategory } from '../../utils/deviceManufacturer';
 
 import { db } from '../../services/firebase';
-import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { calculateTotalDistance } from '../../utils/locationUtils';
@@ -41,8 +41,12 @@ import { fetchCurrentWeather } from '../../services/openWeather';
 import { navigateToWalkDetail } from '../../navigation/walkNavigation';
 import { setWalkTrackingActive } from '../../navigation/walkSessionFlag';
 import { getCurrentWalkMapCoordinate } from '../../utils/walkMapMarks';
+import {
+  isBackgroundLocationGranted,
+  isWalkBackgroundLocationReady,
+} from '../../utils/walkPermissions';
 import { getWalkPhotoLimits } from '../../constants/walkPhotoLimits';
-import { createPendingWalkPhoto } from '../../utils/walkPhotos';
+import { createPendingWalkPhoto, persistWalkPhotoUri } from '../../utils/walkPhotos';
 import { resolveWalkPhotoUploadPolicy } from '../../utils/walkPhotoUploadPolicy';
 import { uploadWalkPhotoFromUri } from '../../services/walkPhotoUpload';
 import { saveWalkPhotoToDeviceLibrary } from '../../utils/saveWalkPhotoToLibrary';
@@ -240,11 +244,7 @@ export default function WalkScreen({ navigation }) {
     return () => subscription.remove();
   }, []);
 
-  const areWalkPermissionsReady = async () => {
-    const { status: foregroundStatus } = await Location.getForegroundPermissionsAsync();
-    const { status: bgStatus } = await Location.getBackgroundPermissionsAsync();
-    return foregroundStatus === 'granted' && bgStatus === 'granted';
-  };
+  const areWalkPermissionsReady = () => isWalkBackgroundLocationReady();
 
   const showReadyToStartAlert = () => {
     Alert.alert(i18n.t('walk.readyToStartTitle'), i18n.t('walk.readyToStartMsg'), [{ text: i18n.t('common.ok') }]);
@@ -264,15 +264,24 @@ export default function WalkScreen({ navigation }) {
   };
 
   const requestLocationPermissions = async () => {
-    const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
-    if (foregroundStatus !== 'granted') {
-      Alert.alert(i18n.t('walk.locationError'), i18n.t('walk.locationErrorMsg'));
-      return false;
+    let foreground = await Location.getForegroundPermissionsAsync();
+    if (foreground.status !== 'granted') {
+      const foregroundResult = await Location.requestForegroundPermissionsAsync();
+      if (foregroundResult.status !== 'granted') {
+        Alert.alert(i18n.t('walk.locationError'), i18n.t('walk.locationErrorMsg'));
+        return false;
+      }
+      foreground = await Location.getForegroundPermissionsAsync();
     }
 
-    const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
-    if (bgStatus !== 'granted') {
-      Alert.alert(i18n.t('walk.bgLocationWarning'), i18n.t('walk.bgLocationWarningMsg'));
+    let background = await Location.getBackgroundPermissionsAsync();
+    if (!isBackgroundLocationGranted(foreground, background)) {
+      const backgroundResult = await Location.requestBackgroundPermissionsAsync();
+      foreground = await Location.getForegroundPermissionsAsync();
+      background = backgroundResult;
+      if (!isBackgroundLocationGranted(foreground, background)) {
+        Alert.alert(i18n.t('walk.bgLocationWarning'), i18n.t('walk.bgLocationWarningMsg'));
+      }
     }
 
     return true;
@@ -432,6 +441,14 @@ export default function WalkScreen({ navigation }) {
     if (isSavingWalk) {
       return;
     }
+    if (!familyId || !userId) {
+      Alert.alert(i18n.t('common.error'), i18n.t('walk.saveError'));
+      return;
+    }
+    if (!startTime) {
+      Alert.alert(i18n.t('common.error'), i18n.t('walk.saveError'));
+      return;
+    }
     setIsSavingWalk(true);
     try {
       const endTime = new Date();
@@ -445,34 +462,19 @@ export default function WalkScreen({ navigation }) {
       const walkRef = doc(collection(db, 'walks'));
       const walkId = walkRef.id;
 
-      let photos = [];
+      let uploadPhotos = false;
+      let skippedReason = null;
       if (walkPhotosEnabled && pendingPhotos.length > 0) {
-        const { upload, skippedReason } = await resolveWalkPhotoUploadPolicy(
+        const policy = await resolveWalkPhotoUploadPolicy(
           uploadPhotosOnCellular,
           pendingPhotos.length
         );
+        uploadPhotos = policy.upload;
+        skippedReason = policy.skippedReason;
 
         if (skippedReason === 'user_declined_skip' || skippedReason === 'user_cancelled') {
           promptEndWalkSave(finalRoute);
           return;
-        }
-
-        if (upload) {
-          for (const pending of pendingPhotos) {
-            const storageUrl = await uploadWalkPhotoFromUri(
-              pending.localUri,
-              familyId,
-              walkId,
-              pending.id
-            );
-            photos.push({
-              id: pending.id,
-              storageUrl,
-              takenAt: pending.takenAt,
-              latitude: pending.latitude,
-              longitude: pending.longitude,
-            });
-          }
         }
       }
 
@@ -490,13 +492,42 @@ export default function WalkScreen({ navigation }) {
         route: finalRoute,
         poops: poops,
         customMarks: customMarks,
-        photos,
+        photos: [],
         memos: [],
         ...(startWeatherRef.current ? { startWeather: startWeatherRef.current } : {}),
         createdAt: serverTimestamp(),
       };
 
       await setDoc(walkRef, walkData);
+
+      let photos = [];
+      let photoUploadFailed = false;
+      if (walkPhotosEnabled && pendingPhotos.length > 0 && uploadPhotos) {
+        try {
+          for (const pending of pendingPhotos) {
+            const storageUrl = await uploadWalkPhotoFromUri(
+              pending.localUri,
+              familyId,
+              walkId,
+              pending.id
+            );
+            photos.push({
+              id: pending.id,
+              storageUrl,
+              takenAt: pending.takenAt,
+              latitude: pending.latitude,
+              longitude: pending.longitude,
+            });
+          }
+          if (photos.length > 0) {
+            await updateDoc(walkRef, { photos });
+          }
+        } catch (photoError) {
+          console.error('walk photo upload failed:', photoError);
+          photoUploadFailed = true;
+        }
+      }
+
       await AsyncStorage.removeItem(TEMP_ROUTE_KEY);
       resetWalkSession();
 
@@ -509,8 +540,18 @@ export default function WalkScreen({ navigation }) {
         console.warn('notifyFamilyMembersWalkEnded failed:', error);
       });
 
-      const savedWalk = { ...walkData, id: walkId };
-      Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('walk.saveSuccessMsg'), [
+      const savedWalk = { ...walkData, id: walkId, photos };
+      const successTitle = i18n.t('walk.saveSuccess');
+      let successMsg = i18n.t('walk.saveSuccessMsg');
+      if (photoUploadFailed) {
+        successMsg = i18n.t('walk.saveSuccessPhotosFailed');
+      } else if (skippedReason === 'cellular_disabled') {
+        successMsg = i18n.t('walk.photoSkippedCellular');
+      } else if (skippedReason === 'no_network') {
+        successMsg = i18n.t('walk.photoSkippedNoNetwork');
+      }
+
+      Alert.alert(successTitle, successMsg, [
         {
           text: i18n.t('walk.viewResult'),
           onPress: () => {
@@ -557,9 +598,11 @@ export default function WalkScreen({ navigation }) {
       return;
     }
 
-    const localUri = result.assets[0].uri;
+    const pickedUri = result.assets[0].uri;
 
     try {
+      const localUri = await persistWalkPhotoUri(pickedUri);
+
       if (savePhotoToLibrary) {
         await saveWalkPhotoToDeviceLibrary(localUri);
       }
@@ -684,7 +727,9 @@ export default function WalkScreen({ navigation }) {
           <View style={styles.savingOverlay}>
             <ActivityIndicator size="large" color={currentTheme.primary} />
             <Text style={[styles.savingOverlayText, { color: currentTheme.text }]}>
-              {i18n.t('walk.photoUploading')}
+              {pendingPhotos.length > 0 && walkPhotosEnabled
+                ? i18n.t('walk.photoUploading')
+                : i18n.t('walk.savingRecord')}
             </Text>
           </View>
         ) : null}

@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, storage, firebaseConfig } from './firebase';
@@ -43,14 +42,15 @@ export async function resolveReadableImageUri(localUri) {
   }
 
   const needsCopy =
-    Platform.OS === 'android' &&
-    (localUri.startsWith('content://') || localUri.startsWith('ph://'));
+    localUri.startsWith('content://') ||
+    localUri.startsWith('ph://') ||
+    localUri.startsWith('assets-library://');
 
   if (!needsCopy) {
     return localUri;
   }
 
-  const dest = `${FileSystem.cacheDirectory}pet-upload-${Date.now()}.jpg`;
+  const dest = `${FileSystem.cacheDirectory}img-upload-${Date.now()}.jpg`;
   await FileSystem.copyAsync({ from: localUri, to: dest });
   return dest;
 }

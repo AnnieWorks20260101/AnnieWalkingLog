@@ -109,7 +109,7 @@ function AuthNavigator() {
 
 function MainApp() {
   const navigationRef = useNavigationContainerRef();
-  useNotificationObserver();
+  useNotificationObserver(navigationRef);
 
   return (
     <NavigationRefContext.Provider value={navigationRef}>

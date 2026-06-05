@@ -20,6 +20,12 @@
           "location",
           "fetch"
         ],
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleDevelopmentRegion": "ja",
+        "CFBundleLocalizations": [
+          "ja",
+          "en"
+        ],
         "NSCameraUsageDescription": "お散歩の記録のためにカメラを使用します。",
         "NSPhotoLibraryUsageDescription": "お散歩の写真をフォトに保存するために使用します。",
         "NSPhotoLibraryAddUsageDescription": "お散歩の写真をフォトアルバムに保存します。"

@@ -1,3 +1,25 @@
+import * as FileSystem from 'expo-file-system/legacy';
+
+/**
+ * 撮影直後にキャッシュへコピー（iOS の一時 URI が保存前に無効になるのを防ぐ）
+ * @param {string} localUri
+ * @returns {Promise<string>}
+ */
+export async function persistWalkPhotoUri(localUri) {
+  if (!localUri) {
+    throw new Error('persistWalkPhotoUri: missing uri');
+  }
+
+  const cachePrefix = `${FileSystem.cacheDirectory}walk-photo-`;
+  if (localUri.startsWith(cachePrefix)) {
+    return localUri;
+  }
+
+  const dest = `${cachePrefix}${Date.now()}.jpg`;
+  await FileSystem.copyAsync({ from: localUri, to: dest });
+  return dest;
+}
+
 /**
  * @param {string} localUri
  * @param {{ latitude: number, longitude: number }} coordinate

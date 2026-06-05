@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 import { getTabBarIconName } from './tabBarIcons';
+import { TAB_SETTINGS } from './tabNames';
+import { SCREEN_SETTINGS_MAIN } from './screenNames';
 
 /**
  * 標準タブバーはカスタムアイコン枠が小さくクリップしやすいため、参考UIどおり自前レイアウト。
@@ -41,7 +43,11 @@ export default function AppTabBar({ state, descriptors, navigation }) {
             canPreventDefault: true,
           });
           if (!focused && !event.defaultPrevented) {
-            navigation.navigate(route.name, route.params);
+            if (route.name === TAB_SETTINGS) {
+              navigation.navigate(TAB_SETTINGS, { screen: SCREEN_SETTINGS_MAIN });
+            } else {
+              navigation.navigate(route.name, route.params);
+            }
           }
         };
 

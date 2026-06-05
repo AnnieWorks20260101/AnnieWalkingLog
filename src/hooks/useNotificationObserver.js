@@ -1,18 +1,33 @@
-import { useContext, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import { NavigationRefContext } from '../navigation/NavigationRefContext';
 import { navigateToWalkDetailFromRoot } from '../navigation/walkNavigation';
 
+function parseWalkEndedNotificationData(raw) {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+
+  const type = raw.type ?? raw.data?.type;
+  const walkId = raw.walkId ?? raw.data?.walkId;
+  if (type !== 'walk_ended' || !walkId) {
+    return null;
+  }
+
+  return { walkId: String(walkId) };
+}
+
 async function openWalkDetailFromNotificationData(navigationRef, data) {
-  if (data?.type !== 'walk_ended' || !data?.walkId) {
+  const parsed = parseWalkEndedNotificationData(data);
+  if (!parsed) {
+    console.warn('[push] notification data missing walk_ended payload:', data);
     return;
   }
 
-  const snap = await getDoc(doc(db, 'walks', data.walkId));
+  const snap = await getDoc(doc(db, 'walks', parsed.walkId));
   if (!snap.exists()) {
-    console.warn('[push] walk not found for notification:', data.walkId);
+    console.warn('[push] walk not found for notification:', parsed.walkId);
     return;
   }
 
@@ -22,9 +37,9 @@ async function openWalkDetailFromNotificationData(navigationRef, data) {
 
 /**
  * 通知タップ時にお散歩記録詳細へ遷移
+ * @param {import('@react-navigation/native').NavigationContainerRef<ReactNavigation.RootParamList> | null} navigationRef
  */
-export function useNotificationObserver() {
-  const navigationRef = useContext(NavigationRefContext);
+export function useNotificationObserver(navigationRef) {
   const handledResponseIds = useRef(new Set());
 
   useEffect(() => {

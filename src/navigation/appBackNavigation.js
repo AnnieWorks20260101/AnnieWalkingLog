@@ -1,7 +1,7 @@
 import { BackHandler } from 'react-native';
-import { TAB_WALK_LOG } from './tabNames';
+import { TAB_SETTINGS, TAB_WALK_LOG } from './tabNames';
 import { SCREEN_WALK_DETAIL } from './walkNavigation';
-import { SCREEN_HISTORY } from './screenNames';
+import { SCREEN_HISTORY, SCREEN_PREMIUM, SCREEN_SETTINGS_MAIN } from './screenNames';
 import { isWalkTrackingActive } from './walkSessionFlag';
 
 function getActiveTabRoute(rootState) {
@@ -17,6 +17,15 @@ function getWalkLogFocusedRouteName(tabRoute) {
     return SCREEN_HISTORY;
   }
   return stack.routes[stack.index]?.name ?? SCREEN_HISTORY;
+}
+
+function getSettingsFocusedRoute(tabRoute) {
+  const stack = tabRoute?.state;
+  if (!stack?.routes?.length) {
+    return { name: SCREEN_SETTINGS_MAIN, params: undefined };
+  }
+  const route = stack.routes[stack.index];
+  return { name: route?.name ?? SCREEN_SETTINGS_MAIN, params: route?.params };
 }
 
 /**
@@ -54,6 +63,18 @@ export function handleAppBackPress(navigationRef) {
     }
     BackHandler.exitApp();
     return true;
+  }
+
+  if (tabRoute.name === TAB_SETTINGS) {
+    const { name, params } = getSettingsFocusedRoute(tabRoute);
+    if (name !== SCREEN_SETTINGS_MAIN) {
+      if (name === SCREEN_PREMIUM && params?.returnTab && params.returnTab !== TAB_SETTINGS) {
+        navigationRef.navigate(params.returnTab);
+        return true;
+      }
+      navigationRef.navigate(TAB_SETTINGS, { screen: SCREEN_SETTINGS_MAIN });
+      return true;
+    }
   }
 
   if (navigationRef.canGoBack()) {

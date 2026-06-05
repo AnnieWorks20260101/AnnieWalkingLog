@@ -8,12 +8,16 @@ export async function sendPushNotification(expoPushToken, title, body, data = {}
     return;
   }
 
+  const stringData = Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [key, value == null ? '' : String(value)])
+  );
+
   const message = {
     to: expoPushToken,
     sound: 'default',
     title,
     body,
-    data,
+    data: stringData,
   };
 
   try {

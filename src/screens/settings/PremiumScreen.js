@@ -1,19 +1,27 @@
 import React from 'react';
 import { StyleSheet, View, Text, ScrollView } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
+import { handlePremiumScreenBack } from '../../utils/navigateToPremium';
 import PlanComparisonTable from '../../components/PlanComparisonTable';
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePlanTier } from '../../hooks/usePlanTier';
 import i18n from '../../i18n';
 
 export default function PremiumScreen() {
+  const navigation = useNavigation();
+  const route = useRoute();
   const { currentTheme, fontSizes } = useTheme();
   const { tier, isPremium } = usePlanTier();
 
   return (
     <View style={[styles.wrapper, { backgroundColor: currentTheme.background }]}>
-      <ScreenHeader title={i18n.t('settings.premiumTitle')} showBack />
+      <ScreenHeader
+        title={i18n.t('settings.premiumTitle')}
+        showBack
+        onBackPress={() => handlePremiumScreenBack(navigation, route)}
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.statusCard, { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.accentBorder }]}>
           <Ionicons
