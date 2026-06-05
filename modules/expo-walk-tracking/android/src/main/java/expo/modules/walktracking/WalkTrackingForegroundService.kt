@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -19,7 +20,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 
 class WalkTrackingForegroundService : Service() {
-  private var fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+  private lateinit var fusedLocationClient: FusedLocationProviderClient
   private var locationCallback: LocationCallback? = null
   private var distanceIntervalMeters = WalkTrackingContracts.DEFAULT_DISTANCE_INTERVAL_METERS
 
@@ -32,6 +33,7 @@ class WalkTrackingForegroundService : Service() {
 
   override fun onCreate() {
     super.onCreate()
+    fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
     runningInstance = this
   }
 
@@ -42,33 +44,44 @@ class WalkTrackingForegroundService : Service() {
         stopSelf()
         return START_NOT_STICKY
       }
-      WalkTrackingContracts.ACTION_START, null -> {
-        title = intent?.getStringExtra(WalkTrackingContracts.EXTRA_TITLE) ?: title
-        body = intent?.getStringExtra(WalkTrackingContracts.EXTRA_BODY) ?: body
-        poopLabel = intent?.getStringExtra(WalkTrackingContracts.EXTRA_POOP_LABEL) ?: poopLabel
-        customLabel = intent?.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_LABEL) ?: customLabel
+      WalkTrackingContracts.ACTION_START -> {
+        title = intent.getStringExtra(WalkTrackingContracts.EXTRA_TITLE) ?: title
+        body = intent.getStringExtra(WalkTrackingContracts.EXTRA_BODY) ?: body
+        poopLabel = intent.getStringExtra(WalkTrackingContracts.EXTRA_POOP_LABEL) ?: poopLabel
+        customLabel = intent.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_LABEL) ?: customLabel
         distanceIntervalMeters =
-          intent?.getFloatExtra(
+          intent.getFloatExtra(
             WalkTrackingContracts.EXTRA_DISTANCE_INTERVAL_METERS,
             WalkTrackingContracts.DEFAULT_DISTANCE_INTERVAL_METERS
-          ) ?: WalkTrackingContracts.DEFAULT_DISTANCE_INTERVAL_METERS
+          )
 
         val customButtonId =
-          intent?.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_BUTTON_ID) ?: "pee"
-        val customIcon = intent?.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_ICON) ?: "💦"
+          intent.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_BUTTON_ID) ?: "pee"
+        val customIcon = intent.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_ICON) ?: "💦"
 
         WalkSessionStorage.beginSession(this, customButtonId, customIcon)
-        try {
-          startTracking()
-        } catch (error: Exception) {
-          Log.e(TAG, "Failed to start walk tracking service", error)
-          WalkSessionStorage.endSession(applicationContext)
+        resumeTracking()
+      }
+      else -> {
+        if (WalkSessionStorage.getSnapshot(applicationContext).isTracking) {
+          resumeTracking()
+        } else {
           stopSelf()
         }
       }
     }
 
     return START_STICKY
+  }
+
+  private fun resumeTracking() {
+    try {
+      startTracking()
+    } catch (error: Exception) {
+      Log.e(TAG, "Failed to start walk tracking service", error)
+      WalkSessionStorage.endSession(applicationContext)
+      stopSelf()
+    }
   }
 
   override fun onDestroy() {
@@ -118,8 +131,10 @@ class WalkTrackingForegroundService : Service() {
   }
 
   private fun stopTracking() {
-    locationCallback?.let { callback ->
-      fusedLocationClient.removeLocationUpdates(callback)
+    if (::fusedLocationClient.isInitialized) {
+      locationCallback?.let { callback ->
+        fusedLocationClient.removeLocationUpdates(callback)
+      }
     }
     locationCallback = null
     WalkSessionStorage.endSession(applicationContext)

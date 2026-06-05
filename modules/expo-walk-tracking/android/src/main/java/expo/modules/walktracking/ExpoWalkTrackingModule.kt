@@ -148,17 +148,7 @@ class ExpoWalkTrackingModule : Module() {
           return@addOnSuccessListener
         }
 
-        if (isPoop) {
-          WalkSessionStorage.appendPoop(context, coordinate.latitude, coordinate.longitude)
-        } else {
-          WalkSessionStorage.appendCustomMark(context, coordinate.latitude, coordinate.longitude)
-        }
-        promise.resolve(
-          mapOf(
-            "latitude" to coordinate.latitude,
-            "longitude" to coordinate.longitude,
-          )
-        )
+        appendMark(context, isPoop, coordinate, promise)
       }
       .addOnFailureListener { error ->
         val fallback = WalkSessionStorage.getLastRoutePoint(context)
@@ -167,18 +157,28 @@ class ExpoWalkTrackingModule : Module() {
           return@addOnFailureListener
         }
 
-        if (isPoop) {
-          WalkSessionStorage.appendPoop(context, fallback.latitude, fallback.longitude)
-        } else {
-          WalkSessionStorage.appendCustomMark(context, fallback.latitude, fallback.longitude)
-        }
-        promise.resolve(
-          mapOf(
-            "latitude" to fallback.latitude,
-            "longitude" to fallback.longitude,
-          )
-        )
+        appendMark(context, isPoop, fallback, promise)
       }
+  }
+
+  private fun appendMark(
+    context: android.content.Context,
+    isPoop: Boolean,
+    coordinate: WalkCoordinate,
+    promise: Promise,
+  ) {
+    if (isPoop) {
+      WalkSessionStorage.appendPoop(context, coordinate.latitude, coordinate.longitude)
+    } else {
+      WalkSessionStorage.appendCustomMark(context, coordinate.latitude, coordinate.longitude)
+    }
+    WalkTrackingForegroundService.refreshNotification(context)
+    promise.resolve(
+      mapOf(
+        "latitude" to coordinate.latitude,
+        "longitude" to coordinate.longitude,
+      )
+    )
   }
 
   private fun snapshotToMap(snapshot: WalkSessionSnapshot): Map<String, Any?> {
