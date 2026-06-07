@@ -11,6 +11,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -154,15 +155,57 @@ class WalkTrackingForegroundService : Service() {
 
   private fun resolveSmallIcon(): Int = R.drawable.ic_walk_notification
 
+  private fun buildPoopPendingIntent(): PendingIntent {
+    return PendingIntent.getBroadcast(
+      this,
+      1,
+      Intent(this, WalkActionReceiver::class.java).apply {
+        action = WalkTrackingContracts.ACTION_RECORD_POOP
+      },
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+  }
+
+  private fun buildCustomPendingIntent(): PendingIntent {
+    return PendingIntent.getBroadcast(
+      this,
+      2,
+      Intent(this, WalkActionReceiver::class.java).apply {
+        action = WalkTrackingContracts.ACTION_RECORD_CUSTOM
+      },
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+  }
+
+  private fun buildCustomRemoteViews(
+    poopPendingIntent: PendingIntent,
+    customPendingIntent: PendingIntent,
+  ): RemoteViews {
+    val remoteViews = RemoteViews(packageName, R.layout.notification_walk_custom)
+    remoteViews.setTextViewText(R.id.notification_title, title)
+    remoteViews.setTextViewText(R.id.notification_counts, notificationBodyText())
+    remoteViews.setTextViewText(R.id.btn_poop, poopLabel)
+    remoteViews.setTextViewText(R.id.btn_custom, customIcon)
+    remoteViews.setOnClickPendingIntent(R.id.btn_poop, poopPendingIntent)
+    remoteViews.setOnClickPendingIntent(R.id.btn_custom, customPendingIntent)
+    return remoteViews
+  }
+
   private fun buildNotification(): Notification {
+    val poopPendingIntent = buildPoopPendingIntent()
+    val customPendingIntent = buildCustomPendingIntent()
+    val customContentView = buildCustomRemoteViews(poopPendingIntent, customPendingIntent)
+
     val builder = NotificationCompat.Builder(this, WalkTrackingContracts.CHANNEL_ID)
-      .setContentTitle(title)
-      .setContentText(notificationBodyText())
       .setSmallIcon(resolveSmallIcon())
       .setOngoing(true)
       .setOnlyAlertOnce(true)
       .setCategory(NotificationCompat.CATEGORY_SERVICE)
       .setPriority(NotificationCompat.PRIORITY_LOW)
+      .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+      .setCustomContentView(customContentView)
+      .setContentTitle(title)
+      .setContentText(notificationBodyText())
 
     val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
     if (launchIntent != null) {
@@ -175,28 +218,7 @@ class WalkTrackingForegroundService : Service() {
       builder.setContentIntent(contentPendingIntent)
     }
 
-    val poopPendingIntent = PendingIntent.getBroadcast(
-      this,
-      1,
-      Intent(this, WalkActionReceiver::class.java).apply {
-        action = WalkTrackingContracts.ACTION_RECORD_POOP
-      },
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-
-    val customPendingIntent = PendingIntent.getBroadcast(
-      this,
-      2,
-      Intent(this, WalkActionReceiver::class.java).apply {
-        action = WalkTrackingContracts.ACTION_RECORD_CUSTOM
-      },
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-
-    return builder
-      .addAction(0, poopLabel, poopPendingIntent)
-      .addAction(0, customIcon, customPendingIntent)
-      .build()
+    return builder.build()
   }
 
   private fun createNotificationChannel() {

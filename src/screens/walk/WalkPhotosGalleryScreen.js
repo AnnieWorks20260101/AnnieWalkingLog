@@ -9,7 +9,7 @@ import { parseWalkFromNavigationParams } from '../../utils/walkNavigationParams'
 
 const LIST_WIDTH = Dimensions.get('window').width - 32;
 
-export default function WalkPhotosGalleryScreen({ route }) {
+export default function WalkPhotosGalleryScreen({ route, navigation }) {
   const walk = useMemo(
     () => parseWalkFromNavigationParams(route.params?.walk),
     [route.params?.walk]
@@ -32,6 +32,7 @@ export default function WalkPhotosGalleryScreen({ route }) {
       <ScreenHeader
         title={i18n.t('walk.photoGalleryTitle', { count: photos.length })}
         showBack
+        onBackPress={() => navigation.goBack()}
       />
       <FlatList
         data={photos}

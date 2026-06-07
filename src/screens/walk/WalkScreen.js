@@ -501,6 +501,7 @@ export default function WalkScreen({ navigation }) {
 
   const stopTracking = async () => {
     setIsTracking(false);
+    setWalkTrackingActive(false);
     if (timerRef.current) clearInterval(timerRef.current);
 
     let finalRoute = [];
@@ -534,6 +535,7 @@ export default function WalkScreen({ navigation }) {
     setCustomMarks([]);
     setPendingPhotos([]);
     setIsTracking(false);
+    setWalkTrackingActive(false);
     setStartTime(null);
     if (timerRef.current) {
       clearInterval(timerRef.current);

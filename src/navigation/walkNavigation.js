@@ -1,12 +1,28 @@
 import { TAB_WALK_LOG } from './tabNames';
-import { SCREEN_WALK_DETAIL } from './screenNames';
+import { SCREEN_HISTORY, SCREEN_WALK_DETAIL } from './screenNames';
 import { serializeWalkForNavigation } from '../utils/walkNavigationParams';
 
 export { SCREEN_WALK_DETAIL };
 
+/** お散歩記録タブを一覧へ戻す */
+export function navigateWalkLogToHistory(tabNavigation) {
+  tabNavigation?.navigate(TAB_WALK_LOG, { screen: SCREEN_HISTORY });
+}
+
+/** ルート ref からお散歩記録一覧へ */
+export function navigateWalkLogToHistoryFromRoot(navigationRef) {
+  if (!navigationRef?.isReady?.()) {
+    return;
+  }
+  navigationRef.navigate(TAB_WALK_LOG, { screen: SCREEN_HISTORY });
+}
+
 /** お散歩記録タブの詳細画面へ遷移（お散歩タブのスタックと分離） */
 export function navigateToWalkDetail(tabNavigation, walk) {
-  tabNavigation?.navigate(TAB_WALK_LOG, {
+  if (!tabNavigation) {
+    return;
+  }
+  tabNavigation.navigate(TAB_WALK_LOG, {
     screen: SCREEN_WALK_DETAIL,
     params: { walk: serializeWalkForNavigation(walk) },
   });
