@@ -162,7 +162,13 @@ export default function WalkDetailScreen({ route, navigation }) {
       <ScreenHeader
         title={i18n.t('walk.detailTitle')}
         showBack
-        onBackPress={() => navigation.navigate(SCREEN_HISTORY)}
+        onBackPress={() => {
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+            return;
+          }
+          navigation.navigate(SCREEN_HISTORY);
+        }}
       />
 
       <View

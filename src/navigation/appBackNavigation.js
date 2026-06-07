@@ -15,14 +15,22 @@ function getWalkLogStackState(tabRoute) {
   return tabRoute?.state ?? null;
 }
 
-function isWalkLogHistoryRoot(tabRoute) {
+function isWalkLogHistoryOnly(tabRoute) {
   const stack = getWalkLogStackState(tabRoute);
   if (!stack?.routes?.length) {
     return true;
   }
+
   const index = stack.index ?? 0;
-  const focused = stack.routes[index]?.name ?? SCREEN_HISTORY;
-  return focused === SCREEN_HISTORY && index === 0;
+  const routes = stack.routes;
+  const focused = routes[index]?.name ?? SCREEN_HISTORY;
+
+  return (
+    focused === SCREEN_HISTORY &&
+    index === 0 &&
+    routes.length === 1 &&
+    routes[0]?.name === SCREEN_HISTORY
+  );
 }
 
 function getSettingsFocusedRoute(tabRoute) {
@@ -37,8 +45,8 @@ function getSettingsFocusedRoute(tabRoute) {
 /**
  * アプリ共通の戻る処理
  * - お散歩タブで追跡中のみ: 戻るを無効化
- * - お散歩記録一覧: アプリ終了
- * - お散歩記録の詳細・写真: 一覧へ
+ * - お散歩記録一覧のみ: アプリ終了
+ * - お散歩記録の詳細・写真・重複スタック: 一覧へリセット
  * - 設定タブなどスタック内の子画面: スタックを1つ戻る
  * - その他のタブのルート: お散歩記録一覧へ
  */
@@ -58,7 +66,7 @@ export function handleAppBackPress(navigationRef) {
   }
 
   if (tabRoute.name === TAB_WALK_LOG) {
-    if (isWalkLogHistoryRoot(tabRoute)) {
+    if (isWalkLogHistoryOnly(tabRoute)) {
       BackHandler.exitApp();
       return true;
     }
