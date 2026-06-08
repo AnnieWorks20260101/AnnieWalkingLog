@@ -24,6 +24,9 @@ import { registerForPushNotificationsAsync } from '../services/pushNotifications
 
 const TEMP_ROUTE_KEY = 'temp_route';
 
+/** ゲスト初回 setup の二重実行（onAuthStateChanged + signInAsGuest）を防ぐ */
+const guestProfileEnsurePromises = new Map();
+
 const AuthContext = createContext(null);
 
 async function createFamilyForUser(uid, displayName = 'ユーザー') {
@@ -54,7 +57,7 @@ async function createFamilyForUser(uid, displayName = 'ユーザー') {
   return newFamilyId;
 }
 
-async function ensureGuestProfile(uid) {
+async function ensureGuestProfileOnce(uid) {
   const userRef = doc(db, 'users', uid);
   const userSnap = await getDoc(userRef);
 
@@ -73,7 +76,24 @@ async function ensureGuestProfile(uid) {
     { merge: true }
   );
 
+  const recheckSnap = await getDoc(userRef);
+  if (recheckSnap.exists() && recheckSnap.data().activeFamilyId) {
+    return recheckSnap.data().activeFamilyId;
+  }
+
   return createFamilyForUser(uid, 'ゲスト');
+}
+
+function ensureGuestProfile(uid) {
+  if (guestProfileEnsurePromises.has(uid)) {
+    return guestProfileEnsurePromises.get(uid);
+  }
+
+  const promise = ensureGuestProfileOnce(uid).finally(() => {
+    guestProfileEnsurePromises.delete(uid);
+  });
+  guestProfileEnsurePromises.set(uid, promise);
+  return promise;
 }
 
 export function AuthProvider({ children }) {
@@ -134,15 +154,13 @@ export function AuthProvider({ children }) {
 
   const signInAsGuest = useCallback(async () => {
     const credential = await signInAnonymously(auth);
-    await refreshUserProfile(credential.user.uid, true);
     return credential.user;
-  }, [refreshUserProfile]);
+  }, []);
 
   const signInWithEmail = useCallback(async (email, password) => {
     const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-    await refreshUserProfile(credential.user.uid, false);
     return credential.user;
-  }, [refreshUserProfile]);
+  }, []);
 
   const signUpWithEmail = useCallback(async (email, password, name) => {
     const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);

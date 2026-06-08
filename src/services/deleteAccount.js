@@ -32,34 +32,77 @@ async function deleteFamilyData(familyId) {
   );
   await Promise.all(petsSnap.docs.map((petDoc) => deleteDoc(petDoc.ref)));
 
-  await deleteDoc(doc(db, 'families', familyId));
+  const familyRef = doc(db, 'families', familyId);
+  const familySnap = await getDoc(familyRef);
+  if (familySnap.exists()) {
+    await deleteDoc(familyRef);
+  }
 }
 
 /**
- * ユーザー文書・家族メンバー文書を削除し、家族の最後の1人なら家族データも削除する。
- * users 文書は最後に削除し、削除中の merge 書き込みで幽霊ドキュメントが残らないようにする。
+ * 当該ユーザー削除後に家族を消してよいか（他メンバー・他ユーザーの activeFamilyId が無い）
+ * @param {string} familyId
+ * @param {string} uid
+ */
+async function shouldDeleteFamilyAfterUserLeaves(familyId, uid) {
+  const [usersSnap, membersSnap] = await Promise.all([
+    getDocs(query(collection(db, 'users'), where('activeFamilyId', '==', familyId))),
+    getDocs(query(collection(db, 'family_members'), where('familyId', '==', familyId))),
+  ]);
+
+  const otherUsers = usersSnap.docs.filter((userDoc) => userDoc.id !== uid);
+  if (otherUsers.length > 0) {
+    return false;
+  }
+
+  const otherMembers = membersSnap.docs.filter((memberDoc) => memberDoc.data().userId !== uid);
+  return otherMembers.length === 0;
+}
+
+/**
+ * ユーザーに紐づく family_members / families をすべて走査し、孤立した家族も削除する。
+ * users 文書は最後に削除する。
  * @param {string} uid
  * @param {string | null | undefined} activeFamilyId
  */
 export async function purgeUserFamilyData(uid, activeFamilyId) {
+  const familyIds = new Set();
   if (activeFamilyId) {
-    const memberRef = doc(db, 'family_members', `${activeFamilyId}_${uid}`);
-    const memberSnap = await getDoc(memberRef);
-    if (memberSnap.exists()) {
-      await deleteDoc(memberRef);
-    }
+    familyIds.add(activeFamilyId);
+  }
 
-    const remaining = await getDocs(
-      query(collection(db, 'users'), where('activeFamilyId', '==', activeFamilyId))
-    );
-    const otherUsersRemain = remaining.docs.some((userDoc) => userDoc.id !== uid);
+  const memberSnap = await getDocs(
+    query(collection(db, 'family_members'), where('userId', '==', uid))
+  );
+  await Promise.all(
+    memberSnap.docs.map(async (memberDoc) => {
+      const familyId = memberDoc.data().familyId;
+      if (familyId) {
+        familyIds.add(familyId);
+      }
+      await deleteDoc(memberDoc.ref);
+    })
+  );
 
-    if (!otherUsersRemain) {
-      await deleteFamilyData(activeFamilyId);
+  const createdFamiliesSnap = await getDocs(
+    query(collection(db, 'families'), where('createdBy', '==', uid))
+  );
+  createdFamiliesSnap.docs.forEach((familyDoc) => {
+    familyIds.add(familyDoc.id);
+  });
+
+  for (const familyId of familyIds) {
+    const shouldDelete = await shouldDeleteFamilyAfterUserLeaves(familyId, uid);
+    if (shouldDelete) {
+      await deleteFamilyData(familyId);
     }
   }
 
-  await deleteDoc(doc(db, 'users', uid));
+  const userRef = doc(db, 'users', uid);
+  const userSnap = await getDoc(userRef);
+  if (userSnap.exists()) {
+    await deleteDoc(userRef);
+  }
 }
 
 async function runAccountDeletion(deleteAuthUser) {
