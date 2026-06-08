@@ -1,15 +1,17 @@
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from './firebase';
 import { sendPushNotification } from '../utils/pushUtils';
+import { getNotificationSenderName } from '../utils/displayName';
 import i18n from '../i18n';
 
 /**
  * お散歩保存完了を、同じ家族の他メンバーにプッシュ通知（送信者本人は除く）
- * @param {{ familyId: string, senderUserId: string, petNameLabel: string, walkId: string }} params
+ * @param {{ familyId: string, senderUserId: string, senderDisplayName?: string, petNameLabel: string, walkId: string }} params
  */
 export async function notifyFamilyMembersWalkEnded({
   familyId,
   senderUserId,
+  senderDisplayName,
   petNameLabel,
   walkId,
 }) {
@@ -21,9 +23,14 @@ export async function notifyFamilyMembersWalkEnded({
     query(collection(db, 'users'), where('activeFamilyId', '==', familyId))
   );
 
+  const senderName =
+    getNotificationSenderName(senderDisplayName) ?? i18n.t('walk.pushWalkEndedSenderFallback');
+  const petName = petNameLabel || i18n.t('walk.defaultPetName');
+
   const title = i18n.t('walk.pushWalkEndedTitle');
   const body = i18n.t('walk.pushWalkEndedBody', {
-    petName: petNameLabel || i18n.t('walk.defaultPetName'),
+    senderName,
+    petName,
   });
 
   const sends = [];

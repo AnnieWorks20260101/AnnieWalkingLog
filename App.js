@@ -118,13 +118,17 @@ function MainApp() {
         <ThemedStatusBar />
         <Tab.Navigator
           initialRouteName={TAB_WALK}
+          backBehavior="none"
           tabBar={(props) => <AppTabBar {...props} />}
           screenOptions={{ headerShown: false }}
         >
         <Tab.Screen
           name={TAB_WALK_LOG}
           component={WalkHistoryStack}
-          options={{ tabBarLabel: i18n.t('tabs.walkLog') }}
+          options={{
+            tabBarLabel: i18n.t('tabs.walkLog'),
+            popToTopOnBlur: true,
+          }}
         />
         <Tab.Screen
           name={TAB_WALK_GRAPH}

@@ -1,32 +1,20 @@
 import { BackHandler } from 'react-native';
+import { StackActions } from '@react-navigation/native';
 import { TAB_SETTINGS, TAB_WALK, TAB_WALK_LOG } from './tabNames';
-import { SCREEN_HISTORY, SCREEN_PREMIUM, SCREEN_SETTINGS_MAIN } from './screenNames';
+import { SCREEN_PREMIUM, SCREEN_SETTINGS_MAIN } from './screenNames';
 import { isWalkTrackingActive } from './walkSessionFlag';
-import { navigateWalkLogToHistoryFromRoot } from './walkNavigation';
+import {
+  getWalkLogStackSnapshot,
+  isWalkLogHistoryRoot,
+  isWalkLogShowingHistoryList,
+  popWalkLogToHistoryFromRoot,
+} from './walkNavigation';
 
 function getActiveTabRoute(rootState) {
   if (!rootState?.routes?.length) {
     return null;
   }
   return rootState.routes[rootState.index];
-}
-
-function getWalkLogStackState(tabRoute) {
-  return tabRoute?.state ?? null;
-}
-
-function getWalkLogFocusedRoute(tabRoute) {
-  const stack = getWalkLogStackState(tabRoute);
-  if (!stack?.routes?.length) {
-    return { name: SCREEN_HISTORY, index: 0, routeCount: 1 };
-  }
-
-  const index = stack.index ?? 0;
-  return {
-    name: stack.routes[index]?.name ?? SCREEN_HISTORY,
-    index,
-    routeCount: stack.routes.length,
-  };
 }
 
 function getSettingsFocusedRoute(tabRoute) {
@@ -42,7 +30,7 @@ function getSettingsFocusedRoute(tabRoute) {
  * アプリ共通の戻る処理
  * - お散歩タブで追跡中のみ: 戻るを無効化
  * - お散歩記録一覧（スタック先頭のみ）: アプリ終了
- * - お散歩記録の詳細・写真: 一覧へ
+ * - お散歩記録の詳細・写真: 一覧へ（スタック popTo）
  * - 設定タブなどスタック内の子画面: スタックを1つ戻る
  * - その他のタブのルート: お散歩記録一覧へ
  */
@@ -57,19 +45,36 @@ export function handleAppBackPress(navigationRef) {
     return false;
   }
 
+  if (__DEV__ && tabRoute.name === TAB_WALK_LOG) {
+    const snapshot = getWalkLogStackSnapshot(navigationRef);
+    console.log('[walkNav] back press WalkLog stack:', {
+      routes: snapshot.routes,
+      index: snapshot.index,
+      routeCount: snapshot.routeCount,
+      focused: snapshot.focused,
+      isHistoryRoot: isWalkLogHistoryRoot(snapshot),
+    });
+  }
+
   if (isWalkTrackingActive() && tabRoute.name === TAB_WALK) {
     return true;
   }
 
   if (tabRoute.name === TAB_WALK_LOG) {
-    const { name, index, routeCount } = getWalkLogFocusedRoute(tabRoute);
+    const snapshot = getWalkLogStackSnapshot(navigationRef);
 
-    if (name === SCREEN_HISTORY && index === 0 && routeCount === 1) {
+    if (isWalkLogShowingHistoryList(snapshot)) {
+      if (snapshot.routeCount > 1) {
+        const stackKey = tabRoute.state?.key;
+        if (stackKey) {
+          navigationRef.dispatch({ ...StackActions.popToTop(), target: stackKey });
+        }
+      }
       BackHandler.exitApp();
       return true;
     }
 
-    navigateWalkLogToHistoryFromRoot(navigationRef);
+    popWalkLogToHistoryFromRoot(navigationRef);
     return true;
   }
 
@@ -90,6 +95,6 @@ export function handleAppBackPress(navigationRef) {
     return true;
   }
 
-  navigationRef.navigate(TAB_WALK_LOG, { screen: SCREEN_HISTORY });
+  popWalkLogToHistoryFromRoot(navigationRef);
   return true;
 }

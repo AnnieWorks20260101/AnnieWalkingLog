@@ -40,6 +40,7 @@ import {
 import { getTimeFormatLabel } from '../../utils/formatTime';
 import i18n from '../../i18n';
 import { deleteCurrentUserAccount } from '../../services/deleteAccount';
+import FamilyMembersModal from '../../components/settings/FamilyMembersModal';
 import {
   seedTestWalksForFamily,
   estimateTestWalkSeedCount,
@@ -77,6 +78,7 @@ export default function SettingsScreen({ navigation }) {
   } = useWalkPreferences();
 
   const [isFamilyModalVisible, setIsFamilyModalVisible] = useState(false);
+  const [isFamilyMembersModalVisible, setIsFamilyMembersModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
   const [isThemeModalVisible, setIsThemeModalVisible] = useState(false);
   const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
@@ -483,6 +485,16 @@ export default function SettingsScreen({ navigation }) {
           {i18n.t('settings.familySectionTitle')}
         </Text>
         <View style={sectionCardStyle}>
+          <SettingRow onPress={() => setIsFamilyMembersModalVisible(true)}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="people" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+              <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                {i18n.t('settings.familyMembersList')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
+          </SettingRow>
+          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
           <SettingRow onPress={openFamilyModal}>
             <View style={styles.settingLeft}>
               <Ionicons name="key-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
@@ -646,6 +658,13 @@ export default function SettingsScreen({ navigation }) {
         ) : null}
 
       </ScrollView>
+
+      <FamilyMembersModal
+        visible={isFamilyMembersModalVisible}
+        onClose={() => setIsFamilyMembersModalVisible(false)}
+        theme={currentTheme}
+        fontSizes={fontSizes}
+      />
 
       <Modal visible={isFamilyModalVisible} animationType="fade" transparent>
         <KeyboardAvoidingView

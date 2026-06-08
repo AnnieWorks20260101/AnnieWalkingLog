@@ -6,7 +6,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getTabBarIconName } from './tabBarIcons';
 import { TAB_SETTINGS, TAB_WALK_LOG } from './tabNames';
 import { SCREEN_HISTORY, SCREEN_SETTINGS_MAIN } from './screenNames';
-import { navigateWalkLogToHistory } from './walkNavigation';
+import { popWalkLogToHistory } from './walkNavigation';
 
 /**
  * 標準タブバーはカスタムアイコン枠が小さくクリップしやすいため、参考UIどおり自前レイアウト。
@@ -44,19 +44,23 @@ export default function AppTabBar({ state, descriptors, navigation }) {
             canPreventDefault: true,
           });
 
-          if (route.name === TAB_WALK_LOG) {
-            const stackRoute = route.state?.routes?.[route.state?.index ?? 0];
-            if (stackRoute?.name && stackRoute.name !== SCREEN_HISTORY) {
-              navigateWalkLogToHistory(navigation);
-              return;
-            }
+          if (event.defaultPrevented) {
+            return;
           }
 
-          if (!focused && !event.defaultPrevented) {
+          if (route.name === TAB_WALK_LOG) {
+            const stackRoute = route.state?.routes?.[route.state?.index ?? 0];
+            const onNestedScreen = stackRoute?.name && stackRoute.name !== SCREEN_HISTORY;
+
+            if (!focused || onNestedScreen) {
+              popWalkLogToHistory(navigation);
+            }
+            return;
+          }
+
+          if (!focused) {
             if (route.name === TAB_SETTINGS) {
               navigation.navigate(TAB_SETTINGS, { screen: SCREEN_SETTINGS_MAIN });
-            } else if (route.name === TAB_WALK_LOG) {
-              navigateWalkLogToHistory(navigation);
             } else {
               navigation.navigate(route.name, route.params);
             }

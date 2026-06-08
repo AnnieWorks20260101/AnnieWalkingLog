@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -15,24 +15,48 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
+import { getEditableDisplayName } from '../../utils/displayName';
 import i18n from '../../i18n';
 
 export default function FamilySetupScreen() {
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { completeFamilySetup } = useAuth();
+  const { completeFamilySetup, displayName } = useAuth();
   const [familyIdInput, setFamilyIdInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setNameInput(getEditableDisplayName(displayName));
+  }, [displayName]);
+
+  const validateDisplayName = () => {
+    if (!nameInput.trim()) {
+      Alert.alert(i18n.t('common.error'), i18n.t('auth.displayNameRequired'));
+      return false;
+    }
+    return true;
+  };
 
   const handleJoin = async () => {
     if (!familyIdInput.trim()) {
       Alert.alert(i18n.t('common.error'), i18n.t('settings.joinFamilyInvalid'));
       return;
     }
+    if (!validateDisplayName()) {
+      return;
+    }
+
     setLoading(true);
     try {
-      const result = await completeFamilySetup({ familyIdInput: familyIdInput.trim(), createNew: false });
-      if (result.success) return;
+      const result = await completeFamilySetup({
+        familyIdInput: familyIdInput.trim(),
+        createNew: false,
+        displayName: nameInput.trim(),
+      });
+      if (result.success) {
+        return;
+      }
       if (result.reason === 'notFound') {
         Alert.alert(i18n.t('common.error'), i18n.t('settings.joinFamilyNotFound'));
       } else {
@@ -47,9 +71,16 @@ export default function FamilySetupScreen() {
   };
 
   const handleCreateNew = async () => {
+    if (!validateDisplayName()) {
+      return;
+    }
+
     setLoading(true);
     try {
-      const result = await completeFamilySetup({ createNew: true });
+      const result = await completeFamilySetup({
+        createNew: true,
+        displayName: nameInput.trim(),
+      });
       if (!result.success) {
         Alert.alert(i18n.t('common.error'), i18n.t('auth.familySetupError'));
       }
@@ -72,6 +103,23 @@ export default function FamilySetupScreen() {
           <Text style={[styles.title, { color: currentTheme.text }]}>{i18n.t('auth.familySetupTitle')}</Text>
           <Text style={[styles.desc, { color: currentTheme.textSecondary }]}>{i18n.t('auth.familySetupDesc')}</Text>
         </View>
+
+        <Text style={[styles.label, { color: currentTheme.textSecondary }]}>{i18n.t('auth.familySetupDisplayNameLabel')}</Text>
+        <Text style={[styles.fieldDesc, { color: currentTheme.textSecondary }]}>{i18n.t('auth.familySetupDisplayNameDesc')}</Text>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: currentTheme.inputBackground,
+              borderColor: currentTheme.border,
+              color: currentTheme.text,
+            },
+          ]}
+          placeholder={i18n.t('auth.displayNamePlaceholder')}
+          placeholderTextColor={currentTheme.textSecondary}
+          value={nameInput}
+          onChangeText={setNameInput}
+        />
 
         <Text style={[styles.label, { color: currentTheme.textSecondary }]}>{i18n.t('auth.familyIdLabel')}</Text>
         <TextInput
@@ -129,6 +177,7 @@ const createStyles = (fs) => ({
   title: { fontSize: fs.xl, fontWeight: 'bold', marginTop: 12, textAlign: 'center' },
   desc: { fontSize: fs.m, marginTop: 12, textAlign: 'center', lineHeight: 22 },
   label: { fontSize: fs.s, fontWeight: '600', marginBottom: 8 },
+  fieldDesc: { fontSize: fs.s, marginBottom: 8, lineHeight: 18 },
   input: {
     borderWidth: 1,
     borderRadius: 12,

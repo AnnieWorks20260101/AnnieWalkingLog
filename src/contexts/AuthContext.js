@@ -76,16 +76,20 @@ export function AuthProvider({ children }) {
   const [userId, setUserId] = useState(null);
   const [isGuest, setIsGuest] = useState(false);
   const [familyId, setFamilyId] = useState(null);
+  const [displayName, setDisplayName] = useState('');
   const [needsFamilySetup, setNeedsFamilySetup] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const refreshUserProfile = useCallback(async (uid, anonymous) => {
     const userSnap = await getDoc(doc(db, 'users', uid));
+    setDisplayName(userSnap.exists() ? userSnap.data().displayName ?? '' : '');
 
     if (anonymous) {
       const fid = await ensureGuestProfile(uid);
       setFamilyId(fid);
       setNeedsFamilySetup(false);
+      const refreshedSnap = await getDoc(doc(db, 'users', uid));
+      setDisplayName(refreshedSnap.exists() ? refreshedSnap.data().displayName ?? '' : '');
       return;
     }
 
@@ -105,6 +109,7 @@ export function AuthProvider({ children }) {
           setUserId(null);
           setIsGuest(false);
           setFamilyId(null);
+          setDisplayName('');
           setNeedsFamilySetup(false);
           return;
         }
@@ -135,11 +140,11 @@ export function AuthProvider({ children }) {
     return credential.user;
   }, [refreshUserProfile]);
 
-  const signUpWithEmail = useCallback(async (email, password, displayName) => {
+  const signUpWithEmail = useCallback(async (email, password, name) => {
     const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
     await setDoc(doc(db, 'users', credential.user.uid), {
       email: email.trim(),
-      displayName: displayName?.trim() || 'ユーザー',
+      displayName: name?.trim() || 'ユーザー',
       authProvider: 'email',
       isGuest: false,
       createdAt: serverTimestamp(),
@@ -147,6 +152,7 @@ export function AuthProvider({ children }) {
     setUserId(credential.user.uid);
     setIsGuest(false);
     setFamilyId(null);
+    setDisplayName(name?.trim() || 'ユーザー');
     setNeedsFamilySetup(true);
     return credential.user;
   }, []);
@@ -159,8 +165,30 @@ export function AuthProvider({ children }) {
     await firebaseSignOut(auth);
   }, []);
 
+  const updateDisplayName = useCallback(async (name) => {
+    if (!userId) {
+      return { success: false, reason: 'invalid' };
+    }
+
+    const trimmed = name?.trim();
+    if (!trimmed) {
+      return { success: false, reason: 'empty' };
+    }
+
+    await setDoc(
+      doc(db, 'users', userId),
+      {
+        displayName: trimmed,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+    setDisplayName(trimmed);
+    return { success: true };
+  }, [userId]);
+
   const joinFamily = useCallback(
-    async (targetFamilyId) => {
+    async (targetFamilyId, name) => {
       const trimmed = targetFamilyId?.trim();
       if (!trimmed || !userId) {
         return { success: false, reason: 'invalid' };
@@ -182,41 +210,54 @@ export function AuthProvider({ children }) {
         });
       }
 
-      await setDoc(
-        doc(db, 'users', userId),
-        { activeFamilyId: trimmed, isGuest: false },
-        { merge: true }
-      );
+      const userPatch = {
+        activeFamilyId: trimmed,
+        isGuest: false,
+        updatedAt: serverTimestamp(),
+      };
+      if (name?.trim()) {
+        userPatch.displayName = name.trim();
+      }
+
+      await setDoc(doc(db, 'users', userId), userPatch, { merge: true });
       setFamilyId(trimmed);
+      if (name?.trim()) {
+        setDisplayName(name.trim());
+      }
       setNeedsFamilySetup(false);
       return { success: true };
     },
     [userId]
   );
 
-  const createNewFamily = useCallback(async () => {
-    if (!userId) {
-      return { success: false, reason: 'invalid' };
-    }
-    const userSnap = await getDoc(doc(db, 'users', userId));
-    const displayName = userSnap.exists() ? userSnap.data().displayName : 'ユーザー';
-    const newFamilyId = await createFamilyForUser(userId, displayName);
-    setFamilyId(newFamilyId);
-    setNeedsFamilySetup(false);
-    return { success: true, familyId: newFamilyId };
-  }, [userId]);
+  const createNewFamily = useCallback(
+    async (name) => {
+      if (!userId) {
+        return { success: false, reason: 'invalid' };
+      }
+
+      const userSnap = await getDoc(doc(db, 'users', userId));
+      const resolvedName = name?.trim() || userSnap.data()?.displayName || 'ユーザー';
+      const newFamilyId = await createFamilyForUser(userId, resolvedName);
+      setFamilyId(newFamilyId);
+      setDisplayName(resolvedName);
+      setNeedsFamilySetup(false);
+      return { success: true, familyId: newFamilyId };
+    },
+    [userId]
+  );
 
   const completeFamilySetup = useCallback(
-    async ({ familyIdInput, createNew }) => {
+    async ({ familyIdInput, createNew, displayName: setupDisplayName }) => {
       if (createNew) {
-        return createNewFamily();
+        return createNewFamily(setupDisplayName);
       }
-      return joinFamily(familyIdInput);
+      return joinFamily(familyIdInput, setupDisplayName);
     },
     [createNewFamily, joinFamily]
   );
 
-  const upgradeGuestWithEmail = useCallback(async (email, password, displayName) => {
+  const upgradeGuestWithEmail = useCallback(async (email, password, name) => {
     const user = auth.currentUser;
     if (!user?.isAnonymous) {
       return { success: false, reason: 'notGuest' };
@@ -229,7 +270,7 @@ export function AuthProvider({ children }) {
       doc(db, 'users', linked.user.uid),
       {
         email: email.trim(),
-        displayName: displayName?.trim() || 'ユーザー',
+        displayName: name?.trim() || 'ユーザー',
         authProvider: 'email',
         isGuest: false,
         upgradedAt: serverTimestamp(),
@@ -239,6 +280,7 @@ export function AuthProvider({ children }) {
     );
 
     setIsGuest(false);
+    setDisplayName(name?.trim() || 'ユーザー');
     await refreshUserProfile(linked.user.uid, false);
     return { success: true };
   }, [refreshUserProfile]);
@@ -249,6 +291,7 @@ export function AuthProvider({ children }) {
         userId,
         isGuest,
         familyId,
+        displayName,
         needsFamilySetup,
         loading,
         signInAsGuest,
@@ -259,6 +302,7 @@ export function AuthProvider({ children }) {
         joinFamily,
         createNewFamily,
         completeFamilySetup,
+        updateDisplayName,
         upgradeGuestWithEmail,
       }}
     >

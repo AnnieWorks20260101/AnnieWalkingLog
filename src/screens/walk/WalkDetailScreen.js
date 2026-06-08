@@ -19,7 +19,8 @@ import { formatAverageSpeedKmh, formatDurationMinutes } from '../../utils/walkFo
 import WalkStartWeather, { hasStartWeatherDisplay } from '../../components/WalkStartWeather';
 import { fitMapToCoordinates, getRegionForCoordinates } from '../../utils/mapRegion';
 import { getWalkPhotoCoordinate, walkHasPhotos, getWalkPhotos } from '../../utils/walkPhotos';
-import { SCREEN_HISTORY, SCREEN_WALK_PHOTOS } from '../../navigation/screenNames';
+import { SCREEN_WALK_PHOTOS } from '../../navigation/screenNames';
+import { closeWalkDetailToHistory } from '../../navigation/walkNavigation';
 import { createWalkMemo, persistWalkMemos } from '../../services/walkMemos';
 
 const DEFAULT_REGION = {
@@ -162,7 +163,7 @@ export default function WalkDetailScreen({ route, navigation }) {
       <ScreenHeader
         title={i18n.t('walk.detailTitle')}
         showBack
-        onBackPress={() => navigation.navigate(SCREEN_HISTORY)}
+        onBackPress={() => closeWalkDetailToHistory(navigation)}
       />
 
       <View

@@ -28,7 +28,8 @@ import { WalkHistoryStatsText, WalkHistoryPoopText } from '../../components/walk
 import { blendColors } from '../../utils/enrichTheme';
 import { walkHasMemos } from '../../services/walkMemos';
 import { walkHasPhotos, getWalkPhotos } from '../../utils/walkPhotos';
-import { SCREEN_WALK_DETAIL, SCREEN_WALK_PHOTOS } from '../../navigation/screenNames';
+import { SCREEN_WALK_PHOTOS } from '../../navigation/screenNames';
+import { openWalkDetail } from '../../navigation/walkNavigation';
 import { serializeWalkForNavigation } from '../../utils/walkNavigationParams';
 
 export default function HistoryScreen({ navigation }) {
@@ -107,9 +108,7 @@ export default function HistoryScreen({ navigation }) {
 
         <TouchableOpacity
           style={[styles.card, { backgroundColor: historySurroundBg }]}
-          onPress={() =>
-            navigation.navigate(SCREEN_WALK_DETAIL, { walk: serializeWalkForNavigation(item) })
-          }
+          onPress={() => openWalkDetail(navigation.getParent(), item)}
         >
           <View style={styles.timelineContainer}>
             <View style={[styles.timelineDot, { backgroundColor: currentTheme.primary }]} />

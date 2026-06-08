@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import { navigateToWalkDetailFromRoot } from '../navigation/walkNavigation';
+import { openWalkDetailFromRoot } from '../navigation/walkNavigation';
 
 function parseWalkEndedNotificationData(raw) {
   if (!raw || typeof raw !== 'object') {
@@ -32,7 +32,7 @@ async function openWalkDetailFromNotificationData(navigationRef, data) {
   }
 
   const walk = { id: snap.id, ...snap.data() };
-  navigateToWalkDetailFromRoot(navigationRef, walk);
+  openWalkDetailFromRoot(navigationRef, walk);
 }
 
 /**

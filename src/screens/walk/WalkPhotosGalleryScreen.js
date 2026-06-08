@@ -32,7 +32,7 @@ export default function WalkPhotosGalleryScreen({ route, navigation }) {
       <ScreenHeader
         title={i18n.t('walk.photoGalleryTitle', { count: photos.length })}
         showBack
-        onBackPress={() => navigation.goBack()}
+        onBackPress={() => navigation.pop()}
       />
       <FlatList
         data={photos}

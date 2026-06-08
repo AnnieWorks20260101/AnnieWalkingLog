@@ -38,7 +38,7 @@ import { collection, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/fi
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { calculateTotalDistance } from '../../utils/locationUtils';
 import { fetchCurrentWeather } from '../../services/openWeather';
-import { navigateToWalkDetail } from '../../navigation/walkNavigation';
+import { openWalkDetail } from '../../navigation/walkNavigation';
 import { setWalkTrackingActive } from '../../navigation/walkSessionFlag';
 import { getCurrentWalkMapCoordinate } from '../../utils/walkMapMarks';
 import {
@@ -103,7 +103,7 @@ export default function WalkScreen({ navigation }) {
   const { tier, entitlements } = usePlanTier();
   const walkPhotosEnabled = canUseWalkPhotos(entitlements);
   const styles = useThemedStyles(createStyles);
-  const { userId, familyId } = useAuth();
+  const { userId, familyId, displayName } = useAuth();
   const { pets } = useFamilyPets(familyId, userId);
   const maxSelectable = entitlements.maxPets ?? Number.POSITIVE_INFINITY;
   const usablePetIds = useMemo(
@@ -637,10 +637,14 @@ export default function WalkScreen({ navigation }) {
       await AsyncStorage.removeItem(TEMP_ROUTE_KEY);
       resetWalkSession();
 
+      const pushPetNameLabel =
+        petNames.length > 0 ? petNames.join('・') : i18n.t('walk.defaultPetName');
+
       notifyFamilyMembersWalkEnded({
         familyId,
         senderUserId: userId,
-        petNameLabel,
+        senderDisplayName: displayName,
+        petNameLabel: pushPetNameLabel,
         walkId,
       }).catch((error) => {
         console.warn('notifyFamilyMembersWalkEnded failed:', error);
@@ -661,7 +665,7 @@ export default function WalkScreen({ navigation }) {
         {
           text: i18n.t('walk.viewResult'),
           onPress: () => {
-            navigateToWalkDetail(navigation.getParent(), savedWalk);
+            openWalkDetail(navigation.getParent(), savedWalk);
           },
         },
       ]);
