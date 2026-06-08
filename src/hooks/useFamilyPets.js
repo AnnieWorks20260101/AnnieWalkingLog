@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, doc, getDoc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { mergePetOrderWithPets, sortPetsByOrder } from '../utils/petOrder';
+import { isAccountDeletionInProgress } from '../utils/accountDeletionState';
 
 export function useFamilyPets(familyId, userId) {
   const [pets, setPets] = useState([]);
@@ -68,7 +69,7 @@ export function useFamilyPets(familyId, userId) {
 
   const savePetOrder = useCallback(
     async (newOrder) => {
-      if (!userId) {
+      if (!userId || isAccountDeletionInProgress()) {
         return;
       }
       await setDoc(doc(db, 'users', userId), { petOrder: newOrder }, { merge: true });
@@ -78,7 +79,7 @@ export function useFamilyPets(familyId, userId) {
 
   // 初回: ユーザーごとの petOrder。旧 families.petOrder があれば一度だけ引き継ぐ
   useEffect(() => {
-    if (!familyId || !userId || loading || pets.length === 0) {
+    if (!familyId || !userId || loading || pets.length === 0 || isAccountDeletionInProgress()) {
       return;
     }
     if (petOrder.length > 0) {
@@ -86,6 +87,9 @@ export function useFamilyPets(familyId, userId) {
     }
 
     const initPetOrder = async () => {
+      if (isAccountDeletionInProgress()) {
+        return;
+      }
       let seedOrder = pets.map((p) => p.id);
 
       try {

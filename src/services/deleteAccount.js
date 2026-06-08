@@ -10,6 +10,10 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { deleteFamilyStorageAssets } from './storageFamilyCleanup';
+import {
+  isAccountDeletionInProgress,
+  setAccountDeletionInProgress,
+} from '../utils/accountDeletionState';
 
 async function deleteFamilyData(familyId) {
   try {
@@ -33,28 +37,51 @@ async function deleteFamilyData(familyId) {
 
 /**
  * ユーザー文書・家族メンバー文書を削除し、家族の最後の1人なら家族データも削除する。
+ * users 文書は最後に削除し、削除中の merge 書き込みで幽霊ドキュメントが残らないようにする。
  * @param {string} uid
  * @param {string | null | undefined} activeFamilyId
  */
 export async function purgeUserFamilyData(uid, activeFamilyId) {
+  if (activeFamilyId) {
+    const memberRef = doc(db, 'family_members', `${activeFamilyId}_${uid}`);
+    const memberSnap = await getDoc(memberRef);
+    if (memberSnap.exists()) {
+      await deleteDoc(memberRef);
+    }
+
+    const remaining = await getDocs(
+      query(collection(db, 'users'), where('activeFamilyId', '==', activeFamilyId))
+    );
+    const otherUsersRemain = remaining.docs.some((userDoc) => userDoc.id !== uid);
+
+    if (!otherUsersRemain) {
+      await deleteFamilyData(activeFamilyId);
+    }
+  }
+
   await deleteDoc(doc(db, 'users', uid));
+}
 
-  if (!activeFamilyId) {
-    return;
+async function runAccountDeletion(deleteAuthUser) {
+  if (isAccountDeletionInProgress()) {
+    throw new Error('auth/deletion-in-progress');
   }
 
-  const memberRef = doc(db, 'family_members', `${activeFamilyId}_${uid}`);
-  const memberSnap = await getDoc(memberRef);
-  if (memberSnap.exists()) {
-    await deleteDoc(memberRef);
-  }
+  setAccountDeletionInProgress(true);
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error('auth/no-current-user');
+    }
 
-  const remaining = await getDocs(
-    query(collection(db, 'users'), where('activeFamilyId', '==', activeFamilyId))
-  );
+    const uid = user.uid;
+    const userSnap = await getDoc(doc(db, 'users', uid));
+    const activeFamilyId = userSnap.exists() ? userSnap.data().activeFamilyId : null;
 
-  if (remaining.empty) {
-    await deleteFamilyData(activeFamilyId);
+    await purgeUserFamilyData(uid, activeFamilyId);
+    await deleteAuthUser(user);
+  } finally {
+    setAccountDeletionInProgress(false);
   }
 }
 
@@ -72,12 +99,7 @@ export async function deleteGuestAccount() {
     throw err;
   }
 
-  const uid = user.uid;
-  const userSnap = await getDoc(doc(db, 'users', uid));
-  const activeFamilyId = userSnap.exists() ? userSnap.data().activeFamilyId : null;
-
-  await purgeUserFamilyData(uid, activeFamilyId);
-  await deleteUser(user);
+  await runAccountDeletion((currentUser) => deleteUser(currentUser));
 }
 
 /**
@@ -96,10 +118,5 @@ export async function deleteCurrentUserAccount() {
     throw err;
   }
 
-  const uid = user.uid;
-  const userSnap = await getDoc(doc(db, 'users', uid));
-  const activeFamilyId = userSnap.exists() ? userSnap.data().activeFamilyId : null;
-
-  await purgeUserFamilyData(uid, activeFamilyId);
-  await deleteUser(user);
+  await runAccountDeletion((currentUser) => deleteUser(currentUser));
 }

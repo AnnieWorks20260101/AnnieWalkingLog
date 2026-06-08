@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { PRIVACY_POLICY_VERSION } from '../constants/legalUrls';
+import { isAccountDeletionInProgress } from './accountDeletionState';
 
 const PRIVACY_CONSENT_KEY = '@legal/privacy_consent_v1';
 
@@ -39,7 +40,7 @@ export async function setAcceptedPrivacyPolicy(userId = null) {
   await AsyncStorage.setItem(PRIVACY_CONSENT_KEY, JSON.stringify(payload));
 
   const uid = userId ?? auth.currentUser?.uid;
-  if (!uid) {
+  if (!uid || isAccountDeletionInProgress()) {
     return;
   }
 

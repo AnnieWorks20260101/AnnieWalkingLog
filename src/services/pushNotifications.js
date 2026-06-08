@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { isAccountDeletionInProgress } from '../utils/accountDeletionState';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -50,7 +51,7 @@ export async function registerForPushNotificationsAsync(userId) {
 
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
 
-    if (userId) {
+    if (userId && !isAccountDeletionInProgress()) {
       // merge: ゲスト初回など users ドキュメント未作成時もエラーにしない
       await setDoc(doc(db, 'users', userId), { expoPushToken: token }, { merge: true });
       console.log('[push] トークンを保存しました');
