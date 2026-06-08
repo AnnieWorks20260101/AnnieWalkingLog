@@ -65,6 +65,7 @@ private enum WalkLiveActivityColors {
   // Lock screen Live Activities render on a dark material; avoid systemBackground tint.
   static let primaryText = Color.white
   static let secondaryText = Color.white.opacity(0.82)
+  static let actionButtonBackground = Color.white.opacity(0.22)
 }
 
 @available(iOS 16.2, *)
@@ -75,22 +76,49 @@ private struct WalkLiveActivityActionRow: View {
     if #available(iOS 17.0, *) {
       HStack(spacing: 12) {
         Button(intent: RecordPoopIntent()) {
-          Text(context.attributes.poopLabel)
-            .font(.title2)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
+          WalkLiveActivityActionButtonLabel(symbol: context.attributes.poopLabel)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(WalkLiveActivityActionButtonStyle())
 
         Button(intent: RecordCustomIntent()) {
-          Text(context.attributes.customIcon)
-            .font(.title2)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
+          WalkLiveActivityActionButtonLabel(symbol: context.attributes.customIcon)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(WalkLiveActivityActionButtonStyle())
       }
-      .padding(.top, 4)
+      .padding(.top, 6)
     }
+  }
+}
+
+@available(iOS 16.2, *)
+private struct WalkLiveActivityActionButtonLabel: View {
+  let symbol: String
+
+  var body: some View {
+    Text(symbol)
+      .font(.system(size: 30))
+      .frame(maxWidth: .infinity)
+      .frame(minHeight: WalkLiveActivityMetrics.actionButtonHeight)
+  }
+}
+
+@available(iOS 16.2, *)
+private enum WalkLiveActivityMetrics {
+  // Match Android notification_walk_custom.xml (48dp buttons, 28sp emoji).
+  static let actionButtonHeight: CGFloat = 48
+  static let actionButtonCornerRadius: CGFloat = 12
+}
+
+@available(iOS 16.2, *)
+private struct WalkLiveActivityActionButtonStyle: ButtonStyle {
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .background(
+        RoundedRectangle(cornerRadius: WalkLiveActivityMetrics.actionButtonCornerRadius)
+          .fill(WalkLiveActivityColors.actionButtonBackground)
+      )
+      .opacity(configuration.isPressed ? 0.72 : 1)
+      .scaleEffect(configuration.isPressed ? 0.97 : 1)
+      .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
   }
 }
