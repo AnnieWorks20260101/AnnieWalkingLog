@@ -40,6 +40,9 @@ import {
 import { getTimeFormatLabel } from '../../utils/formatTime';
 import i18n from '../../i18n';
 import { deleteCurrentUserAccount } from '../../services/deleteAccount';
+import { openPrivacyPolicy } from '../../utils/openPrivacyPolicy';
+import { buildFamilyExportPayload } from '../../services/exportFamilyData';
+import { shareExportJsonFile } from '../../utils/shareExportJson';
 import FamilyMembersModal from '../../components/settings/FamilyMembersModal';
 import {
   seedTestWalksForFamily,
@@ -62,7 +65,7 @@ function SettingRow({ children, onPress, style }) {
 export default function SettingsScreen({ navigation }) {
   const { currentTheme, themeName, changeTheme, fontSizes, activeFontSizeOption, changeFontSize } =
     useTheme();
-  const { userId, familyId, isGuest, joinFamily, signOut } = useAuth();
+  const { userId, familyId, isGuest, joinFamily, signOut, discardGuestSession } = useAuth();
   const { isPremium } = usePremium();
   const { language, languageLabel, timeFormat, timeFormatLabel, setLanguage, setTimeFormat } =
     useDisplayPreferences();
@@ -88,6 +91,9 @@ export default function SettingsScreen({ navigation }) {
   const [editFamilyId, setEditFamilyId] = useState('');
   const [testDevRunning, setTestDevRunning] = useState(false);
   const [testDevProgress, setTestDevProgress] = useState({ done: 0, total: 0 });
+  const [guestLogoutRunning, setGuestLogoutRunning] = useState(false);
+  const [isExportModalVisible, setIsExportModalVisible] = useState(false);
+  const [exportRunning, setExportRunning] = useState(false);
 
   const appVersion = Constants.expoConfig?.version || '1.0.0';
 
@@ -132,6 +138,45 @@ export default function SettingsScreen({ navigation }) {
     }
   };
 
+  const handleOpenExportModal = () => {
+    if (!familyId || !userId) {
+      Alert.alert(i18n.t('common.error'), i18n.t('settings.exportNoFamily'));
+      return;
+    }
+    setIsExportModalVisible(true);
+  };
+
+  const handleExportData = async (mode) => {
+    if (!familyId || !userId || exportRunning) {
+      return;
+    }
+
+    setExportRunning(true);
+    try {
+      const payload = await buildFamilyExportPayload({
+        familyId,
+        userId,
+        mode,
+        appVersion,
+      });
+
+      if (payload.stats.petCount === 0 && payload.stats.walkCount === 0) {
+        Alert.alert(i18n.t('common.notice'), i18n.t('settings.exportEmpty'));
+        return;
+      }
+
+      const jsonString = JSON.stringify(payload, null, 2);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      await shareExportJsonFile(jsonString, `annie-walking-log-${mode}-${dateStr}.json`);
+      setIsExportModalVisible(false);
+    } catch (error) {
+      console.error('export data failed:', error);
+      Alert.alert(i18n.t('common.error'), i18n.t('settings.exportError'));
+    } finally {
+      setExportRunning(false);
+    }
+  };
+
   const handleSupportEmail = async () => {
     const email = 'support@annie-works.com';
     const subject = encodeURIComponent(i18n.t('settings.supportEmailSubject'));
@@ -143,8 +188,26 @@ export default function SettingsScreen({ navigation }) {
     }
   };
 
+  const handleGuestDiscard = async () => {
+    if (guestLogoutRunning) {
+      return;
+    }
+    setGuestLogoutRunning(true);
+    try {
+      await discardGuestSession();
+    } catch (error) {
+      console.error('guest discard failed:', error);
+      Alert.alert(i18n.t('common.error'), i18n.t('settings.guestLogoutError'));
+    } finally {
+      setGuestLogoutRunning(false);
+    }
+  };
+
   const handleSignOut = () => {
     if (isGuest) {
+      if (guestLogoutRunning) {
+        return;
+      }
       Alert.alert(i18n.t('auth.guestLogoutTitle'), i18n.t('auth.guestLogoutDesc'), [
         { text: i18n.t('walk.cancel'), style: 'cancel' },
         {
@@ -154,7 +217,9 @@ export default function SettingsScreen({ navigation }) {
         {
           text: i18n.t('auth.guestLogoutDiscard'),
           style: 'destructive',
-          onPress: () => signOut(),
+          onPress: () => {
+            handleGuestDiscard();
+          },
         },
       ]);
       return;
@@ -530,6 +595,30 @@ export default function SettingsScreen({ navigation }) {
             <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
           </SettingRow>
           <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
+          <SettingRow onPress={exportRunning ? undefined : handleOpenExportModal}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="download-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+              <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                {exportRunning ? i18n.t('settings.exportRunning') : i18n.t('settings.exportData')}
+              </Text>
+            </View>
+            {exportRunning ? (
+              <ActivityIndicator size="small" color={currentTheme.primary} />
+            ) : (
+              <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
+            )}
+          </SettingRow>
+          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
+          <SettingRow onPress={openPrivacyPolicy}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="document-text-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+              <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                {i18n.t('legal.privacyPolicy')}
+              </Text>
+            </View>
+            <Ionicons name="open-outline" size={20} color={currentTheme.textSecondary} />
+          </SettingRow>
+          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
           <SettingRow onPress={handleSupportEmail}>
             <View style={styles.settingLeft}>
               <Ionicons name="mail-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
@@ -570,13 +659,18 @@ export default function SettingsScreen({ navigation }) {
               <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
             </>
           ) : null}
-          <SettingRow onPress={handleSignOut}>
+          <SettingRow onPress={guestLogoutRunning ? undefined : handleSignOut}>
             <View style={styles.settingLeft}>
               <Ionicons name="log-out-outline" size={22} color="#FF3B30" style={styles.settingIcon} />
               <Text style={[styles.settingText, styles.dangerText, { fontSize: fontSizes.m }]}>
-                {i18n.t('auth.signOut')}
+                {guestLogoutRunning && isGuest
+                  ? i18n.t('auth.guestLogoutInProgress')
+                  : i18n.t('auth.signOut')}
               </Text>
             </View>
+            {guestLogoutRunning && isGuest ? (
+              <ActivityIndicator size="small" color={currentTheme.primary} />
+            ) : null}
           </SettingRow>
         </View>
 
@@ -665,6 +759,62 @@ export default function SettingsScreen({ navigation }) {
         theme={currentTheme}
         fontSizes={fontSizes}
       />
+
+      <Modal visible={isExportModalVisible} animationType="fade" transparent onRequestClose={() => !exportRunning && setIsExportModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: currentTheme.card }]}>
+            <Text style={[styles.modalTitle, { color: currentTheme.text, fontSize: fontSizes.l }]}>
+              {i18n.t('settings.exportModalTitle')}
+            </Text>
+            <Text style={[styles.modalDesc, { color: currentTheme.textSecondary, fontSize: fontSizes.m }]}>
+              {i18n.t('settings.exportModalDesc')}
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.exportOptionButton, { borderColor: currentTheme.border, backgroundColor: currentTheme.background }]}
+              onPress={() => handleExportData('summary')}
+              disabled={exportRunning}
+            >
+              <Text style={[styles.exportOptionTitle, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                {i18n.t('settings.exportSummaryTitle')}
+              </Text>
+              <Text style={[styles.exportOptionDesc, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                {i18n.t('settings.exportSummaryDesc')}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.exportOptionButton, { borderColor: currentTheme.border, backgroundColor: currentTheme.background }]}
+              onPress={() => handleExportData('full')}
+              disabled={exportRunning}
+            >
+              <Text style={[styles.exportOptionTitle, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                {i18n.t('settings.exportFullTitle')}
+              </Text>
+              <Text style={[styles.exportOptionDesc, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                {i18n.t('settings.exportFullDesc')}
+              </Text>
+            </TouchableOpacity>
+
+            {exportRunning ? (
+              <View style={styles.exportRunningRow}>
+                <ActivityIndicator size="small" color={currentTheme.primary} />
+                <Text style={[styles.exportRunningText, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                  {i18n.t('settings.exportRunning')}
+                </Text>
+              </View>
+            ) : null}
+
+            <TouchableOpacity
+              onPress={() => setIsExportModalVisible(false)}
+              style={styles.modalClose}
+              disabled={exportRunning}
+            >
+              <Text style={{ color: currentTheme.textSecondary, fontSize: fontSizes.m }}>{i18n.t('walk.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={isFamilyModalVisible} animationType="fade" transparent>
         <KeyboardAvoidingView
@@ -1077,6 +1227,21 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginTop: 8,
   },
+  exportOptionButton: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 12,
+  },
+  exportOptionTitle: { fontWeight: '700', marginBottom: 6 },
+  exportOptionDesc: { lineHeight: 20 },
+  exportRunningRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  exportRunningText: { marginLeft: 8 },
   modalClose: { alignItems: 'center', marginTop: 16, padding: 8 },
   themeOptionRow: {
     flexDirection: 'row',

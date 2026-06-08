@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,12 +11,13 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import ScreenHeader from '../../components/ScreenHeader';
+import PrivacyPolicyConsentRow from '../../components/auth/PrivacyPolicyConsentRow';
 import i18n from '../../i18n';
+import { hasAcceptedPrivacyPolicy, setAcceptedPrivacyPolicy } from '../../utils/privacyConsentStorage';
 
 export default function RegisterScreen({ navigation }) {
   const { currentTheme } = useTheme();
@@ -26,8 +27,32 @@ export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [privacyConsentChecked, setPrivacyConsentChecked] = useState(false);
+
+  useEffect(() => {
+    hasAcceptedPrivacyPolicy()
+      .then((accepted) => {
+        if (accepted) {
+          setPrivacyConsentChecked(true);
+        }
+      })
+      .catch((error) => {
+        console.warn('privacy consent load failed:', error);
+      });
+  }, []);
+
+  const ensurePrivacyConsent = useCallback(() => {
+    if (privacyConsentChecked) {
+      return true;
+    }
+    Alert.alert(i18n.t('common.notice'), i18n.t('legal.privacyConsentRequired'));
+    return false;
+  }, [privacyConsentChecked]);
 
   const handleRegister = async () => {
+    if (!ensurePrivacyConsent()) {
+      return;
+    }
     if (!email.trim() || !password) {
       Alert.alert(i18n.t('common.error'), i18n.t('auth.emailRequired'));
       return;
@@ -40,6 +65,7 @@ export default function RegisterScreen({ navigation }) {
     setLoading(true);
     try {
       await signUpWithEmail(email, password, displayName);
+      await setAcceptedPrivacyPolicy();
       Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('auth.registerSuccess'));
     } catch (error) {
       console.error(error);
@@ -112,14 +138,25 @@ export default function RegisterScreen({ navigation }) {
             onChangeText={setPassword}
           />
 
+          <PrivacyPolicyConsentRow
+            checked={privacyConsentChecked}
+            onToggle={() => setPrivacyConsentChecked((prev) => !prev)}
+            disabled={loading}
+          />
+
           {loading ? (
-            <ActivityIndicator size="large" color={currentTheme.primary} style={{ marginTop: 20 }} />
+            <ActivityIndicator size="large" color={currentTheme.primary} style={{ marginTop: 8 }} />
           ) : (
             <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: currentTheme.primary }]}
+              style={[
+                styles.primaryButton,
+                { backgroundColor: currentTheme.primary, opacity: privacyConsentChecked ? 1 : 0.45 },
+              ]}
               onPress={handleRegister}
             >
-              <Text style={[styles.primaryButtonText, { color: currentTheme.card }]}>{i18n.t('auth.registerButton')}</Text>
+              <Text style={[styles.primaryButtonText, { color: currentTheme.card }]}>
+                {i18n.t('auth.registerButton')}
+              </Text>
             </TouchableOpacity>
           )}
         </ScrollView>
@@ -145,7 +182,7 @@ const createStyles = (fs) => ({
     borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 4,
   },
   primaryButtonText: { fontSize: fs.m, fontWeight: 'bold' },
 });

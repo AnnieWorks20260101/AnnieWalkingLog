@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -15,8 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
+import PrivacyPolicyConsentRow from '../../components/auth/PrivacyPolicyConsentRow';
 import i18n from '../../i18n';
 import { SCREEN_REGISTER } from '../../navigation/screenNames';
+import { hasAcceptedPrivacyPolicy, setAcceptedPrivacyPolicy } from '../../utils/privacyConsentStorage';
 
 export default function LoginScreen({ navigation }) {
   const { currentTheme } = useTheme();
@@ -25,15 +27,43 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [privacyConsentChecked, setPrivacyConsentChecked] = useState(false);
+
+  useEffect(() => {
+    hasAcceptedPrivacyPolicy()
+      .then((accepted) => {
+        if (accepted) {
+          setPrivacyConsentChecked(true);
+        }
+      })
+      .catch((error) => {
+        console.warn('privacy consent load failed:', error);
+      });
+  }, []);
+
+  const ensurePrivacyConsent = useCallback(() => {
+    if (privacyConsentChecked) {
+      return true;
+    }
+    Alert.alert(i18n.t('common.notice'), i18n.t('legal.privacyConsentRequired'));
+    return false;
+  }, [privacyConsentChecked]);
 
   const showComingSoon = (provider) => {
+    if (!ensurePrivacyConsent()) {
+      return;
+    }
     Alert.alert(i18n.t('auth.comingSoonTitle'), i18n.t('auth.comingSoonMsg', { provider }));
   };
 
   const handleGuestLogin = async () => {
+    if (!ensurePrivacyConsent()) {
+      return;
+    }
     setLoading(true);
     try {
       await signInAsGuest();
+      await setAcceptedPrivacyPolicy();
     } catch (error) {
       console.error(error);
       Alert.alert(i18n.t('common.error'), i18n.t('auth.guestError'));
@@ -43,6 +73,9 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleEmailLogin = async () => {
+    if (!ensurePrivacyConsent()) {
+      return;
+    }
     if (!email.trim() || !password) {
       Alert.alert(i18n.t('common.error'), i18n.t('auth.emailRequired'));
       return;
@@ -50,6 +83,7 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
     try {
       await signInWithEmail(email, password);
+      await setAcceptedPrivacyPolicy();
     } catch (error) {
       console.error(error);
       Alert.alert(i18n.t('common.error'), i18n.t('auth.loginError'));
@@ -58,7 +92,17 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const handleGoRegister = () => {
+    if (!ensurePrivacyConsent()) {
+      return;
+    }
+    navigation.navigate(SCREEN_REGISTER);
+  };
+
   const handlePasswordReset = async () => {
+    if (!ensurePrivacyConsent()) {
+      return;
+    }
     if (!email.trim()) {
       Alert.alert(i18n.t('common.error'), i18n.t('auth.resetEmailRequired'));
       return;
@@ -92,8 +136,16 @@ export default function LoginScreen({ navigation }) {
           <ActivityIndicator size="large" color={currentTheme.primary} style={{ marginTop: 24 }} />
         ) : (
           <>
+            <PrivacyPolicyConsentRow
+              checked={privacyConsentChecked}
+              onToggle={() => setPrivacyConsentChecked((prev) => !prev)}
+            />
+
             <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: '#32CD32' }]}
+              style={[
+                styles.primaryButton,
+                { backgroundColor: '#32CD32', opacity: privacyConsentChecked ? 1 : 0.45 },
+              ]}
               onPress={handleGuestLogin}
             >
               <Text style={[styles.primaryButtonText, { color: '#fff' }]}>{i18n.t('auth.guestLogin')}</Text>
@@ -135,14 +187,20 @@ export default function LoginScreen({ navigation }) {
                 onChangeText={setPassword}
               />
               <TouchableOpacity
-                style={[styles.primaryButton, { backgroundColor: currentTheme.primary }]}
+                style={[
+                  styles.primaryButton,
+                  { backgroundColor: currentTheme.primary, opacity: privacyConsentChecked ? 1 : 0.45 },
+                ]}
                 onPress={handleEmailLogin}
               >
                 <Text style={[styles.primaryButtonText, { color: currentTheme.card }]}>{i18n.t('auth.login')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.outlineButton, { borderColor: currentTheme.primary }]}
-                onPress={() => navigation.navigate(SCREEN_REGISTER)}
+                style={[
+                  styles.outlineButton,
+                  { borderColor: currentTheme.primary, opacity: privacyConsentChecked ? 1 : 0.45 },
+                ]}
+                onPress={handleGoRegister}
               >
                 <Text style={[styles.outlineButtonText, { color: currentTheme.primary }]}>
                   {i18n.t('auth.goRegister')}
@@ -160,7 +218,14 @@ export default function LoginScreen({ navigation }) {
             </View>
 
             <TouchableOpacity
-              style={[styles.socialButton, { borderColor: currentTheme.border, backgroundColor: currentTheme.card }]}
+              style={[
+                styles.socialButton,
+                {
+                  borderColor: currentTheme.border,
+                  backgroundColor: currentTheme.card,
+                  opacity: privacyConsentChecked ? 1 : 0.45,
+                },
+              ]}
               onPress={() => showComingSoon('Google')}
             >
               <Ionicons name="logo-google" size={20} color="#DB4437" style={styles.socialIcon} />
@@ -168,7 +233,14 @@ export default function LoginScreen({ navigation }) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.socialButton, { borderColor: currentTheme.border, backgroundColor: currentTheme.card }]}
+              style={[
+                styles.socialButton,
+                {
+                  borderColor: currentTheme.border,
+                  backgroundColor: currentTheme.card,
+                  opacity: privacyConsentChecked ? 1 : 0.45,
+                },
+              ]}
               onPress={() => showComingSoon('Apple')}
             >
               <Ionicons name="logo-apple" size={20} color={currentTheme.text} style={styles.socialIcon} />
@@ -184,7 +256,7 @@ export default function LoginScreen({ navigation }) {
 const createStyles = (fs) => ({
   container: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24, paddingBottom: 40 },
-  hero: { alignItems: 'center', marginBottom: 28 },
+  hero: { alignItems: 'center', marginBottom: 20 },
   title: { fontSize: fs.xl, fontWeight: 'bold', marginTop: 12 },
   subtitle: { fontSize: fs.m, marginTop: 8, textAlign: 'center', lineHeight: 22 },
   section: { marginBottom: 8 },

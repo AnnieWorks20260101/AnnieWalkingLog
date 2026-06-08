@@ -38,6 +38,8 @@ import AppTabBar from './src/navigation/AppTabBar';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
 import FamilySetupScreen from './src/screens/auth/FamilySetupScreen';
+import PrivacyPolicyReconsentScreen from './src/screens/auth/PrivacyPolicyReconsentScreen';
+import { usePrivacyPolicyConsent } from './src/hooks/usePrivacyPolicyConsent';
 
 import HistoryScreen from './src/screens/walk/HistoryScreen';
 import WalkGraphScreen from './src/screens/walk/WalkGraphScreen';
@@ -160,8 +162,10 @@ function RootNavigator() {
   const { currentTheme } = useTheme();
   const { language } = useDisplayPreferences();
   const { loading, userId, needsFamilySetup } = useAuth();
+  const { policyConsentAccepted, policyConsentLoading, refreshPolicyConsent } =
+    usePrivacyPolicyConsent(userId);
 
-  if (loading) {
+  if (loading || policyConsentLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: currentTheme.background }}>
         <ActivityIndicator size="large" color={currentTheme.primary} />
@@ -175,6 +179,15 @@ function RootNavigator() {
         <ThemedStatusBar />
         <AuthNavigator />
       </NavigationContainer>
+    );
+  }
+
+  if (!policyConsentAccepted) {
+    return (
+      <View key={language} style={{ flex: 1, backgroundColor: currentTheme.background }}>
+        <ThemedStatusBar />
+        <PrivacyPolicyReconsentScreen onAccepted={refreshPolicyConsent} />
+      </View>
     );
   }
 

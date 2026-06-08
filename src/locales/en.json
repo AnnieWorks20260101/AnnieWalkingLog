@@ -285,6 +285,17 @@
         "aNote": "For testing, set premiumExpiresAt on the families document in Firestore to a future timestamp. Set it in the past to simulate Free plan behavior."
       }
     },
+    "exportData": "Export data",
+    "exportModalTitle": "Export data",
+    "exportModalDesc": "Export your family's pet info and walk records as JSON. Save or share via email, cloud storage, or other apps.",
+    "exportSummaryTitle": "Summary",
+    "exportSummaryDesc": "Dates, distance, duration, pet names, memos, photo URLs, and weather summary. No route coordinates.",
+    "exportFullTitle": "Full",
+    "exportFullDesc": "Everything in Summary plus the full walk route, poop marks, and custom mark locations.",
+    "exportRunning": "Exporting…",
+    "exportNoFamily": "Could not load family info.",
+    "exportError": "Export failed. Check your connection and try again.",
+    "exportEmpty": "There is no data to export.",
     "supportContact": "Contact support",
     "supportEmailSubject": "[Annie Walking Log] Inquiry",
     "supportEmailError": "Could not open mail app. Email support@annie-works.com directly.",
@@ -299,6 +310,7 @@
     "deleteAccountDoneMsg": "Your account was deleted. Thank you for using the app.",
     "deleteAccountRecentLogin": "For security, log out and sign in again, then try deleting once more.",
     "deleteAccountError": "Could not delete account.",
+    "guestLogoutError": "Could not delete your data. Check your connection and try again.",
     "testDevSectionTitle": "Development",
     "testSeedCardTitle": "Create test walk data",
     "testSeedCardDesc": "Adds about 2 years of walks (1–2 per day). Distance 1–2 km, 30–50 min, 0–3 poops.",
@@ -430,8 +442,9 @@
     "upgradeBannerDesc": "As a guest, you lose access to data when you log out. Register to protect your records.",
     "upgradeBannerButton": "Register & protect data 🐾",
     "guestLogoutTitle": "Data will be lost",
-    "guestLogoutDesc": "Logging out as a guest means you can never access these records again. Register for free to keep them.",
-    "guestLogoutDiscard": "Log out (discard data)"
+    "guestLogoutDesc": "Logging out as a guest permanently deletes your cloud data (walks, pets, etc.) and you can never access it again. Register for free to keep your records.",
+    "guestLogoutDiscard": "Log out (discard data)",
+    "guestLogoutInProgress": "Deleting data…"
   },
   "plan": {
     "historyNotice": {
@@ -510,6 +523,21 @@
         }
       }
     }
+  },
+  "legal": {
+    "privacyPolicy": "Privacy Policy",
+    "privacyConsentSuffix": " — I agree and wish to continue",
+    "privacyConsentRequired": "You must agree to the Privacy Policy before continuing.",
+    "reconsentTitle": "Privacy Policy updated",
+    "reconsentDesc": "Our Privacy Policy has been updated. To keep using the app, please review and agree to the new policy.",
+    "reconsentGuestHint": "If you do not agree, you can sign out and stop using the app.",
+    "reconsentContinue": "Agree and continue",
+    "reconsentSignOut": "Sign out and stop using the app",
+    "reconsentSignOutTitle": "Stop using the app?",
+    "reconsentSignOutMsg": "After signing out, you cannot use app features until you agree to the policy.",
+    "reconsentSignOutConfirm": "Sign out",
+    "reconsentError": "Could not save your consent. Please try again.",
+    "privacyPolicyOpenError": "Could not open the browser. Please try again later."
   },
   "common": {
     "error": "Error",

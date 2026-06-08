@@ -285,6 +285,17 @@
         "aNote": "開発・テスト時は Firestore の families に premiumExpiresAt（未来の日時）を設定すると有効になります。過去の日時にすると無料プラン相当の動作確認ができます。"
       }
     },
+    "exportData": "データをエクスポート",
+    "exportModalTitle": "データのエクスポート",
+    "exportModalDesc": "家族グループのペット情報とお散歩記録を JSON 形式で書き出します。メールやクラウドストレージなど、お好みの方法で保存・共有できます。",
+    "exportSummaryTitle": "サマリー版",
+    "exportSummaryDesc": "日時・距離・時間・ペット名・メモ・写真URL・天気概要など。ルートの緯度経度は含みません。",
+    "exportFullTitle": "フル版",
+    "exportFullDesc": "サマリーの内容に加え、散歩ルートの全座標、排泄・カスタムマークの位置も含みます。",
+    "exportRunning": "エクスポート中…",
+    "exportNoFamily": "家族情報が取得できません。",
+    "exportError": "データのエクスポートに失敗しました。通信状況を確認して、もう一度お試しください。",
+    "exportEmpty": "エクスポートする記録がありません。",
     "supportContact": "サポートへ連絡",
     "supportEmailSubject": "【Annie Walking Log】お問い合わせ",
     "supportEmailError": "メールアプリを起動できませんでした。support@annie-works.com まで直接ご連絡ください。",
@@ -299,6 +310,7 @@
     "deleteAccountDoneMsg": "アカウントを削除しました。ご利用ありがとうございました。",
     "deleteAccountRecentLogin": "安全のため、一度ログアウトして再ログインしてから、もう一度削除を実行してください。",
     "deleteAccountError": "アカウントの削除に失敗しました。",
+    "guestLogoutError": "データの削除に失敗しました。通信状況を確認して、もう一度お試しください。",
     "testDevSectionTitle": "開発用",
     "testSeedCardTitle": "テスト用お散歩データを作成",
     "testSeedCardDesc": "過去2年分・毎日1～2件の記録を追加します（距離1～2km、時間30～50分、うんち0～3回）。",
@@ -430,8 +442,9 @@
     "upgradeBannerDesc": "ゲストのままだとログアウト時にデータにアクセスできなくなります。会員登録でデータを保護しましょう。",
     "upgradeBannerButton": "登録してデータを保護🐾",
     "guestLogoutTitle": "データの消失警告",
-    "guestLogoutDesc": "ゲストのままログアウトすると、現在の記録に二度とアクセスできなくなります。データを残すには無料の会員登録をお願いします。",
-    "guestLogoutDiscard": "ログアウト（データ放棄）"
+    "guestLogoutDesc": "ゲストのままログアウトすると、クラウド上の記録（お散歩・ペット情報など）もすべて削除され、二度とアクセスできなくなります。データを残すには無料の会員登録をお願いします。",
+    "guestLogoutDiscard": "ログアウト（データ放棄）",
+    "guestLogoutInProgress": "データを削除しています…"
   },
   "plan": {
     "historyNotice": {
@@ -510,6 +523,21 @@
         }
       }
     }
+  },
+  "legal": {
+    "privacyPolicy": "プライバシーポリシー",
+    "privacyConsentSuffix": "に同意して利用します",
+    "privacyConsentRequired": "プライバシーポリシーへの同意が必要です。チェックを入れてからお進みください。",
+    "reconsentTitle": "プライバシーポリシーの更新",
+    "reconsentDesc": "プライバシーポリシーが更新されました。引き続き本アプリをご利用いただくには、新しいポリシーへの同意が必要です。",
+    "reconsentGuestHint": "同意いただけない場合は、ログアウトして利用を終了できます。",
+    "reconsentContinue": "同意して続ける",
+    "reconsentSignOut": "ログアウトして利用をやめる",
+    "reconsentSignOutTitle": "利用を終了しますか？",
+    "reconsentSignOutMsg": "ログアウトすると、同意が完了するまでアプリの機能はご利用いただけません。",
+    "reconsentSignOutConfirm": "ログアウトする",
+    "reconsentError": "同意の保存に失敗しました。もう一度お試しください。",
+    "privacyPolicyOpenError": "ブラウザを開けませんでした。しばらくしてからもう一度お試しください。"
   },
   "common": {
     "error": "エラー",

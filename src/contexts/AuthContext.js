@@ -17,8 +17,12 @@ import {
   collection,
   serverTimestamp,
 } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, db } from '../services/firebase';
+import { deleteGuestAccount } from '../services/deleteAccount';
 import { registerForPushNotificationsAsync } from '../services/pushNotifications';
+
+const TEMP_ROUTE_KEY = 'temp_route';
 
 const AuthContext = createContext(null);
 
@@ -165,6 +169,15 @@ export function AuthProvider({ children }) {
     await firebaseSignOut(auth);
   }, []);
 
+  const discardGuestSession = useCallback(async () => {
+    await deleteGuestAccount();
+    try {
+      await AsyncStorage.removeItem(TEMP_ROUTE_KEY);
+    } catch (error) {
+      console.warn('discardGuestSession: temp_route cleanup failed:', error);
+    }
+  }, []);
+
   const updateDisplayName = useCallback(async (name) => {
     if (!userId) {
       return { success: false, reason: 'invalid' };
@@ -299,6 +312,7 @@ export function AuthProvider({ children }) {
         signUpWithEmail,
         sendPasswordReset,
         signOut,
+        discardGuestSession,
         joinFamily,
         createNewFamily,
         completeFamilySetup,
