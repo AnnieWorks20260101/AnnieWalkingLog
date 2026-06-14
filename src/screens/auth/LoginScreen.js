@@ -16,18 +16,43 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import LegalConsentRow from '../../components/auth/LegalConsentRow';
+import GoogleAccountLinkModal from '../../components/auth/GoogleAccountLinkModal';
 import i18n from '../../i18n';
 import { SCREEN_REGISTER } from '../../navigation/screenNames';
 import { hasAcceptedLegalDocuments, setAcceptedLegalDocuments } from '../../utils/legalConsentStorage';
+import { getOAuthAuthErrorMessage } from '../../utils/oauthAuthResult';
+import { isAppleSignInAvailable } from '../../services/appleSignIn';
 
 export default function LoginScreen({ navigation }) {
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { signInAsGuest, signInWithEmail, sendPasswordReset } = useAuth();
+  const {
+    signInAsGuest,
+    signInWithEmail,
+    sendPasswordReset,
+    signInWithGoogle,
+    signInWithApple,
+    linkGoogleWithPassword,
+    linkAppleWithPassword,
+  } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [legalConsentChecked, setLegalConsentChecked] = useState(false);
+  const [oauthLinkRequest, setOauthLinkRequest] = useState(null);
+  const [linkSubmitting, setLinkSubmitting] = useState(false);
+  const [appleSignInAvailable, setAppleSignInAvailable] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS !== 'ios') {
+      return;
+    }
+    isAppleSignInAvailable()
+      .then(setAppleSignInAvailable)
+      .catch((error) => {
+        console.warn('apple sign-in availability check failed:', error);
+      });
+  }, []);
 
   useEffect(() => {
     hasAcceptedLegalDocuments()
@@ -48,13 +73,6 @@ export default function LoginScreen({ navigation }) {
     Alert.alert(i18n.t('common.notice'), i18n.t('legal.legalConsentRequired'));
     return false;
   }, [legalConsentChecked]);
-
-  const showComingSoon = (provider) => {
-    if (!ensureLegalConsent()) {
-      return;
-    }
-    Alert.alert(i18n.t('auth.comingSoonTitle'), i18n.t('auth.comingSoonMsg', { provider }));
-  };
 
   const handleGuestLogin = async () => {
     if (!ensureLegalConsent()) {
@@ -113,6 +131,110 @@ export default function LoginScreen({ navigation }) {
     } catch (error) {
       console.error(error);
       Alert.alert(i18n.t('common.error'), i18n.t('auth.resetError'));
+    }
+  };
+
+  const openOAuthLinkModal = (result) => {
+    setOauthLinkRequest({
+      email: result.email,
+      idToken: result.idToken,
+      rawNonce: result.rawNonce ?? null,
+      provider: result.provider ?? 'google',
+      guestDataWarning: result.guestDataWarning ?? false,
+    });
+  };
+
+  const handleGoogleLogin = async () => {
+    if (!ensureLegalConsent()) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await signInWithGoogle();
+      if (result.success) {
+        await setAcceptedLegalDocuments();
+        return;
+      }
+      if (result.reason === 'linkPasswordRequired') {
+        openOAuthLinkModal(result);
+        return;
+      }
+      const message = getOAuthAuthErrorMessage(result, 'google');
+      if (message) {
+        Alert.alert(i18n.t('common.error'), message);
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert(i18n.t('common.error'), i18n.t('auth.googleLoginError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    if (!ensureLegalConsent()) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await signInWithApple();
+      if (result.success) {
+        await setAcceptedLegalDocuments();
+        return;
+      }
+      if (result.reason === 'linkPasswordRequired') {
+        openOAuthLinkModal(result);
+        return;
+      }
+      const message = getOAuthAuthErrorMessage(result, 'apple');
+      if (message) {
+        Alert.alert(i18n.t('common.error'), message);
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert(i18n.t('common.error'), i18n.t('auth.appleLoginError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuthLinkSubmit = async (linkPassword) => {
+    if (!oauthLinkRequest) {
+      return;
+    }
+
+    setLinkSubmitting(true);
+    try {
+      const result =
+        oauthLinkRequest.provider === 'apple'
+          ? await linkAppleWithPassword(
+              oauthLinkRequest.email,
+              linkPassword,
+              oauthLinkRequest.idToken,
+              oauthLinkRequest.rawNonce
+            )
+          : await linkGoogleWithPassword(
+              oauthLinkRequest.email,
+              linkPassword,
+              oauthLinkRequest.idToken
+            );
+      if (result.success) {
+        setOauthLinkRequest(null);
+        await setAcceptedLegalDocuments();
+        return;
+      }
+      Alert.alert(i18n.t('common.error'), i18n.t('auth.googleLinkError'));
+    } catch (error) {
+      console.error(error);
+      if (error?.code === 'auth/wrong-password' || error?.code === 'auth/invalid-credential') {
+        Alert.alert(i18n.t('common.error'), i18n.t('auth.googleLinkWrongPassword'));
+      } else {
+        Alert.alert(i18n.t('common.error'), i18n.t('auth.googleLinkError'));
+      }
+    } finally {
+      setLinkSubmitting(false);
     }
   };
 
@@ -226,29 +348,41 @@ export default function LoginScreen({ navigation }) {
                   opacity: legalConsentChecked ? 1 : 0.45,
                 },
               ]}
-              onPress={() => showComingSoon('Google')}
+              onPress={handleGoogleLogin}
             >
               <Ionicons name="logo-google" size={20} color="#DB4437" style={styles.socialIcon} />
               <Text style={[styles.socialText, { color: currentTheme.text }]}>{i18n.t('auth.googleLogin')}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.socialButton,
-                {
-                  borderColor: currentTheme.border,
-                  backgroundColor: currentTheme.card,
-                  opacity: legalConsentChecked ? 1 : 0.45,
-                },
-              ]}
-              onPress={() => showComingSoon('Apple')}
-            >
-              <Ionicons name="logo-apple" size={20} color={currentTheme.text} style={styles.socialIcon} />
-              <Text style={[styles.socialText, { color: currentTheme.text }]}>{i18n.t('auth.appleLogin')}</Text>
-            </TouchableOpacity>
+            {appleSignInAvailable ? (
+              <TouchableOpacity
+                style={[
+                  styles.socialButton,
+                  {
+                    borderColor: currentTheme.border,
+                    backgroundColor: currentTheme.card,
+                    opacity: legalConsentChecked ? 1 : 0.45,
+                  },
+                ]}
+                onPress={handleAppleLogin}
+              >
+                <Ionicons name="logo-apple" size={20} color={currentTheme.text} style={styles.socialIcon} />
+                <Text style={[styles.socialText, { color: currentTheme.text }]}>{i18n.t('auth.appleLogin')}</Text>
+              </TouchableOpacity>
+            ) : null}
           </>
         )}
       </ScrollView>
+
+      <GoogleAccountLinkModal
+        visible={oauthLinkRequest != null}
+        email={oauthLinkRequest?.email ?? ''}
+        provider={oauthLinkRequest?.provider ?? 'google'}
+        guestDataWarning={oauthLinkRequest?.guestDataWarning ?? false}
+        submitting={linkSubmitting}
+        onCancel={() => setOauthLinkRequest(null)}
+        onSubmit={handleOAuthLinkSubmit}
+      />
     </KeyboardAvoidingView>
   );
 }

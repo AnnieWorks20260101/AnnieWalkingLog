@@ -16,6 +16,8 @@
       "deploymentTarget": "16.2",
       "supportsTablet": true,
       "bundleIdentifier": "com.annieworks.AnnieWalkingLog",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "usesAppleSignIn": true,
       "appleTeamId": "8AXQGJTA55",
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -91,7 +93,9 @@
           "savePhotosPermission": "お散歩の写真をフォトアルバムに保存します。"
         }
       ],
-      "./modules/expo-walk-tracking/app.plugin.js"
+      "./modules/expo-walk-tracking/app.plugin.js",
+      "@react-native-google-signin/google-signin",
+      "expo-apple-authentication"
     ]
   }
 }

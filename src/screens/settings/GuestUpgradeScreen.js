@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -16,19 +16,140 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import ScreenHeader from '../../components/ScreenHeader';
+import GoogleAccountLinkModal from '../../components/auth/GoogleAccountLinkModal';
 import i18n from '../../i18n';
+import { getOAuthAuthErrorMessage } from '../../utils/oauthAuthResult';
+import { isAppleSignInAvailable } from '../../services/appleSignIn';
 
 export default function GuestUpgradeScreen({ navigation }) {
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { upgradeGuestWithEmail } = useAuth();
+  const {
+    upgradeGuestWithEmail,
+    upgradeGuestWithGoogle,
+    upgradeGuestWithApple,
+    linkGoogleWithPassword,
+    linkAppleWithPassword,
+  } = useAuth();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [oauthLinkRequest, setOauthLinkRequest] = useState(null);
+  const [linkSubmitting, setLinkSubmitting] = useState(false);
+  const [appleSignInAvailable, setAppleSignInAvailable] = useState(false);
 
-  const showComingSoon = (provider) => {
-    Alert.alert(i18n.t('auth.comingSoonTitle'), i18n.t('auth.comingSoonMsg', { provider }));
+  useEffect(() => {
+    if (Platform.OS !== 'ios') {
+      return;
+    }
+    isAppleSignInAvailable()
+      .then(setAppleSignInAvailable)
+      .catch((error) => {
+        console.warn('apple sign-in availability check failed:', error);
+      });
+  }, []);
+
+  const showUpgradeSuccess = () => {
+    Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('auth.upgradeSuccess'), [
+      { text: i18n.t('common.ok'), onPress: () => navigation.goBack() },
+    ]);
+  };
+
+  const openOAuthLinkModal = (result) => {
+    setOauthLinkRequest({
+      email: result.email,
+      idToken: result.idToken,
+      rawNonce: result.rawNonce ?? null,
+      provider: result.provider ?? 'google',
+      guestDataWarning: result.guestDataWarning ?? false,
+    });
+  };
+
+  const handleGoogleUpgrade = async () => {
+    setLoading(true);
+    try {
+      const result = await upgradeGuestWithGoogle();
+      if (result.success) {
+        showUpgradeSuccess();
+        return;
+      }
+      if (result.reason === 'linkPasswordRequired') {
+        openOAuthLinkModal(result);
+        return;
+      }
+      const message = getOAuthAuthErrorMessage(result, 'google');
+      if (message) {
+        Alert.alert(i18n.t('common.error'), message);
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert(i18n.t('common.error'), i18n.t('auth.googleLoginError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleUpgrade = async () => {
+    setLoading(true);
+    try {
+      const result = await upgradeGuestWithApple();
+      if (result.success) {
+        showUpgradeSuccess();
+        return;
+      }
+      if (result.reason === 'linkPasswordRequired') {
+        openOAuthLinkModal(result);
+        return;
+      }
+      const message = getOAuthAuthErrorMessage(result, 'apple');
+      if (message) {
+        Alert.alert(i18n.t('common.error'), message);
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert(i18n.t('common.error'), i18n.t('auth.appleLoginError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuthLinkSubmit = async (linkPassword) => {
+    if (!oauthLinkRequest) {
+      return;
+    }
+
+    setLinkSubmitting(true);
+    try {
+      const result =
+        oauthLinkRequest.provider === 'apple'
+          ? await linkAppleWithPassword(
+              oauthLinkRequest.email,
+              linkPassword,
+              oauthLinkRequest.idToken,
+              oauthLinkRequest.rawNonce
+            )
+          : await linkGoogleWithPassword(
+              oauthLinkRequest.email,
+              linkPassword,
+              oauthLinkRequest.idToken
+            );
+      if (result.success) {
+        setOauthLinkRequest(null);
+        showUpgradeSuccess();
+        return;
+      }
+      Alert.alert(i18n.t('common.error'), i18n.t('auth.googleLinkError'));
+    } catch (error) {
+      console.error(error);
+      if (error?.code === 'auth/wrong-password' || error?.code === 'auth/invalid-credential') {
+        Alert.alert(i18n.t('common.error'), i18n.t('auth.googleLinkWrongPassword'));
+      } else {
+        Alert.alert(i18n.t('common.error'), i18n.t('auth.googleLinkError'));
+      }
+    } finally {
+      setLinkSubmitting(false);
+    }
   };
 
   const handleUpgrade = async () => {
@@ -147,23 +268,35 @@ export default function GuestUpgradeScreen({ navigation }) {
 
               <TouchableOpacity
                 style={[styles.socialButton, { borderColor: currentTheme.border, backgroundColor: currentTheme.card }]}
-                onPress={() => showComingSoon('Google')}
+                onPress={handleGoogleUpgrade}
               >
                 <Ionicons name="logo-google" size={20} color="#DB4437" style={styles.socialIcon} />
                 <Text style={[styles.socialText, { color: currentTheme.text }]}>{i18n.t('auth.upgradeGoogle')}</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.socialButton, { borderColor: currentTheme.border, backgroundColor: currentTheme.card }]}
-                onPress={() => showComingSoon('Apple')}
-              >
-                <Ionicons name="logo-apple" size={20} color={currentTheme.text} style={styles.socialIcon} />
-                <Text style={[styles.socialText, { color: currentTheme.text }]}>{i18n.t('auth.upgradeApple')}</Text>
-              </TouchableOpacity>
+              {appleSignInAvailable ? (
+                <TouchableOpacity
+                  style={[styles.socialButton, { borderColor: currentTheme.border, backgroundColor: currentTheme.card }]}
+                  onPress={handleAppleUpgrade}
+                >
+                  <Ionicons name="logo-apple" size={20} color={currentTheme.text} style={styles.socialIcon} />
+                  <Text style={[styles.socialText, { color: currentTheme.text }]}>{i18n.t('auth.upgradeApple')}</Text>
+                </TouchableOpacity>
+              ) : null}
             </>
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <GoogleAccountLinkModal
+        visible={oauthLinkRequest != null}
+        email={oauthLinkRequest?.email ?? ''}
+        provider={oauthLinkRequest?.provider ?? 'google'}
+        guestDataWarning={oauthLinkRequest?.guestDataWarning ?? false}
+        submitting={linkSubmitting}
+        onCancel={() => setOauthLinkRequest(null)}
+        onSubmit={handleOAuthLinkSubmit}
+      />
     </View>
   );
 }

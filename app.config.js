@@ -7,6 +7,8 @@ module.exports = () => {
   const googleMapsApiKeyAndroid = process.env.GOOGLE_MAPS_API_KEY_Android?.trim() || undefined;
   const googleMapsApiKeyIos = process.env.GOOGLE_MAPS_API_KEY_iOS?.trim() || undefined;
 
+  const googleWebClientId = process.env.GOOGLE_WEB_CLIENT_ID?.trim() || undefined;
+
   if (!openWeatherApiKey) {
     console.warn(
       '[app.config] OPENWEATHER_API_KEY が未設定です。.env.example を .env にコピーしてキーを設定してください。'
@@ -20,6 +22,12 @@ module.exports = () => {
   if (!googleMapsApiKeyIos) {
     console.warn(
       '[app.config] GOOGLE_MAPS_API_KEY_iOS が未設定です。iOS の地図表示に必要です（.env.example を参照）。'
+    );
+  }
+
+  if (!googleWebClientId) {
+    console.warn(
+      '[app.config] GOOGLE_WEB_CLIENT_ID が未設定です。Google ログインに必要です（.env.example を参照）。'
     );
   }
 
@@ -47,6 +55,7 @@ module.exports = () => {
         openWeatherApiKey,
         googleMapsApiKeyAndroid,
         googleMapsApiKeyIos,
+        googleWebClientId,
         eas: {
           ...appJson.expo.extra?.eas,
           build: {

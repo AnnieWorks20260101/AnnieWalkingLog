@@ -13,7 +13,7 @@ Firebase Authentication + `@react-native-google-signin/google-signin` で Google
 | 認証基盤 | Firebase Authentication（プロジェクト `anniewalkinglog`） |
 | ネイティブ連携 | `@react-native-google-signin/google-signin`（Expo dev client / prebuild 向け） |
 | 対象画面 | ログイン（`LoginScreen`）、ゲスト昇格（`GuestUpgradeScreen`） |
-| 対象外（本ドキュメント） | Apple ログイン、Web 版 |
+| 対象外（本ドキュメント） | Apple ログイン（[APPLE_SIGN_IN.md](./APPLE_SIGN_IN.md) 参照）、Web 版 |
 
 ログイン成功後の流れは **メール登録と同様**です。
 
@@ -23,15 +23,15 @@ Firebase Authentication + `@react-native-google-signin/google-signin` で Google
 
 ---
 
-## 現状（2026-05 時点）
+## 現状
 
 | 状態 | 詳細 |
 |------|------|
-| Google ログインボタン | UI のみ。`showComingSoon('Google')` で未接続 |
-| Firebase Google プロバイダ | コンソールで有効化が必要（未確認） |
-| `google-services.json` | リポジトリに存在するが **`oauth_client` が空** → Android 用 OAuth 未設定 |
-| `GoogleService-Info.plist` | リポジトリに **未配置**（iOS 用） |
-| 依存パッケージ | `@react-native-google-signin/google-signin` **未導入** |
+| コード実装 | **完了**（`signInWithGoogle` / `upgradeGuestWithGoogle` / メール既存アカウントとの自動連携） |
+| `GoogleService-Info.plist` | **リポジトリ直下**（`app.json` → `ios.googleServicesFile: ./GoogleService-Info.plist`） |
+| `google-services.json` | リポジトリに配置済み（`oauth_client` に Web クライアントあり） |
+| 依存パッケージ | `@react-native-google-signin/google-signin` 導入済み |
+| 残作業 | `.env` / EAS Secret の `GOOGLE_WEB_CLIENT_ID`、**ネイティブ再ビルド**、実機テスト |
 
 ---
 
@@ -125,9 +125,9 @@ cd android
 2. iOS アプリが無ければ追加
    - Bundle ID: `com.annieworks.AnnieWalkingLog`
 3. **GoogleService-Info.plist** をダウンロード
-4. リポジトリ直下（または `ios/`）に配置し、実装側にパスを伝える  
-   （実装側が `app.json` の `ios.googleServicesFile` を設定します）
-5. Apple Developer の App ID に **Sign In with Google 用の URL スキーム**が必要になる場合、実装側の prebuild 後に Xcode で確認
+4. リポジトリ **直下**に配置（[`GoogleService-Info.plist`](../GoogleService-Info.plist)）  
+   `app.json` で `ios.googleServicesFile: "./GoogleService-Info.plist"` を参照済み
+5. Apple Developer の App ID に **Sign In with Google 用の URL スキーム**が必要になる場合、prebuild 後に Xcode で確認
 
 ### 5. Web クライアント ID の共有
 
@@ -170,41 +170,47 @@ npx expo run:ios
 
 ---
 
-## 実装側が行う作業（コード変更）
-
-以下は **リポジトリ内**で行う予定の作業です。あなたのコンソール作業（上記 A〜E）が揃ってから、または並行して進めます。
+## 実装済み（コード側）
 
 ### パッケージ・ネイティブ設定
 
-| ファイル | 変更内容 |
-|----------|----------|
-| `package.json` | `@react-native-google-signin/google-signin` を追加 |
-| `app.json` / `app.config.js` | Google Sign-In 用 Expo プラグイン、`GOOGLE_WEB_CLIENT_ID` を `extra` 経由で渡す |
-| `app.json` | `ios.googleServicesFile` で `GoogleService-Info.plist` を指定 |
-| `.env.example` | `GOOGLE_WEB_CLIENT_ID` の説明を追記 |
+| ファイル | 内容 |
+|----------|------|
+| `package.json` | `@react-native-google-signin/google-signin` |
+| `app.json` | プラグイン、`ios.googleServicesFile: ./GoogleService-Info.plist` |
+| `app.config.js` | `GOOGLE_WEB_CLIENT_ID` → `extra.googleWebClientId` |
+| `.env.example` | `GOOGLE_WEB_CLIENT_ID` |
 
 ### 認証ロジック
 
-| ファイル | 変更内容 |
-|----------|----------|
-| `src/services/googleSignIn.js`（新規） | `GoogleSignin.configure`、`signIn`、キャンセル・エラー処理 |
-| `src/contexts/AuthContext.js` | `signInWithGoogle` — `signInWithCredential(GoogleAuthProvider.credential(idToken))` |
-| 同上 | `upgradeGuestWithGoogle` — ゲスト時は `linkWithCredential` |
-| 同上 | 初回 Google ユーザー向け `users/{uid}` 作成（`authProvider: 'google'`, `displayName`, `email`） |
-| `src/utils/legalConsentStorage.js` | ログイン成功時に既存の法的同意保存を呼ぶ（メールログインと同様） |
+| ファイル | 内容 |
+|----------|------|
+| `src/services/googleSignIn.js` | Google Sign-In ネイティブ連携 |
+| `src/contexts/AuthContext.js` | `signInWithGoogle`, `upgradeGuestWithGoogle`, `linkGoogleWithPassword` |
+| `src/components/auth/GoogleAccountLinkModal.js` | メール既存アカウントとの連携用パスワード入力 |
+
+### メール既存アカウントとの自動連携
+
+同じメールアドレスが **メール/パスワードで既登録** されている状態で Google ログインした場合:
+
+1. Firebase が `auth/account-exists-with-different-credential` を返す
+2. アプリが **連携モーダル** を表示し、既存アカウントのパスワードを入力させる
+3. メールでログイン → `linkWithCredential` で Google を同一 UID にリンク
+4. 以降、メールログイン・Google ログインのどちらでも同じアカウントに入れる（`authProvider: 'email,google'`）
+
+ゲスト昇格で既存メールアカウントと衝突した場合は、**ゲストデータは引き継がれない**旨をモーダルで警告してから同様に連携します。
 
 ### UI
 
-| ファイル | 変更内容 |
-|----------|----------|
-| `src/screens/auth/LoginScreen.js` | `showComingSoon('Google')` → `signInWithGoogle` + ローディング・エラー表示 |
-| `src/screens/settings/GuestUpgradeScreen.js` | 同上（ゲスト昇格） |
-| `src/locales/ja.json` / `en.json` | `auth.googleLoginError` 等のエラー文言 |
+| ファイル | 内容 |
+|----------|------|
+| `src/screens/auth/LoginScreen.js` | Google ログイン + 連携モーダル |
+| `src/screens/settings/GuestUpgradeScreen.js` | Google 登録 + 連携モーダル |
+| `src/locales/ja.json` / `en.json` | エラー・連携文言 |
 
-### 実装しないもの（今回）
+### 未実装（別タスク）
 
-- Apple ログイン
-- Google アカウントとメールアドレスの自動マージ UI（`auth/account-exists-with-different-credential` はエラーメッセージで案内）
+- Apple ログイン（[APPLE_SIGN_IN.md](./APPLE_SIGN_IN.md)）
 - Cloud Functions 側の処理（不要）
 
 ---
@@ -220,6 +226,8 @@ npx expo run:ios
 - [ ] 既存 Google ユーザー（`users` + `activeFamilyId` あり）→ メイン画面へ
 - [ ] ログアウト → 再ログインで同じ UID で復帰する
 - [ ] キャンセル時にクラッシュせず、元の画面に戻る
+- [ ] **メール登録済みの同一アドレス**で Google ログイン → パスワード入力モーダル → 連携後にログインできる
+- [ ] 連携後、`users.authProvider` が `email,google` になる
 
 ### ゲスト昇格
 
@@ -247,8 +255,8 @@ npx expo run:ios
 | `oauth_client` が空のまま | 上記と同じ | Android アプリ設定を見直す |
 | ログイン直後に `auth/invalid-credential` | `GOOGLE_WEB_CLIENT_ID` が誤り（Android/iOS 用 ID を入れている） | **Web クライアント ID**（type 3）を設定 |
 | 「このアプリは Google で確認されていません」 | OAuth 同意画面がテストモード | テストユーザー追加、または本番公開 |
-| iOS で何も起きない | `GoogleService-Info.plist` 未配置・URL スキーム未設定 | plist と prebuild を確認 |
-| `auth/account-exists-with-different-credential` | 同じメールがメール/パスワードで既登録 | 既存方法でログインするよう案内（別途アカウントリンクは将来対応可） |
+| iOS で何も起きない | `GoogleService-Info.plist` 未配置・URL スキーム未設定 | ルート直下の plist と `npx expo prebuild` を確認 |
+| `auth/account-exists-with-different-credential` | 同じメールがメール/パスワードで既登録 | 表示される連携モーダルでパスワードを入力（自動マージ） |
 | Expo Go では動かない | ネイティブモジュールが必要 | dev client または `expo run:*` でビルドしたアプリを使う |
 
 ---
@@ -268,9 +276,9 @@ npx expo run:ios
 2. **あなた**: Android SHA-1 + `google-services.json` 更新（§3）
 3. **あなた**: iOS `GoogleService-Info.plist` 取得（§4）
 4. **あなた**: Web クライアント ID を実装側に共有（§5）
-5. **実装側**: コード変更（上記「実装側が行う作業」）
+5. **実装側**: コード変更（**完了**）
 6. **あなた**: `.env` / EAS Secret 設定（§6）
 7. **あなた**: ネイティブ再ビルド（§7）
 8. **共同**: テストチェックリスト（§結合・テスト）
 
-実装を依頼するときは、このドキュメントの **§5 まで完了しているか**（特に `oauth_client` と Web クライアント ID）を伝えてもらえるとスムーズです。
+コンソール設定と `.env` が揃ったら **ネイティブ再ビルド** を行い、§結合・テストで確認してください。
