@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { hasAcceptedPrivacyPolicy } from '../utils/privacyConsentStorage';
+import { hasAcceptedLegalDocuments } from '../utils/legalConsentStorage';
 
 /**
- * ログイン済みユーザー向けのポリシー同意状態（PRIVACY_POLICY_VERSION と照合）
+ * ログイン済みユーザー向けの法的文書同意状態（プライバシーポリシー・利用規約の版と照合）
  * @param {string | null | undefined} userId
  */
 export function usePrivacyPolicyConsent(userId) {
@@ -13,7 +13,7 @@ export function usePrivacyPolicyConsent(userId) {
       setAccepted(true);
       return;
     }
-    const ok = await hasAcceptedPrivacyPolicy();
+    const ok = await hasAcceptedLegalDocuments();
     setAccepted(ok);
   }, [userId]);
 
@@ -26,7 +26,7 @@ export function usePrivacyPolicyConsent(userId) {
     let cancelled = false;
     setAccepted(null);
 
-    hasAcceptedPrivacyPolicy()
+    hasAcceptedLegalDocuments()
       .then((ok) => {
         if (!cancelled) {
           setAccepted(ok);

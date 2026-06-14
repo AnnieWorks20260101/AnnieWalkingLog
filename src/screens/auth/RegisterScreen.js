@@ -15,9 +15,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
 import ScreenHeader from '../../components/ScreenHeader';
-import PrivacyPolicyConsentRow from '../../components/auth/PrivacyPolicyConsentRow';
+import LegalConsentRow from '../../components/auth/LegalConsentRow';
 import i18n from '../../i18n';
-import { hasAcceptedPrivacyPolicy, setAcceptedPrivacyPolicy } from '../../utils/privacyConsentStorage';
+import { hasAcceptedLegalDocuments, setAcceptedLegalDocuments } from '../../utils/legalConsentStorage';
 
 export default function RegisterScreen({ navigation }) {
   const { currentTheme } = useTheme();
@@ -27,30 +27,30 @@ export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [privacyConsentChecked, setPrivacyConsentChecked] = useState(false);
+  const [legalConsentChecked, setLegalConsentChecked] = useState(false);
 
   useEffect(() => {
-    hasAcceptedPrivacyPolicy()
+    hasAcceptedLegalDocuments()
       .then((accepted) => {
         if (accepted) {
-          setPrivacyConsentChecked(true);
+          setLegalConsentChecked(true);
         }
       })
       .catch((error) => {
-        console.warn('privacy consent load failed:', error);
+        console.warn('legal consent load failed:', error);
       });
   }, []);
 
-  const ensurePrivacyConsent = useCallback(() => {
-    if (privacyConsentChecked) {
+  const ensureLegalConsent = useCallback(() => {
+    if (legalConsentChecked) {
       return true;
     }
-    Alert.alert(i18n.t('common.notice'), i18n.t('legal.privacyConsentRequired'));
+    Alert.alert(i18n.t('common.notice'), i18n.t('legal.legalConsentRequired'));
     return false;
-  }, [privacyConsentChecked]);
+  }, [legalConsentChecked]);
 
   const handleRegister = async () => {
-    if (!ensurePrivacyConsent()) {
+    if (!ensureLegalConsent()) {
       return;
     }
     if (!email.trim() || !password) {
@@ -65,7 +65,7 @@ export default function RegisterScreen({ navigation }) {
     setLoading(true);
     try {
       await signUpWithEmail(email, password, displayName);
-      await setAcceptedPrivacyPolicy();
+      await setAcceptedLegalDocuments();
       Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('auth.registerSuccess'));
     } catch (error) {
       console.error(error);
@@ -138,9 +138,9 @@ export default function RegisterScreen({ navigation }) {
             onChangeText={setPassword}
           />
 
-          <PrivacyPolicyConsentRow
-            checked={privacyConsentChecked}
-            onToggle={() => setPrivacyConsentChecked((prev) => !prev)}
+          <LegalConsentRow
+            checked={legalConsentChecked}
+            onToggle={() => setLegalConsentChecked((prev) => !prev)}
             disabled={loading}
           />
 
@@ -150,7 +150,7 @@ export default function RegisterScreen({ navigation }) {
             <TouchableOpacity
               style={[
                 styles.primaryButton,
-                { backgroundColor: currentTheme.primary, opacity: privacyConsentChecked ? 1 : 0.45 },
+                { backgroundColor: currentTheme.primary, opacity: legalConsentChecked ? 1 : 0.45 },
               ]}
               onPress={handleRegister}
             >

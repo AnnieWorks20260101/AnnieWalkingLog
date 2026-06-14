@@ -12,7 +12,12 @@
           "package_name": "com.annieworks.AnnieWalkingLog"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "468922569983-mvvo9gv74tusogikcf3m79vptqk4si6t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCaI8LcwChRDIx4cqYkXEa5ccL0RrYNTiU"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "468922569983-mvvo9gv74tusogikcf3m79vptqk4si6t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -526,10 +526,12 @@
   },
   "legal": {
     "privacyPolicy": "プライバシーポリシー",
-    "privacyConsentSuffix": "に同意して利用します",
-    "privacyConsentRequired": "プライバシーポリシーへの同意が必要です。チェックを入れてからお進みください。",
-    "reconsentTitle": "プライバシーポリシーの更新",
-    "reconsentDesc": "プライバシーポリシーが更新されました。引き続き本アプリをご利用いただくには、新しいポリシーへの同意が必要です。",
+    "termsOfService": "利用規約",
+    "legalConsentMiddle": "および",
+    "legalConsentSuffix": "に同意して利用します",
+    "legalConsentRequired": "プライバシーポリシーおよび利用規約への同意が必要です。チェックを入れてからお進みください。",
+    "reconsentTitle": "利用規約・プライバシーポリシーの更新",
+    "reconsentDesc": "利用規約またはプライバシーポリシーが更新されました。引き続き本アプリをご利用いただくには、最新版への同意が必要です。",
     "reconsentGuestHint": "同意いただけない場合は、ログアウトして利用を終了できます。",
     "reconsentContinue": "同意して続ける",
     "reconsentSignOut": "ログアウトして利用をやめる",
@@ -537,7 +539,8 @@
     "reconsentSignOutMsg": "ログアウトすると、同意が完了するまでアプリの機能はご利用いただけません。",
     "reconsentSignOutConfirm": "ログアウトする",
     "reconsentError": "同意の保存に失敗しました。もう一度お試しください。",
-    "privacyPolicyOpenError": "ブラウザを開けませんでした。しばらくしてからもう一度お試しください。"
+    "privacyPolicyOpenError": "ブラウザを開けませんでした。しばらくしてからもう一度お試しください。",
+    "termsOpenError": "ブラウザを開けませんでした。しばらくしてからもう一度お試しください。"
   },
   "common": {
     "error": "エラー",

@@ -5,11 +5,12 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import i18n from '../../i18n';
 import { openPrivacyPolicy } from '../../utils/openPrivacyPolicy';
+import { openTermsOfService } from '../../utils/openTermsOfService';
 
 /**
  * @param {{ checked: boolean, onToggle: () => void, disabled?: boolean }} props
  */
-export default function PrivacyPolicyConsentRow({ checked, onToggle, disabled = false }) {
+export default function LegalConsentRow({ checked, onToggle, disabled = false }) {
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
 
@@ -32,7 +33,11 @@ export default function PrivacyPolicyConsentRow({ checked, onToggle, disabled = 
         <Text style={[styles.link, { color: currentTheme.primary }]} onPress={openPrivacyPolicy}>
           {i18n.t('legal.privacyPolicy')}
         </Text>
-        {i18n.t('legal.privacyConsentSuffix')}
+        {i18n.t('legal.legalConsentMiddle')}
+        <Text style={[styles.link, { color: currentTheme.primary }]} onPress={openTermsOfService}>
+          {i18n.t('legal.termsOfService')}
+        </Text>
+        {i18n.t('legal.legalConsentSuffix')}
       </Text>
     </View>
   );

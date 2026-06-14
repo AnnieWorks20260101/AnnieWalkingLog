@@ -41,6 +41,7 @@ import { getTimeFormatLabel } from '../../utils/formatTime';
 import i18n from '../../i18n';
 import { deleteCurrentUserAccount } from '../../services/deleteAccount';
 import { openPrivacyPolicy } from '../../utils/openPrivacyPolicy';
+import { openTermsOfService } from '../../utils/openTermsOfService';
 import { buildFamilyExportPayload } from '../../services/exportFamilyData';
 import { shareExportJsonFile } from '../../utils/shareExportJson';
 import FamilyMembersModal from '../../components/settings/FamilyMembersModal';
@@ -614,6 +615,16 @@ export default function SettingsScreen({ navigation }) {
               <Ionicons name="document-text-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
               <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
                 {i18n.t('legal.privacyPolicy')}
+              </Text>
+            </View>
+            <Ionicons name="open-outline" size={20} color={currentTheme.textSecondary} />
+          </SettingRow>
+          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
+          <SettingRow onPress={openTermsOfService}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="reader-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+              <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                {i18n.t('legal.termsOfService')}
               </Text>
             </View>
             <Ionicons name="open-outline" size={20} color={currentTheme.textSecondary} />

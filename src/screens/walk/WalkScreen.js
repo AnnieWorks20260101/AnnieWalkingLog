@@ -764,8 +764,9 @@ export default function WalkScreen({ navigation }) {
 
   if (!initialRegion) {
     return (
-      <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-        <Text style={{ marginTop: 100, textAlign: 'center', color: currentTheme.textSecondary }}>
+      <View style={[styles.container, styles.locationLoading, { backgroundColor: currentTheme.background }]}>
+        <ActivityIndicator size="large" color={currentTheme.primary} />
+        <Text style={[styles.locationLoadingText, { color: currentTheme.text }]}>
           {i18n.t('walk.gettingLocation')}
         </Text>
       </View>
@@ -910,6 +911,18 @@ export default function WalkScreen({ navigation }) {
 
 const createStyles = (fs) => ({
   container: { flex: 1 },
+  locationLoading: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  locationLoadingText: {
+    marginTop: 20,
+    fontSize: fs.xl,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: Math.round(fs.xl * 1.45),
+  },
   petSection: { paddingTop: 8, paddingBottom: 12, borderBottomWidth: 1 },
   petSectionLabel: { fontSize: fs.s, fontWeight: '600', paddingHorizontal: 20, marginBottom: 8 },
   buttonContainer: {

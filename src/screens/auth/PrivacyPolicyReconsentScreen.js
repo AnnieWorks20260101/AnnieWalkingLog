@@ -13,9 +13,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
-import PrivacyPolicyConsentRow from '../../components/auth/PrivacyPolicyConsentRow';
+import LegalConsentRow from '../../components/auth/LegalConsentRow';
 import i18n from '../../i18n';
-import { setAcceptedPrivacyPolicy } from '../../utils/privacyConsentStorage';
+import { setAcceptedLegalDocuments } from '../../utils/legalConsentStorage';
 
 /**
  * @param {{ onAccepted: () => void | Promise<void> }} props
@@ -29,13 +29,13 @@ export default function PrivacyPolicyReconsentScreen({ onAccepted }) {
 
   const handleContinue = async () => {
     if (!checked) {
-      Alert.alert(i18n.t('common.notice'), i18n.t('legal.privacyConsentRequired'));
+      Alert.alert(i18n.t('common.notice'), i18n.t('legal.legalConsentRequired'));
       return;
     }
 
     setSubmitting(true);
     try {
-      await setAcceptedPrivacyPolicy();
+      await setAcceptedLegalDocuments();
       await onAccepted();
     } catch (error) {
       console.error('reconsent failed:', error);
@@ -72,7 +72,7 @@ export default function PrivacyPolicyReconsentScreen({ onAccepted }) {
           ) : null}
         </View>
 
-        <PrivacyPolicyConsentRow checked={checked} onToggle={() => setChecked((prev) => !prev)} disabled={submitting} />
+        <LegalConsentRow checked={checked} onToggle={() => setChecked((prev) => !prev)} disabled={submitting} />
 
         {submitting ? (
           <ActivityIndicator size="large" color={currentTheme.primary} style={styles.loader} />

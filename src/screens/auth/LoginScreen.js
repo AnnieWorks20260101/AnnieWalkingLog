@@ -15,10 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
-import PrivacyPolicyConsentRow from '../../components/auth/PrivacyPolicyConsentRow';
+import LegalConsentRow from '../../components/auth/LegalConsentRow';
 import i18n from '../../i18n';
 import { SCREEN_REGISTER } from '../../navigation/screenNames';
-import { hasAcceptedPrivacyPolicy, setAcceptedPrivacyPolicy } from '../../utils/privacyConsentStorage';
+import { hasAcceptedLegalDocuments, setAcceptedLegalDocuments } from '../../utils/legalConsentStorage';
 
 export default function LoginScreen({ navigation }) {
   const { currentTheme } = useTheme();
@@ -27,43 +27,43 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [privacyConsentChecked, setPrivacyConsentChecked] = useState(false);
+  const [legalConsentChecked, setLegalConsentChecked] = useState(false);
 
   useEffect(() => {
-    hasAcceptedPrivacyPolicy()
+    hasAcceptedLegalDocuments()
       .then((accepted) => {
         if (accepted) {
-          setPrivacyConsentChecked(true);
+          setLegalConsentChecked(true);
         }
       })
       .catch((error) => {
-        console.warn('privacy consent load failed:', error);
+        console.warn('legal consent load failed:', error);
       });
   }, []);
 
-  const ensurePrivacyConsent = useCallback(() => {
-    if (privacyConsentChecked) {
+  const ensureLegalConsent = useCallback(() => {
+    if (legalConsentChecked) {
       return true;
     }
-    Alert.alert(i18n.t('common.notice'), i18n.t('legal.privacyConsentRequired'));
+    Alert.alert(i18n.t('common.notice'), i18n.t('legal.legalConsentRequired'));
     return false;
-  }, [privacyConsentChecked]);
+  }, [legalConsentChecked]);
 
   const showComingSoon = (provider) => {
-    if (!ensurePrivacyConsent()) {
+    if (!ensureLegalConsent()) {
       return;
     }
     Alert.alert(i18n.t('auth.comingSoonTitle'), i18n.t('auth.comingSoonMsg', { provider }));
   };
 
   const handleGuestLogin = async () => {
-    if (!ensurePrivacyConsent()) {
+    if (!ensureLegalConsent()) {
       return;
     }
     setLoading(true);
     try {
       await signInAsGuest();
-      await setAcceptedPrivacyPolicy();
+      await setAcceptedLegalDocuments();
     } catch (error) {
       console.error(error);
       Alert.alert(i18n.t('common.error'), i18n.t('auth.guestError'));
@@ -73,7 +73,7 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleEmailLogin = async () => {
-    if (!ensurePrivacyConsent()) {
+    if (!ensureLegalConsent()) {
       return;
     }
     if (!email.trim() || !password) {
@@ -83,7 +83,7 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
     try {
       await signInWithEmail(email, password);
-      await setAcceptedPrivacyPolicy();
+      await setAcceptedLegalDocuments();
     } catch (error) {
       console.error(error);
       Alert.alert(i18n.t('common.error'), i18n.t('auth.loginError'));
@@ -93,14 +93,14 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleGoRegister = () => {
-    if (!ensurePrivacyConsent()) {
+    if (!ensureLegalConsent()) {
       return;
     }
     navigation.navigate(SCREEN_REGISTER);
   };
 
   const handlePasswordReset = async () => {
-    if (!ensurePrivacyConsent()) {
+    if (!ensureLegalConsent()) {
       return;
     }
     if (!email.trim()) {
@@ -136,15 +136,15 @@ export default function LoginScreen({ navigation }) {
           <ActivityIndicator size="large" color={currentTheme.primary} style={{ marginTop: 24 }} />
         ) : (
           <>
-            <PrivacyPolicyConsentRow
-              checked={privacyConsentChecked}
-              onToggle={() => setPrivacyConsentChecked((prev) => !prev)}
+            <LegalConsentRow
+              checked={legalConsentChecked}
+              onToggle={() => setLegalConsentChecked((prev) => !prev)}
             />
 
             <TouchableOpacity
               style={[
                 styles.primaryButton,
-                { backgroundColor: '#32CD32', opacity: privacyConsentChecked ? 1 : 0.45 },
+                { backgroundColor: '#32CD32', opacity: legalConsentChecked ? 1 : 0.45 },
               ]}
               onPress={handleGuestLogin}
             >
@@ -189,7 +189,7 @@ export default function LoginScreen({ navigation }) {
               <TouchableOpacity
                 style={[
                   styles.primaryButton,
-                  { backgroundColor: currentTheme.primary, opacity: privacyConsentChecked ? 1 : 0.45 },
+                  { backgroundColor: currentTheme.primary, opacity: legalConsentChecked ? 1 : 0.45 },
                 ]}
                 onPress={handleEmailLogin}
               >
@@ -198,7 +198,7 @@ export default function LoginScreen({ navigation }) {
               <TouchableOpacity
                 style={[
                   styles.outlineButton,
-                  { borderColor: currentTheme.primary, opacity: privacyConsentChecked ? 1 : 0.45 },
+                  { borderColor: currentTheme.primary, opacity: legalConsentChecked ? 1 : 0.45 },
                 ]}
                 onPress={handleGoRegister}
               >
@@ -223,7 +223,7 @@ export default function LoginScreen({ navigation }) {
                 {
                   borderColor: currentTheme.border,
                   backgroundColor: currentTheme.card,
-                  opacity: privacyConsentChecked ? 1 : 0.45,
+                  opacity: legalConsentChecked ? 1 : 0.45,
                 },
               ]}
               onPress={() => showComingSoon('Google')}
@@ -238,7 +238,7 @@ export default function LoginScreen({ navigation }) {
                 {
                   borderColor: currentTheme.border,
                   backgroundColor: currentTheme.card,
-                  opacity: privacyConsentChecked ? 1 : 0.45,
+                  opacity: legalConsentChecked ? 1 : 0.45,
                 },
               ]}
               onPress={() => showComingSoon('Apple')}

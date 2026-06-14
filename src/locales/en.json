@@ -526,10 +526,12 @@
   },
   "legal": {
     "privacyPolicy": "Privacy Policy",
-    "privacyConsentSuffix": " — I agree and wish to continue",
-    "privacyConsentRequired": "You must agree to the Privacy Policy before continuing.",
-    "reconsentTitle": "Privacy Policy updated",
-    "reconsentDesc": "Our Privacy Policy has been updated. To keep using the app, please review and agree to the new policy.",
+    "termsOfService": "Terms of Service",
+    "legalConsentMiddle": " and ",
+    "legalConsentSuffix": " — I agree and wish to continue",
+    "legalConsentRequired": "You must agree to the Privacy Policy and Terms of Service before continuing.",
+    "reconsentTitle": "Terms and Privacy Policy updated",
+    "reconsentDesc": "Our Terms of Service or Privacy Policy has been updated. To keep using the app, please review and accept the latest versions.",
     "reconsentGuestHint": "If you do not agree, you can sign out and stop using the app.",
     "reconsentContinue": "Agree and continue",
     "reconsentSignOut": "Sign out and stop using the app",
@@ -537,7 +539,8 @@
     "reconsentSignOutMsg": "After signing out, you cannot use app features until you agree to the policy.",
     "reconsentSignOutConfirm": "Sign out",
     "reconsentError": "Could not save your consent. Please try again.",
-    "privacyPolicyOpenError": "Could not open the browser. Please try again later."
+    "privacyPolicyOpenError": "Could not open the browser. Please try again later.",
+    "termsOpenError": "Could not open the browser. Please try again later."
   },
   "common": {
     "error": "Error",
