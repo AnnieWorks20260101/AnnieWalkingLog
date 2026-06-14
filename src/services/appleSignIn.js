@@ -1,5 +1,5 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Crypto from 'expo-crypto';
+import { sha256 } from 'js-sha256';
 
 export class AppleSignInCancelledError extends Error {
   constructor() {
@@ -42,7 +42,7 @@ export async function getAppleSignInTokens() {
   }
 
   const rawNonce = generateRawNonce();
-  const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
+  const hashedNonce = sha256(rawNonce);
 
   try {
     const credential = await AppleAuthentication.signInAsync({

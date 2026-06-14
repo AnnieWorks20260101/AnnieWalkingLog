@@ -1,5 +1,6 @@
 // Expo は .env を自動読み込みします
 const appJson = require('./app.json');
+const { GOOGLE_WEB_CLIENT_ID: DEFAULT_GOOGLE_WEB_CLIENT_ID } = require('./src/constants/googleAuth');
 
 /** @type {import('expo/config').ExpoConfig} */
 module.exports = () => {
@@ -7,7 +8,8 @@ module.exports = () => {
   const googleMapsApiKeyAndroid = process.env.GOOGLE_MAPS_API_KEY_Android?.trim() || undefined;
   const googleMapsApiKeyIos = process.env.GOOGLE_MAPS_API_KEY_iOS?.trim() || undefined;
 
-  const googleWebClientId = process.env.GOOGLE_WEB_CLIENT_ID?.trim() || undefined;
+  const googleWebClientId =
+    process.env.GOOGLE_WEB_CLIENT_ID?.trim() || DEFAULT_GOOGLE_WEB_CLIENT_ID;
 
   if (!openWeatherApiKey) {
     console.warn(
@@ -25,9 +27,9 @@ module.exports = () => {
     );
   }
 
-  if (!googleWebClientId) {
+  if (!process.env.GOOGLE_WEB_CLIENT_ID?.trim()) {
     console.warn(
-      '[app.config] GOOGLE_WEB_CLIENT_ID が未設定です。Google ログインに必要です（.env.example を参照）。'
+      '[app.config] GOOGLE_WEB_CLIENT_ID が未設定のため、google-services.json と同じ既定値を使います。'
     );
   }
 

@@ -5,6 +5,7 @@ import {
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+import { GOOGLE_WEB_CLIENT_ID as FALLBACK_GOOGLE_WEB_CLIENT_ID } from '../constants/googleAuth';
 
 let configured = false;
 
@@ -23,7 +24,9 @@ export class GoogleSignInNotConfiguredError extends Error {
 }
 
 function getGoogleWebClientId() {
-  return Constants.expoConfig?.extra?.googleWebClientId?.trim() || null;
+  return (
+    Constants.expoConfig?.extra?.googleWebClientId?.trim() || FALLBACK_GOOGLE_WEB_CLIENT_ID
+  );
 }
 
 export function ensureGoogleSignInConfigured() {

@@ -41,7 +41,7 @@ iOS アプリで **Google ログイン等の第三者ログイン** を提供す
 |------|------|
 | コード実装 | **完了**（`signInWithApple` / `upgradeGuestWithApple` / メール既存アカウントとの自動連携） |
 | `app.json` | `usesAppleSignIn: true`、`expo-apple-authentication` プラグイン |
-| 依存パッケージ | `expo-apple-authentication` / `expo-crypto` 導入済み |
+| 依存パッケージ | `expo-apple-authentication`、nonce 用に `js-sha256`（純 JS・iOS のみ利用） |
 | 残作業 | Firebase Apple プロバイダ設定（§4）、**iOS ネイティブ再ビルド**、実機テスト |
 
 ---
