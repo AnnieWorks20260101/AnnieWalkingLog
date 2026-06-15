@@ -89,8 +89,17 @@ npx expo run:ios
 
 ## 未実装（次のステップ）
 
-- RevenueCat Webhook → Cloud Function → `families.premiumExpiresAt` 更新（家族全員への確実な同期）
+- RevenueCat Webhook → Cloud Function → `families.premiumExpiresAt` 更新（サーバー側の確実な同期）
 - Paywall（`react-native-purchases-ui`）
+
+## クライアント側の Firestore 同期（実装済み）
+
+Webhook 未導入でも、RevenueCat でプレミアムが有効と判定されたとき `families.premiumExpiresAt` をクライアントから更新します（`syncFamilyPremiumFromRevenueCat`）。家族全員の `usePremium` が Firestore 経由で即時反映されます。
+
+- 起動時の `identifyRevenueCatFamily`（`RevenueCatSync` / `usePremium`）
+- 購入・復元成功後（`PremiumScreen`）
+
+**既に購入済みで機能が解放されない場合**: アプリ更新後、設定 → プレミアム画面を開くか「購入を復元」をタップしてください。
 
 ## 購入 UI
 

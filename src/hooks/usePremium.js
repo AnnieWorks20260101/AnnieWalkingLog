@@ -4,8 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/firebase';
 import {
   addRevenueCatCustomerInfoListener,
+  identifyRevenueCatFamily,
   isRevenueCatEntitlementActive,
-  isRevenueCatPremiumActive,
+  syncFamilyPremiumFromRevenueCat,
 } from '../services/revenueCat';
 
 function isFirestorePremiumActive(familyData) {
@@ -27,15 +28,20 @@ function isFirestorePremiumActive(familyData) {
  * 手順: docs/PREMIUM_FIRESTORE.md, docs/REVENUECAT.md
  */
 export function usePremium() {
-  const { familyId } = useAuth();
+  const { familyId, userId } = useAuth();
   const [firestorePremium, setFirestorePremium] = useState(false);
   const [revenueCatPremium, setRevenueCatPremium] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const refreshRevenueCatPremium = useCallback(async () => {
-    const active = await isRevenueCatPremiumActive();
-    setRevenueCatPremium(active);
-  }, []);
+    if (!familyId) {
+      setRevenueCatPremium(false);
+      return;
+    }
+
+    const customerInfo = await identifyRevenueCatFamily(familyId, { userId });
+    setRevenueCatPremium(isRevenueCatEntitlementActive(customerInfo));
+  }, [familyId, userId]);
 
   useEffect(() => {
     if (!familyId) {
@@ -68,18 +74,31 @@ export function usePremium() {
       return undefined;
     }
 
+    let cancelled = false;
+
     refreshRevenueCatPremium().catch((error) => {
       console.warn('usePremium: RevenueCat refresh failed:', error);
+      if (!cancelled) {
+        setRevenueCatPremium(false);
+      }
     });
 
     const removeListener = addRevenueCatCustomerInfoListener((customerInfo) => {
       setRevenueCatPremium(isRevenueCatEntitlementActive(customerInfo));
+      if (isRevenueCatEntitlementActive(customerInfo)) {
+        syncFamilyPremiumFromRevenueCat(familyId, customerInfo).catch((error) => {
+          console.warn('usePremium: Firestore premium sync failed:', error);
+        });
+      }
     });
 
-    return removeListener;
+    return () => {
+      cancelled = true;
+      removeListener();
+    };
   }, [familyId, refreshRevenueCatPremium]);
 
   const isPremium = firestorePremium || revenueCatPremium;
 
-  return { isPremium, firestorePremium, revenueCatPremium, loading };
+  return { isPremium, firestorePremium, revenueCatPremium, loading, refreshRevenueCatPremium };
 }

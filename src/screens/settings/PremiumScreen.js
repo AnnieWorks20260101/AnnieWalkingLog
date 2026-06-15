@@ -19,10 +19,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePlanTier } from '../../hooks/usePlanTier';
 import {
   getRevenueCatPackages,
+  identifyRevenueCatFamily,
   purchaseRevenueCatPackage,
   restoreRevenueCatPurchases,
   isRevenueCatEntitlementActive,
   isRevenueCatSupportedPlatform,
+  syncFamilyPremiumFromRevenueCat,
 } from '../../services/revenueCat';
 import { openPrivacyPolicy } from '../../utils/openPrivacyPolicy';
 import { openTermsOfService } from '../../utils/openTermsOfService';
@@ -42,7 +44,7 @@ export default function PremiumScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { currentTheme, fontSizes } = useTheme();
-  const { isGuest, familyId } = useAuth();
+  const { isGuest, familyId, userId } = useAuth();
   const { tier, isPremium } = usePlanTier();
   const [packages, setPackages] = useState([]);
   const [loadingPackages, setLoadingPackages] = useState(true);
@@ -60,6 +62,7 @@ export default function PremiumScreen() {
 
     setLoadingPackages(true);
     try {
+      await identifyRevenueCatFamily(familyId, { userId });
       const availablePackages = await getRevenueCatPackages();
       setPackages(availablePackages);
     } catch (error) {
@@ -68,17 +71,26 @@ export default function PremiumScreen() {
     } finally {
       setLoadingPackages(false);
     }
-  }, [canPurchase]);
+  }, [canPurchase, familyId, userId]);
 
   useEffect(() => {
     loadPackages();
   }, [loadPackages]);
 
-  const handlePurchaseSuccess = useCallback((customerInfo) => {
-    if (isRevenueCatEntitlementActive(customerInfo)) {
+  const handlePurchaseSuccess = useCallback(
+    async (customerInfo) => {
+      if (!isRevenueCatEntitlementActive(customerInfo)) {
+        return;
+      }
+
+      if (familyId) {
+        await syncFamilyPremiumFromRevenueCat(familyId, customerInfo);
+      }
+
       Alert.alert(i18n.t('common.notice'), i18n.t('settings.premiumPurchaseSuccess'));
-    }
-  }, []);
+    },
+    [familyId]
+  );
 
   const handlePurchaseError = useCallback((error) => {
     if (error?.userCancelled) {
@@ -96,15 +108,16 @@ export default function PremiumScreen() {
 
       setPurchasingPackageId(pkg.identifier);
       try {
+        await identifyRevenueCatFamily(familyId, { userId });
         const customerInfo = await purchaseRevenueCatPackage(pkg);
-        handlePurchaseSuccess(customerInfo);
+        await handlePurchaseSuccess(customerInfo);
       } catch (error) {
         handlePurchaseError(error);
       } finally {
         setPurchasingPackageId(null);
       }
     },
-    [handlePurchaseError, handlePurchaseSuccess, purchasingPackageId, restoring]
+    [familyId, handlePurchaseError, handlePurchaseSuccess, purchasingPackageId, restoring, userId]
   );
 
   const handleRestore = useCallback(async () => {
@@ -114,8 +127,10 @@ export default function PremiumScreen() {
 
     setRestoring(true);
     try {
+      await identifyRevenueCatFamily(familyId, { userId });
       const customerInfo = await restoreRevenueCatPurchases();
       if (isRevenueCatEntitlementActive(customerInfo)) {
+        await syncFamilyPremiumFromRevenueCat(familyId, customerInfo);
         Alert.alert(i18n.t('common.notice'), i18n.t('settings.premiumRestoreSuccess'));
       } else {
         Alert.alert(i18n.t('common.notice'), i18n.t('settings.premiumRestoreNone'));
@@ -126,7 +141,7 @@ export default function PremiumScreen() {
     } finally {
       setRestoring(false);
     }
-  }, [purchasingPackageId, restoring]);
+  }, [familyId, purchasingPackageId, restoring, userId]);
 
   const purchaseBusy = !!purchasingPackageId || restoring;
 

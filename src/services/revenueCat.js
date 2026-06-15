@@ -1,7 +1,9 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { REVENUECAT_ENTITLEMENT_ID, REVENUECAT_OFFERING_ID } from '../constants/revenueCat';
+import { db } from './firebase';
 
 let isConfigured = false;
 let identifiedFamilyId = null;
@@ -54,12 +56,79 @@ export function configureRevenueCat() {
 
 /**
  * @param {import('react-native-purchases').CustomerInfo | null | undefined} customerInfo
+ * @returns {import('react-native-purchases').PurchasesEntitlementInfo | null}
+ */
+export function getActivePremiumEntitlement(customerInfo) {
+  const active = customerInfo?.entitlements?.active;
+  if (!active) {
+    return null;
+  }
+
+  if (active[REVENUECAT_ENTITLEMENT_ID]) {
+    return active[REVENUECAT_ENTITLEMENT_ID];
+  }
+
+  const caseInsensitiveKey = Object.keys(active).find(
+    (key) => key.toLowerCase() === REVENUECAT_ENTITLEMENT_ID.toLowerCase()
+  );
+  if (caseInsensitiveKey) {
+    if (__DEV__) {
+      console.warn(
+        `[RevenueCat] Entitlement ID mismatch: expected "${REVENUECAT_ENTITLEMENT_ID}", found "${caseInsensitiveKey}".`
+      );
+    }
+    return active[caseInsensitiveKey];
+  }
+
+  const keys = Object.keys(active);
+  if (keys.length === 1) {
+    if (__DEV__) {
+      console.warn(
+        `[RevenueCat] Using sole active entitlement "${keys[0]}" (REVENUECAT_ENTITLEMENT_ID is "${REVENUECAT_ENTITLEMENT_ID}").`
+      );
+    }
+    return active[keys[0]];
+  }
+
+  if (__DEV__ && keys.length > 0) {
+    console.warn(
+      `[RevenueCat] Active entitlements: ${keys.join(', ')} (expected "${REVENUECAT_ENTITLEMENT_ID}").`
+    );
+  }
+
+  return null;
+}
+
+/**
+ * @param {import('react-native-purchases').CustomerInfo | null | undefined} customerInfo
  */
 export function isRevenueCatEntitlementActive(customerInfo) {
-  if (!customerInfo?.entitlements?.active) {
+  return getActivePremiumEntitlement(customerInfo) != null;
+}
+
+/**
+ * RevenueCat の有効期限を families.premiumExpiresAt に反映（家族全員が即時プレミアム扱い）。
+ * Webhook 未実装時のクライアント同期。Webhook 導入後も自己修復用に利用可。
+ * @param {string} familyId
+ * @param {import('react-native-purchases').CustomerInfo | null | undefined} customerInfo
+ */
+export async function syncFamilyPremiumFromRevenueCat(familyId, customerInfo) {
+  const entitlement = getActivePremiumEntitlement(customerInfo);
+  if (!familyId || !entitlement) {
     return false;
   }
-  return customerInfo.entitlements.active[REVENUECAT_ENTITLEMENT_ID] != null;
+
+  const expiresAt = entitlement.expirationDate
+    ? Timestamp.fromDate(new Date(entitlement.expirationDate))
+    : Timestamp.fromDate(new Date('2099-12-31T23:59:59Z'));
+
+  await setDoc(doc(db, 'families', familyId), { premiumExpiresAt: expiresAt }, { merge: true });
+
+  if (__DEV__) {
+    console.log('[RevenueCat] Synced premiumExpiresAt to Firestore for family:', familyId);
+  }
+
+  return true;
 }
 
 /**
@@ -76,12 +145,17 @@ export async function identifyRevenueCatFamily(familyId, options = {}) {
     return null;
   }
 
-  if (identifiedFamilyId === familyId) {
-    return Purchases.getCustomerInfo();
-  }
+  let customerInfo;
+  let created = false;
 
-  const { customerInfo, created } = await Purchases.logIn(familyId);
-  identifiedFamilyId = familyId;
+  if (identifiedFamilyId === familyId) {
+    customerInfo = await Purchases.getCustomerInfo();
+  } else {
+    const loginResult = await Purchases.logIn(familyId);
+    customerInfo = loginResult.customerInfo;
+    created = loginResult.created;
+    identifiedFamilyId = familyId;
+  }
 
   if (options.userId) {
     try {
@@ -95,6 +169,14 @@ export async function identifyRevenueCatFamily(familyId, options = {}) {
 
   if (__DEV__ && created) {
     console.log('[RevenueCat] New customer created for family:', familyId);
+  }
+
+  if (options.syncFirestore !== false) {
+    try {
+      await syncFamilyPremiumFromRevenueCat(familyId, customerInfo);
+    } catch (error) {
+      console.warn('[RevenueCat] syncFamilyPremiumFromRevenueCat failed:', error);
+    }
   }
 
   return customerInfo;
@@ -130,8 +212,13 @@ export async function getRevenueCatCustomerInfo() {
   }
 }
 
-export async function isRevenueCatPremiumActive() {
-  const customerInfo = await getRevenueCatCustomerInfo();
+/**
+ * familyId に紐づけたうえでプレミアム状態を返す（匿名ユーザーへの誤紐づけを防ぐ）。
+ * @param {string} familyId
+ * @param {{ userId?: string | null }} [options]
+ */
+export async function isRevenueCatPremiumActiveForFamily(familyId, options = {}) {
+  const customerInfo = await identifyRevenueCatFamily(familyId, options);
   return isRevenueCatEntitlementActive(customerInfo);
 }
 
