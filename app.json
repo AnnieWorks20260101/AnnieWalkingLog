@@ -2,7 +2,7 @@
   "expo": {
     "name": "AnnieWalkingLog",
     "slug": "AnnieWalkingLog",
-    "version": "0.91.00",
+    "version": "0.91.04",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -22,6 +22,9 @@
       "entitlements": {
         "com.apple.security.application-groups": [
           "group.com.annieworks.AnnieWalkingLog.walk"
+        ],
+        "com.apple.developer.applesignin": [
+          "Default"
         ]
       },
       "infoPlist": {
@@ -94,8 +97,7 @@
         }
       ],
       "./modules/expo-walk-tracking/app.plugin.js",
-      "@react-native-google-signin/google-signin",
-      "expo-apple-authentication"
+      "@react-native-google-signin/google-signin"
     ]
   }
 }

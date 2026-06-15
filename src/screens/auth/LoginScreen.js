@@ -21,7 +21,7 @@ import i18n from '../../i18n';
 import { SCREEN_REGISTER } from '../../navigation/screenNames';
 import { hasAcceptedLegalDocuments, setAcceptedLegalDocuments } from '../../utils/legalConsentStorage';
 import { getOAuthAuthErrorMessage } from '../../utils/oauthAuthResult';
-import { isAppleSignInAvailable } from '../../services/appleSignIn';
+import { getGoogleSignInErrorMessage } from '../../utils/googleSignInErrors';
 
 export default function LoginScreen({ navigation }) {
   const { currentTheme } = useTheme();
@@ -41,18 +41,7 @@ export default function LoginScreen({ navigation }) {
   const [legalConsentChecked, setLegalConsentChecked] = useState(false);
   const [oauthLinkRequest, setOauthLinkRequest] = useState(null);
   const [linkSubmitting, setLinkSubmitting] = useState(false);
-  const [appleSignInAvailable, setAppleSignInAvailable] = useState(false);
-
-  useEffect(() => {
-    if (Platform.OS !== 'ios') {
-      return;
-    }
-    isAppleSignInAvailable()
-      .then(setAppleSignInAvailable)
-      .catch((error) => {
-        console.warn('apple sign-in availability check failed:', error);
-      });
-  }, []);
+  const showAppleLoginButton = true;
 
   useEffect(() => {
     hasAcceptedLegalDocuments()
@@ -165,8 +154,11 @@ export default function LoginScreen({ navigation }) {
         Alert.alert(i18n.t('common.error'), message);
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert(i18n.t('common.error'), i18n.t('auth.googleLoginError'));
+      console.error('Google login failed:', error);
+      const message = getGoogleSignInErrorMessage(error);
+      if (message) {
+        Alert.alert(i18n.t('common.error'), message);
+      }
     } finally {
       setLoading(false);
     }
@@ -354,7 +346,7 @@ export default function LoginScreen({ navigation }) {
               <Text style={[styles.socialText, { color: currentTheme.text }]}>{i18n.t('auth.googleLogin')}</Text>
             </TouchableOpacity>
 
-            {appleSignInAvailable ? (
+            {showAppleLoginButton ? (
               <TouchableOpacity
                 style={[
                   styles.socialButton,

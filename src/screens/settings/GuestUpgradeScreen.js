@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -19,7 +19,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import GoogleAccountLinkModal from '../../components/auth/GoogleAccountLinkModal';
 import i18n from '../../i18n';
 import { getOAuthAuthErrorMessage } from '../../utils/oauthAuthResult';
-import { isAppleSignInAvailable } from '../../services/appleSignIn';
+import { getGoogleSignInErrorMessage } from '../../utils/googleSignInErrors';
 
 export default function GuestUpgradeScreen({ navigation }) {
   const { currentTheme } = useTheme();
@@ -37,18 +37,7 @@ export default function GuestUpgradeScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [oauthLinkRequest, setOauthLinkRequest] = useState(null);
   const [linkSubmitting, setLinkSubmitting] = useState(false);
-  const [appleSignInAvailable, setAppleSignInAvailable] = useState(false);
-
-  useEffect(() => {
-    if (Platform.OS !== 'ios') {
-      return;
-    }
-    isAppleSignInAvailable()
-      .then(setAppleSignInAvailable)
-      .catch((error) => {
-        console.warn('apple sign-in availability check failed:', error);
-      });
-  }, []);
+  const showAppleLoginButton = true;
 
   const showUpgradeSuccess = () => {
     Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('auth.upgradeSuccess'), [
@@ -83,8 +72,11 @@ export default function GuestUpgradeScreen({ navigation }) {
         Alert.alert(i18n.t('common.error'), message);
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert(i18n.t('common.error'), i18n.t('auth.googleLoginError'));
+      console.error('Google upgrade failed:', error);
+      const message = getGoogleSignInErrorMessage(error);
+      if (message) {
+        Alert.alert(i18n.t('common.error'), message);
+      }
     } finally {
       setLoading(false);
     }
@@ -274,7 +266,7 @@ export default function GuestUpgradeScreen({ navigation }) {
                 <Text style={[styles.socialText, { color: currentTheme.text }]}>{i18n.t('auth.upgradeGoogle')}</Text>
               </TouchableOpacity>
 
-              {appleSignInAvailable ? (
+              {showAppleLoginButton ? (
                 <TouchableOpacity
                   style={[styles.socialButton, { borderColor: currentTheme.border, backgroundColor: currentTheme.card }]}
                   onPress={handleAppleUpgrade}

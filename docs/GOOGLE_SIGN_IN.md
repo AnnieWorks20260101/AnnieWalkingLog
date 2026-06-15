@@ -31,7 +31,7 @@ Firebase Authentication + `@react-native-google-signin/google-signin` で Google
 | `GoogleService-Info.plist` | **リポジトリ直下**（`app.json` → `ios.googleServicesFile: ./GoogleService-Info.plist`） |
 | `google-services.json` | リポジトリに配置済み（`oauth_client` に Web クライアントあり） |
 | 依存パッケージ | `@react-native-google-signin/google-signin` 導入済み |
-| 残作業 | `.env` / EAS Secret の `GOOGLE_WEB_CLIENT_ID`、**ネイティブ再ビルド**、実機テスト |
+| 残作業 | `.env` / EAS Secret の `GOOGLE_WEB_CLIENT_ID`、**Android SHA-1 登録**、**ネイティブ再ビルド**、実機テスト |
 
 ---
 
@@ -64,14 +64,17 @@ Firebase Authentication + `@react-native-google-signin/google-signin` で Google
 
 ### 2. Google Cloud — OAuth 同意画面
 
-Firebase で Google を有効化すると、同じプロジェクトの [Google Cloud Console](https://console.cloud.google.com/) に OAuth クライアントが自動作成されます。
+Firebase で Google を有効化すると、同じプロジェクトの [Google Cloud Console](https://console.cloud.google.com/) に OAuth クライアントが **自動作成** されます。**新規に同意画面を手動作成する必要はありません。** 自動作成された画面を開き、不足項目を埋めてください。
+
+エラー 12500 の詳細手順: **[GOOGLE_SIGN_IN_ERROR_12500.md](./GOOGLE_SIGN_IN_ERROR_12500.md)** §4
 
 1. **APIs & Services** → **OAuth consent screen**
 2. User type（外部／内部）を選択
 3. アプリ名・サポートメール・デベロッパー連絡先を入力
-4. スコープはデフォルト（`email`, `profile`, `openid`）で足りる
-5. **テスト**段階ではテストユーザーを追加（本番公開前は Google 未登録アカウントは弾かれる場合あり）
-6. ストア公開前に **本番公開（Publish）** の審査を完了させる
+4. **プライバシーポリシー URL** を入力（例: `https://www.annie-works.com/jp/AnnieWalkingLog/Privacy-Policy`）
+5. スコープはデフォルト（`email`, `profile`, `openid`）で足りる
+6. **テスト**段階ではテストユーザーを追加（本番公開前は Google 未登録アカウントは弾かれる場合あり）
+7. ストア公開前に **本番公開（Publish）** の審査を完了させる
 
 ### 3. Android — SHA-1 フィンガープリント
 
@@ -251,6 +254,7 @@ npx expo run:ios
 
 | 症状 | よくある原因 | 対処 |
 |------|--------------|------|
+| **エラー 12500**（Android） | サポートメール未設定、OAuth 同意画面の不足、**SHA-1 未登録**、`google-services.json` 未更新 | **[GOOGLE_SIGN_IN_ERROR_12500.md](./GOOGLE_SIGN_IN_ERROR_12500.md)**（詳細手順） |
 | `DEVELOPER_ERROR`（Android） | SHA-1 未登録、または `google-services.json` が古い | Firebase に SHA-1 追加 → JSON 再ダウンロード → 再ビルド |
 | `oauth_client` が空のまま | 上記と同じ | Android アプリ設定を見直す |
 | ログイン直後に `auth/invalid-credential` | `GOOGLE_WEB_CLIENT_ID` が誤り（Android/iOS 用 ID を入れている） | **Web クライアント ID**（type 3）を設定 |
