@@ -16,6 +16,7 @@ Firebase Console で `premiumExpiresAt` を未来の日時に設定すると、�
 
 ## 本番（Phase 2）
 
-- RevenueCat / ストア課金の Webhook → Cloud Function で `premiumExpiresAt` を更新
+- RevenueCat クライアント連携: [REVENUECAT.md](./REVENUECAT.md)（実装済み）
+- RevenueCat Webhook → Cloud Function で `premiumExpiresAt` を更新（家族全員へのバックエンド同期）
 - `storage.rules` を Console にデプロイ（[storage.rules](../storage.rules)）
 - 無料プラン用の walks クエリ（1年フィルタ）には複合インデックスが必要な場合があります → [firestore.indexes.json](../firestore.indexes.json) を `firebase deploy --only firestore:indexes`

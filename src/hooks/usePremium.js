@@ -1,9 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/firebase';
+import {
+  addRevenueCatCustomerInfoListener,
+  isRevenueCatEntitlementActive,
+  isRevenueCatPremiumActive,
+} from '../services/revenueCat';
 
-function isPremiumActive(familyData) {
+function isFirestorePremiumActive(familyData) {
   if (!familyData) {
     return false;
   }
@@ -16,18 +21,26 @@ function isPremiumActive(familyData) {
 }
 
 /**
- * 家族単位のプレミアム状態（families.premiumExpiresAt）。
- * 課金連携後: RevenueCat 等 → Cloud Function で premiumExpiresAt を更新。
- * 手順: docs/PREMIUM_FIRESTORE.md
+ * 家族単位のプレミアム状態。
+ * - Firestore: families.premiumExpiresAt（手動テスト / Webhook 連携後）
+ * - RevenueCat: エンタイトルメント（アプリ内課金の即時反映）
+ * 手順: docs/PREMIUM_FIRESTORE.md, docs/REVENUECAT.md
  */
 export function usePremium() {
   const { familyId } = useAuth();
-  const [isPremium, setIsPremium] = useState(false);
+  const [firestorePremium, setFirestorePremium] = useState(false);
+  const [revenueCatPremium, setRevenueCatPremium] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const refreshRevenueCatPremium = useCallback(async () => {
+    const active = await isRevenueCatPremiumActive();
+    setRevenueCatPremium(active);
+  }, []);
 
   useEffect(() => {
     if (!familyId) {
-      setIsPremium(false);
+      setFirestorePremium(false);
+      setRevenueCatPremium(false);
       setLoading(false);
       return undefined;
     }
@@ -37,11 +50,11 @@ export function usePremium() {
     const unsubscribe = onSnapshot(
       familyRef,
       (snap) => {
-        setIsPremium(snap.exists() && isPremiumActive(snap.data()));
+        setFirestorePremium(snap.exists() && isFirestorePremiumActive(snap.data()));
         setLoading(false);
       },
       () => {
-        setIsPremium(false);
+        setFirestorePremium(false);
         setLoading(false);
       }
     );
@@ -49,5 +62,24 @@ export function usePremium() {
     return unsubscribe;
   }, [familyId]);
 
-  return { isPremium, loading };
+  useEffect(() => {
+    if (!familyId) {
+      setRevenueCatPremium(false);
+      return undefined;
+    }
+
+    refreshRevenueCatPremium().catch((error) => {
+      console.warn('usePremium: RevenueCat refresh failed:', error);
+    });
+
+    const removeListener = addRevenueCatCustomerInfoListener((customerInfo) => {
+      setRevenueCatPremium(isRevenueCatEntitlementActive(customerInfo));
+    });
+
+    return removeListener;
+  }, [familyId, refreshRevenueCatPremium]);
+
+  const isPremium = firestorePremium || revenueCatPremium;
+
+  return { isPremium, firestorePremium, revenueCatPremium, loading };
 }

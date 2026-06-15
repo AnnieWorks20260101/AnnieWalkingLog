@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import i18n from '../i18n';
 
@@ -11,7 +11,8 @@ export async function saveWalkPhotoToDeviceLibrary(localUri) {
     return false;
   }
 
-  const permission = await MediaLibrary.requestPermissionsAsync();
+  // Android: 保存のみ（READ_MEDIA_IMAGES は不要）。iOS: ライブラリへの追加許可。
+  const permission = await MediaLibrary.requestPermissionsAsync(Platform.OS === 'android');
   if (!permission.granted) {
     Alert.alert(i18n.t('common.error'), i18n.t('walk.photoLibraryPermissionDenied'));
     return false;

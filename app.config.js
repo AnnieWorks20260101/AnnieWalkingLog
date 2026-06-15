@@ -33,6 +33,20 @@ module.exports = () => {
     );
   }
 
+  const revenueCatApiKeyIos = process.env.REVENUECAT_API_KEY_IOS?.trim() || undefined;
+  const revenueCatApiKeyAndroid = process.env.REVENUECAT_API_KEY_ANDROID?.trim() || undefined;
+
+  if (!revenueCatApiKeyIos) {
+    console.warn(
+      '[app.config] REVENUECAT_API_KEY_IOS が未設定です。RevenueCat iOS 課金に必要です（.env.example を参照）。'
+    );
+  }
+  if (!revenueCatApiKeyAndroid) {
+    console.warn(
+      '[app.config] REVENUECAT_API_KEY_ANDROID が未設定です。RevenueCat Android 課金に必要です（.env.example を参照）。'
+    );
+  }
+
   return {
     expo: {
       ...appJson.expo,
@@ -58,6 +72,8 @@ module.exports = () => {
         googleMapsApiKeyAndroid,
         googleMapsApiKeyIos,
         googleWebClientId,
+        revenueCatApiKeyIos,
+        revenueCatApiKeyAndroid,
         eas: {
           ...appJson.expo.extra?.eas,
           build: {

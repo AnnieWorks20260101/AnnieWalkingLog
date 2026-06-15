@@ -16,6 +16,7 @@ import {
 import { WalkPreferencesProvider } from './src/contexts/WalkPreferencesContext';
 import ThemedStatusBar from './src/components/ThemedStatusBar';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import RevenueCatSync from './src/components/RevenueCatSync';
 import i18n from './src/i18n';
 import { TAB_WALK_LOG, TAB_WALK_GRAPH, TAB_WALK, TAB_PETS, TAB_SETTINGS } from './src/navigation/tabNames';
 import {
@@ -210,6 +211,7 @@ export default function App() {
         <DisplayPreferencesProvider>
           <WalkPreferencesProvider>
             <AuthProvider>
+              <RevenueCatSync />
               <RootNavigator />
             </AuthProvider>
           </WalkPreferencesProvider>

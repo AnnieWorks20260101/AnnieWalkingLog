@@ -3,6 +3,7 @@ export const WALK_CUSTOM_BUTTON_OPTIONS = [
   { id: 'pee', icon: '💦', labelKey: 'settings.customButton.pee' },
   { id: 'dog', icon: '🐶', labelKey: 'settings.customButton.dog' },
   { id: 'water', icon: '💧', labelKey: 'settings.customButton.water' },
+  { id: 'rest', icon: '☕', labelKey: 'settings.customButton.rest' },
   { id: 'star', icon: '⭐', labelKey: 'settings.customButton.star' },
   { id: 'heart_yellow', icon: '💛', labelKey: 'settings.customButton.heartYellow' },
   { id: 'heart', icon: '❤️', labelKey: 'settings.customButton.heart' },

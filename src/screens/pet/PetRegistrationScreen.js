@@ -144,10 +144,13 @@ export default function PetRegistrationScreen({ navigation, route }) {
   }, [familyId]);
 
   const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(i18n.t('common.error'), i18n.t('petRegistration.photoPermissionDenied'));
-      return;
+    // Android 13+ はシステムのフォトピッカーを使うため READ_MEDIA_* 不要（iOS のみ事前許可）
+    if (Platform.OS === 'ios') {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(i18n.t('common.error'), i18n.t('petRegistration.photoPermissionDenied'));
+        return;
+      }
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
