@@ -13,7 +13,6 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "deploymentTarget": "16.2",
       "supportsTablet": true,
       "bundleIdentifier": "com.annieworks.AnnieWalkingLog",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -100,7 +99,16 @@
         }
       ],
       "./modules/expo-walk-tracking/app.plugin.js",
-      "@react-native-google-signin/google-signin"
+      "./plugins/withGoogleModularHeaders.js",
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.2"
+          }
+        }
+      ]
     ]
   }
 }

@@ -89,8 +89,11 @@ npx expo run:ios
 
 ## 未実装（次のステップ）
 
-- プレミアム画面での購入・復元 UI（`getOfferings` / `purchasePackage`）
 - RevenueCat Webhook → Cloud Function → `families.premiumExpiresAt` 更新（家族全員への確実な同期）
 - Paywall（`react-native-purchases-ui`）
+
+## 購入 UI
+
+[`src/screens/settings/PremiumScreen.js`](../src/screens/settings/PremiumScreen.js) で Offering `pro_offering` から月額・年額パッケージの購入、復元、利用規約・プライバシーポリシーへのリンクを表示します。
 
 Firestore 手動テストは引き続き有効です（[PREMIUM_FIRESTORE.md](./PREMIUM_FIRESTORE.md)）。

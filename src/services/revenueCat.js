@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
-import { REVENUECAT_ENTITLEMENT_ID } from '../constants/revenueCat';
+import { REVENUECAT_ENTITLEMENT_ID, REVENUECAT_OFFERING_ID } from '../constants/revenueCat';
 
 let isConfigured = false;
 let identifiedFamilyId = null;
@@ -149,4 +149,66 @@ export function addRevenueCatCustomerInfoListener(listener) {
   return () => {
     Purchases.removeCustomerInfoUpdateListener(listener);
   };
+}
+
+/**
+ * @returns {Promise<import('react-native-purchases').PurchasesOffering | null>}
+ */
+export async function getRevenueCatOffering() {
+  if (!configureRevenueCat()) {
+    return null;
+  }
+
+  try {
+    const offerings = await Purchases.getOfferings();
+    return offerings.all[REVENUECAT_OFFERING_ID] ?? offerings.current ?? null;
+  } catch (error) {
+    console.warn('[RevenueCat] getOfferings failed:', error);
+    return null;
+  }
+}
+
+/**
+ * @returns {Promise<import('react-native-purchases').PurchasesPackage[]>}
+ */
+export async function getRevenueCatPackages() {
+  const offering = await getRevenueCatOffering();
+  if (!offering?.availablePackages?.length) {
+    return [];
+  }
+
+  const packageOrder = {
+    MONTHLY: 0,
+    ANNUAL: 1,
+  };
+
+  return [...offering.availablePackages].sort((left, right) => {
+    const leftOrder = packageOrder[left.packageType] ?? 99;
+    const rightOrder = packageOrder[right.packageType] ?? 99;
+    return leftOrder - rightOrder;
+  });
+}
+
+/**
+ * @param {import('react-native-purchases').PurchasesPackage} pkg
+ * @returns {Promise<import('react-native-purchases').CustomerInfo>}
+ */
+export async function purchaseRevenueCatPackage(pkg) {
+  if (!configureRevenueCat()) {
+    throw new Error('REVENUECAT_NOT_CONFIGURED');
+  }
+
+  const { customerInfo } = await Purchases.purchasePackage(pkg);
+  return customerInfo;
+}
+
+/**
+ * @returns {Promise<import('react-native-purchases').CustomerInfo>}
+ */
+export async function restoreRevenueCatPurchases() {
+  if (!configureRevenueCat()) {
+    throw new Error('REVENUECAT_NOT_CONFIGURED');
+  }
+
+  return Purchases.restorePurchases();
 }

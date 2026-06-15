@@ -1,0 +1,23 @@
+# EAS Build のアップロード除外（.gitignore の代わりに使われる）
+# .env と Firebase 設定ファイルはビルドに必要なのでここには書かない
+
+node_modules/
+.expo/
+dist/
+web-build/
+/android
+/ios
+build/
+.idea/
+.vscode/
+.DS_Store
+*.jks
+*.keystore
+*.aab
+*.apk
+*.ipa
+*.tar.gz
+local.properties
+android/keystore.properties
+annieworks.keystore
+credentials.json
