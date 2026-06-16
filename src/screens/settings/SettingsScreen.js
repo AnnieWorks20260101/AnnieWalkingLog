@@ -48,8 +48,8 @@ import FamilyMembersModal from '../../components/settings/FamilyMembersModal';
 import {
   seedTestWalksForFamily,
   estimateTestWalkSeedCount,
-  countTestWalksForFamily,
-  deleteTestWalksForFamily,
+  countAllTestWalks,
+  deleteAllTestWalks,
 } from '../../dev/seedTestWalks';
 
 function SettingRow({ children, onPress, style }) {
@@ -281,14 +281,9 @@ export default function SettingsScreen({ navigation }) {
   };
 
   const handleDeleteTestWalks = async () => {
-    if (!familyId) {
-      Alert.alert(i18n.t('common.error'), i18n.t('settings.testSeedNoFamily'));
-      return;
-    }
-
     let count = 0;
     try {
-      count = await countTestWalksForFamily(familyId);
+      count = await countAllTestWalks();
     } catch (error) {
       console.error('count test walks error:', error);
       Alert.alert(i18n.t('common.error'), i18n.t('settings.testDeleteError'));
@@ -312,8 +307,7 @@ export default function SettingsScreen({ navigation }) {
             setTestDevRunning(true);
             setTestDevProgress({ done: 0, total: count });
             try {
-              const { deleted } = await deleteTestWalksForFamily({
-                familyId,
+              const { deleted } = await deleteAllTestWalks({
                 onProgress: (done, total) => setTestDevProgress({ done, total }),
               });
               Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('settings.testDeleteSuccess', { count: deleted }));

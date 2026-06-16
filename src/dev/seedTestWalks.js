@@ -179,36 +179,28 @@ export async function seedTestWalksForFamily({ familyId, userId, locale, onProgr
   return { created: total, petCount: pets.length };
 }
 
-function testWalksQuery(familyId) {
-  return query(
-    collection(db, 'walks'),
-    where('familyId', '==', familyId),
-    where(TEST_SEED_FLAG, '==', true)
-  );
+function allTestWalksQuery() {
+  return query(collection(db, 'walks'), where(TEST_SEED_FLAG, '==', true));
 }
 
-/** 削除対象のテストお散歩件数 */
-export async function countTestWalksForFamily(familyId) {
-  if (!familyId) {
-    return 0;
-  }
-  const snap = await getDocs(testWalksQuery(familyId));
+/** 削除対象のテストお散歩件数（Firestore 全体・家族 ID 不問） */
+export async function countAllTestWalks() {
+  const snap = await getDocs(allTestWalksQuery());
   return snap.size;
 }
 
 const DELETE_CHUNK_SIZE = 15;
 
 /**
- * isTestSeed のお散歩だけ削除（Storage 写真含む）
- * @param {{ familyId: string, onProgress?: (done: number, total: number) => void }} params
+ * isTestSeed のお散歩を Firestore 全体から削除（Storage 写真含む・家族 ID 不問）
+ * @param {{ onProgress?: (done: number, total: number) => void }} [params]
  */
-export async function deleteTestWalksForFamily({ familyId, onProgress }) {
-  if (!familyId) {
-    throw new Error('deleteTestWalks: familyId is required');
-  }
-
-  const snap = await getDocs(testWalksQuery(familyId));
-  const walks = snap.docs.map((d) => ({ id: d.id, familyId }));
+export async function deleteAllTestWalks({ onProgress } = {}) {
+  const snap = await getDocs(allTestWalksQuery());
+  const walks = snap.docs.map((d) => ({
+    id: d.id,
+    familyId: d.data()?.familyId,
+  }));
   const total = walks.length;
 
   if (total === 0) {

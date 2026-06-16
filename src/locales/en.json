@@ -10,7 +10,7 @@
     "title": "🐾 Walk",
     "alertNoPet": "Please register and select a pet first 🐾",
     "saveError": "Failed to save.",
-    "graphComingSoon": "Walk graphs are coming soon.",
+    "graphComingSoon": "Use the Graphs tab to view distance, duration, speed, and poop counts by period.",
     "graphEmpty": "No walk records to show on the graph.",
     "graphMetricDistance": "Distance",
     "graphMetricDuration": "Duration",
@@ -297,11 +297,11 @@
       },
       "graph": {
         "q": "What is the locked graph?",
-        "a": "The comparison graph at the bottom is Premium only. The top graph uses records for your plan (Guest: last 10 walks, Free: last year). Purchases are coming soon."
+        "a": "The comparison graph at the bottom is Premium only. The top graph uses records for your plan (Guest: last 10 walks, Free: last year). Subscribe via Settings → Premium plan through the App Store or Google Play."
       },
       "premium": {
         "q": "About Premium",
-        "aIntro": "If one family member subscribes, everyone with the same family code gets Premium. Planned price: ¥180/month or ¥1,800/year (store billing coming soon).",
+        "aIntro": "If one family member subscribes, everyone with the same family code gets Premium. Pricing follows the App Store / Google Play listing (approx. ¥180/month or ¥1,800/year). Purchase or restore from Settings → Premium plan.",
         "aDowngrade": "[After Premium ends] If you had 3+ pets registered, only the first 2 in list order stay usable on Free. Others are grayed out in the pet list (no reordering), walks allow 2 pets max, and history/graph pet filters match. Pet records are not deleted. Reorder the list to bring a pet into the top slots to use it again.",
         "aNote": "For testing, set premiumExpiresAt on the families document in Firestore to a future timestamp. Set it in the past to simulate Free plan behavior."
       }
@@ -342,14 +342,14 @@
     "testSeedError": "Failed to create test data.",
     "testSeedNoFamily": "Family ID not found. Check that you are signed in.",
     "testDeleteCardTitle": "Delete test walk data",
-    "testDeleteCardDesc": "Removes only walks marked isTestSeed (your real walks stay).",
+    "testDeleteCardDesc": "Deletes isTestSeed walks across all family codes (your real walks stay).",
     "testDeleteConfirmTitle": "Delete test data?",
     "testDeleteConfirmMsg": "Delete %{count} test walk record(s)? This cannot be undone.",
     "testDeleteRunning": "Deleting… %{done} / %{total}",
     "testDeleteSuccess": "Deleted %{count} test walk(s).",
     "testDeleteError": "Failed to delete test data.",
     "testDeleteEmptyTitle": "Nothing to delete",
-    "testDeleteEmptyMsg": "No test walk records were found.",
+    "testDeleteEmptyMsg": "No test walk records were found in Firestore.",
     "testSeedCardTitleKo": "Create test walk data (Korean)",
     "testSeedCardDescKo": "Uses Korean default pet names and separators (~2 years of walks)."
   },
