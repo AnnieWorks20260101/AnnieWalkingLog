@@ -1,6 +1,6 @@
 /**
- * TEST ONLY — 本番リリース前にこのファイルと設定画面の呼び出しを削除すること。
- * 過去2年分のダミーお散歩記録を Firestore に投入する。
+ * 設定画面から投入するテスト用お散歩データ（isTestSeed フラグ付き）。
+ * 英語のサンプル内容（ペット名・メモ・座標）で App Store 等のデモ向け。
  */
 import {
   collection,
@@ -18,6 +18,31 @@ import { deleteWalkRecord } from '../services/deleteWalk';
 const BATCH_SIZE = 400;
 const SEED_YEARS = 2;
 const TEST_SEED_FLAG = 'isTestSeed';
+const TEST_PET_NAME_SEPARATOR = ', ';
+const TEST_DEFAULT_PET_NAME = 'Pet';
+
+/** 実在ペットに依存せず、英語名のサンプルペットを使う */
+const TEST_PETS = [
+  { id: 'test_seed_buddy', name: 'Buddy' },
+  { id: 'test_seed_luna', name: 'Luna' },
+  { id: 'test_seed_max', name: 'Max' },
+  { id: 'test_seed_bella', name: 'Bella' },
+  { id: 'test_seed_charlie', name: 'Charlie' },
+];
+
+/** Central Park, New York — 英語圏向けデモ用の座標 */
+const TEST_ROUTE_BASE_LAT = 40.7829;
+const TEST_ROUTE_BASE_LNG = -73.9654;
+
+const TEST_MEMO_SAMPLES = [
+  'Met a friendly golden retriever at the park.',
+  'Short walk today — rain expected later.',
+  'Great energy this morning!',
+  'Stopped for a water break.',
+  'Tried a new route through the trees.',
+  'Quiet evening stroll.',
+  'Lots of squirrels today.',
+];
 
 function addDays(date, days) {
   const d = new Date(date);
@@ -51,37 +76,42 @@ function shuffle(array) {
 }
 
 function buildPoops(count) {
-  const baseLat = 35.68 + (Math.random() - 0.5) * 0.02;
-  const baseLng = 139.76 + (Math.random() - 0.5) * 0.02;
+  const baseLat = TEST_ROUTE_BASE_LAT + (Math.random() - 0.5) * 0.02;
+  const baseLng = TEST_ROUTE_BASE_LNG + (Math.random() - 0.5) * 0.02;
   return Array.from({ length: count }, (_, index) => ({
     latitude: baseLat + index * 0.0001,
     longitude: baseLng + index * 0.0001,
   }));
 }
 
-function pickPetsForWalk(pets, defaultPetName) {
-  if (!pets.length) {
-    return {
-      petIds: [],
-      petNames: [],
-      petId: null,
-      petName: defaultPetName,
-    };
-  }
-
-  const ordered = shuffle(pets);
+function pickPetsForWalk() {
+  const ordered = shuffle(TEST_PETS);
   const take = randomInt(1, Math.min(2, ordered.length));
   const selected = ordered.slice(0, take);
-  const petNames = selected.map((p) => p.name);
+  const petNames = selected.map((pet) => pet.name);
   return {
-    petIds: selected.map((p) => p.id),
+    petIds: selected.map((pet) => pet.id),
     petNames,
     petId: selected[0].id,
-    petName: petNames.join('、'),
+    petName: petNames.join(TEST_PET_NAME_SEPARATOR),
   };
 }
 
-function buildWalkPayload(day, slotIndex, { familyId, userId, pets, defaultPetName }) {
+function buildMemos(seedIndex) {
+  if (Math.random() > 0.28) {
+    return [];
+  }
+
+  const memoCount = randomInt(1, 2);
+  const samples = shuffle(TEST_MEMO_SAMPLES).slice(0, memoCount);
+  return samples.map((text, index) => ({
+    id: `memo_test_${seedIndex}_${index}`,
+    text,
+    updatedAt: new Date().toISOString(),
+  }));
+}
+
+function buildWalkPayload(day, slotIndex, seedIndex, { familyId, userId }) {
   const duration = randomFloat(30, 50, 0);
   const distance = randomFloat(1, 2, 2);
   const poopCount = randomInt(0, 3);
@@ -92,7 +122,7 @@ function buildWalkPayload(day, slotIndex, { familyId, userId, pets, defaultPetNa
   start.setHours(hourBase, minute, 0, 0);
 
   const end = new Date(start.getTime() + duration * 60 * 1000);
-  const petFields = pickPetsForWalk(pets, defaultPetName);
+  const petFields = pickPetsForWalk();
 
   return {
     familyId,
@@ -104,6 +134,7 @@ function buildWalkPayload(day, slotIndex, { familyId, userId, pets, defaultPetNa
     duration,
     route: [],
     poops: buildPoops(poopCount),
+    memos: buildMemos(seedIndex),
     [TEST_SEED_FLAG]: true,
     createdAt: serverTimestamp(),
   };
@@ -115,47 +146,34 @@ export function estimateTestWalkSeedCount() {
   return days * 1.5;
 }
 
-function buildAllWalkPayloads({ familyId, userId, pets, defaultPetName }) {
+function buildAllWalkPayloads({ familyId, userId }) {
   const payloads = [];
   const today = startOfDay(new Date());
   const firstDay = addDays(today, -(SEED_YEARS * 365));
+  let seedIndex = 0;
 
   for (let cursor = new Date(firstDay); cursor <= today; cursor = addDays(cursor, 1)) {
     const walksToday = randomInt(1, 2);
     for (let slot = 0; slot < walksToday; slot += 1) {
       payloads.push(
-        buildWalkPayload(cursor, slot, { familyId, userId, pets, defaultPetName })
+        buildWalkPayload(cursor, slot, seedIndex, { familyId, userId })
       );
+      seedIndex += 1;
     }
   }
 
   return payloads;
 }
 
-async function fetchFamilyPets(familyId) {
-  const snap = await getDocs(query(collection(db, 'pets'), where('familyId', '==', familyId)));
-  const pets = [];
-  snap.forEach((petDoc) => {
-    pets.push({ id: petDoc.id, ...petDoc.data() });
-  });
-  return pets;
-}
-
 /**
- * @param {{ familyId: string, userId: string, defaultPetName: string, onProgress?: (done: number, total: number) => void }} params
+ * @param {{ familyId: string, userId: string, onProgress?: (done: number, total: number) => void }} params
  */
-export async function seedTestWalksForFamily({ familyId, userId, defaultPetName, onProgress }) {
+export async function seedTestWalksForFamily({ familyId, userId, onProgress }) {
   if (!familyId || !userId) {
     throw new Error('seedTestWalks: familyId and userId are required');
   }
 
-  const pets = await fetchFamilyPets(familyId);
-  const payloads = buildAllWalkPayloads({
-    familyId,
-    userId,
-    pets,
-    defaultPetName,
-  });
+  const payloads = buildAllWalkPayloads({ familyId, userId });
   const total = payloads.length;
   let done = 0;
 
@@ -173,7 +191,7 @@ export async function seedTestWalksForFamily({ familyId, userId, defaultPetName,
     onProgress?.(done, total);
   }
 
-  return { created: total, petCount: pets.length };
+  return { created: total, petCount: TEST_PETS.length, defaultPetName: TEST_DEFAULT_PET_NAME };
 }
 
 function testWalksQuery(familyId) {

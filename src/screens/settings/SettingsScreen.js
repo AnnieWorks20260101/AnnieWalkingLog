@@ -256,7 +256,6 @@ export default function SettingsScreen({ navigation }) {
               const { created } = await seedTestWalksForFamily({
                 familyId,
                 userId,
-                defaultPetName: i18n.t('walk.defaultPetName'),
                 onProgress: (done, total) => setTestDevProgress({ done, total }),
               });
               Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('settings.testSeedSuccess', { count: created }));
@@ -685,10 +684,9 @@ export default function SettingsScreen({ navigation }) {
           </SettingRow>
         </View>
 
-        {__DEV__ ? (
-          <>
+        <>
             <Text style={[styles.sectionTitle, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-              {i18n.t('settings.testDevSectionTitle')}
+              {i18n.t('settings.testDataSectionTitle')}
             </Text>
             <TouchableOpacity
               style={[
@@ -759,8 +757,7 @@ export default function SettingsScreen({ navigation }) {
                 <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
               )}
             </TouchableOpacity>
-          </>
-        ) : null}
+        </>
 
       </ScrollView>
 
