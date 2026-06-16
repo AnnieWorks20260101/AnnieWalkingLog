@@ -334,7 +334,7 @@
     "guestLogoutError": "Não foi possível eliminar os dados. Verifique a ligação e tente novamente.",
     "testDevSectionTitle": "Desenvolvimento",
     "testSeedCardTitle": "Criar dados de teste de passeios",
-    "testSeedCardDesc": "Adiciona cerca de 2 anos de passeios (1–2 por dia). Distância 1–2 km, 30–50 min, 0–3 cocós.",
+    "testSeedCardDesc": "Adiciona cerca de 2 anos de passeios (1–2 por dia) no idioma selecionado (%{language}).",
     "testSeedConfirmTitle": "Criar dados de teste?",
     "testSeedConfirmMsg": "Cerca de %{count} registos de passeio serão adicionados ao Firestore. Pode demorar dezenas de segundos.",
     "testSeedRunning": "A criar… %{done} / %{total}",
@@ -349,9 +349,7 @@
     "testDeleteSuccess": "Eliminados %{count} passeio(s) de teste.",
     "testDeleteError": "Falha ao eliminar dados de teste.",
     "testDeleteEmptyTitle": "Nada a eliminar",
-    "testDeleteEmptyMsg": "Não foram encontrados registos de passeio de teste.",
-    "testSeedCardTitleKo": "Criar dados de teste de passeios (coreano)",
-    "testSeedCardDescKo": "Usa nomes de animais predefinidos em coreano e separadores (~2 anos de passeios)."
+    "testDeleteEmptyMsg": "Não foram encontrados registos de passeio de teste."
   },
   "petList": {
     "title": "Animais",

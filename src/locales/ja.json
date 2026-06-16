@@ -334,7 +334,7 @@
     "guestLogoutError": "データの削除に失敗しました。通信状況を確認して、もう一度お試しください。",
     "testDataSectionTitle": "テストデータ",
     "testSeedCardTitle": "テスト用お散歩データを作成",
-    "testSeedCardDesc": "英語のサンプル内容で過去2年分（毎日1～2件）を追加します。ペット名 Buddy / Luna など、Central Park 付近の座標、英語メモ付き。",
+    "testSeedCardDesc": "設定中の言語（%{language}）に合わせた内容で、過去2年分（毎日1～2件）を追加します。",
     "testSeedConfirmTitle": "テストデータを作成しますか？",
     "testSeedConfirmMsg": "約%{count}件のお散歩記録をFirestoreに追加します。完了まで数十秒かかることがあります。",
     "testSeedRunning": "作成中… %{done} / %{total}",
@@ -349,9 +349,7 @@
     "testDeleteSuccess": "テストデータを %{count} 件削除しました。",
     "testDeleteError": "テストデータの削除に失敗しました。",
     "testDeleteEmptyTitle": "削除対象なし",
-    "testDeleteEmptyMsg": "テスト用のお散歩記録は見つかりませんでした。",
-    "testSeedCardTitleKo": "テスト用お散歩データを作成（韓国語）",
-    "testSeedCardDescKo": "ペット名の区切り・デフォルト名を韓国語向けに生成します（約2年分）。"
+    "testDeleteEmptyMsg": "テスト用のお散歩記録は見つかりませんでした。"
   },
   "petList": {
     "title": "ペット一覧",

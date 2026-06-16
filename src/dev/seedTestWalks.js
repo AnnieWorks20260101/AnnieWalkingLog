@@ -1,6 +1,7 @@
 /**
  * 設定画面から投入するテスト用お散歩データ（isTestSeed フラグ付き）。
  * locale=en のときは英語サンプル（Buddy / Luna、Central Park、英語メモ）。
+ * それ以外は家族のペット名と locale ごとの区切り文字を使用。
  */
 import {
   collection,

@@ -334,7 +334,7 @@
     "guestLogoutError": "Daten konnten nicht gelöscht werden. Verbindung prüfen und erneut versuchen.",
     "testDevSectionTitle": "Entwicklung",
     "testSeedCardTitle": "Test-Spaziergang-Daten erstellen",
-    "testSeedCardDesc": "Fügt ca. 2 Jahre Spaziergänge hinzu (1–2 pro Tag). Strecke 1–2 km, 30–50 Min., 0–3 Kot.",
+    "testSeedCardDesc": "Fügt ca. 2 Jahre Spaziergänge hinzu (1–2 pro Tag) in der gewählten Sprache (%{language}).",
     "testSeedConfirmTitle": "Testdaten erstellen?",
     "testSeedConfirmMsg": "Ca. %{count} Spaziergang-Einträge werden zu Firestore hinzugefügt. Kann zehn Sekunden dauern.",
     "testSeedRunning": "Erstelle… %{done} / %{total}",
@@ -349,9 +349,7 @@
     "testDeleteSuccess": "%{count} Test-Spaziergang/Spaziergänge gelöscht.",
     "testDeleteError": "Testdaten konnten nicht gelöscht werden.",
     "testDeleteEmptyTitle": "Nichts zu löschen",
-    "testDeleteEmptyMsg": "Keine Test-Spaziergang-Einträge gefunden.",
-    "testSeedCardTitleKo": "Test-Spaziergang-Daten erstellen (Koreanisch)",
-    "testSeedCardDescKo": "Nutzt koreanische Standard-Haustiernamen und Trennzeichen (~2 Jahre Spaziergänge)."
+    "testDeleteEmptyMsg": "Keine Test-Spaziergang-Einträge gefunden."
   },
   "petList": {
     "title": "Haustiere",

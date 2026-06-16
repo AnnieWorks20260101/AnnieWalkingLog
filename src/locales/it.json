@@ -334,7 +334,7 @@
     "guestLogoutError": "Impossibile eliminare i dati. Controlla la connessione e riprova.",
     "testDevSectionTitle": "Sviluppo",
     "testSeedCardTitle": "Crea dati test passeggiate",
-    "testSeedCardDesc": "Aggiunge circa 2 anni di passeggiate (1–2 al giorno). Distanza 1–2 km, 30–50 min, 0–3 cacche.",
+    "testSeedCardDesc": "Aggiunge circa 2 anni di passeggiate (1–2 al giorno) nella lingua selezionata (%{language}).",
     "testSeedConfirmTitle": "Creare dati test?",
     "testSeedConfirmMsg": "Circa %{count} record di passeggiata verranno aggiunti a Firestore. Potrebbe richiedere decine di secondi.",
     "testSeedRunning": "Creazione… %{done} / %{total}",
@@ -349,9 +349,7 @@
     "testDeleteSuccess": "Eliminate %{count} passeggiate test.",
     "testDeleteError": "Eliminazione dati test non riuscita.",
     "testDeleteEmptyTitle": "Niente da eliminare",
-    "testDeleteEmptyMsg": "Nessun record di passeggiata test trovato.",
-    "testSeedCardTitleKo": "Crea dati test passeggiate (coreano)",
-    "testSeedCardDescKo": "Usa nomi animali predefiniti coreani e separatori (~2 anni di passeggiate)."
+    "testDeleteEmptyMsg": "Nessun record di passeggiata test trovato."
   },
   "petList": {
     "title": "Animali",

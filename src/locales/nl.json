@@ -334,7 +334,7 @@
     "guestLogoutError": "Kon je gegevens niet verwijderen. Controleer je verbinding en probeer opnieuw.",
     "testDevSectionTitle": "Ontwikkeling",
     "testSeedCardTitle": "Testwandelgegevens maken",
-    "testSeedCardDesc": "Voegt ongeveer 2 jaar wandelingen toe (1–2 per dag). Afstand 1–2 km, 30–50 min, 0–3 keer poep.",
+    "testSeedCardDesc": "Voegt ongeveer 2 jaar wandelingen toe (1–2 per dag) in de gekozen taal (%{language}).",
     "testSeedConfirmTitle": "Testgegevens maken?",
     "testSeedConfirmMsg": "Ongeveer %{count} wandelrecords worden toegevoegd aan Firestore. Dit kan tientallen seconden duren.",
     "testSeedRunning": "Maken… %{done} / %{total}",
@@ -349,9 +349,7 @@
     "testDeleteSuccess": "%{count} testwandeling(en) verwijderd.",
     "testDeleteError": "Kon testgegevens niet verwijderen.",
     "testDeleteEmptyTitle": "Niets te verwijderen",
-    "testDeleteEmptyMsg": "Geen testwandelrecords gevonden.",
-    "testSeedCardTitleKo": "Testwandelgegevens maken (Koreaans)",
-    "testSeedCardDescKo": "Gebruikt Koreaanse standaard huisdiernamen en scheidingstekens (~2 jaar wandelingen)."
+    "testDeleteEmptyMsg": "Geen testwandelrecords gevonden."
   },
   "petList": {
     "title": "Huisdieren",

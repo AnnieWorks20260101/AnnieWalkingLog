@@ -334,7 +334,7 @@
     "guestLogoutError": "Could not delete your data. Check your connection and try again.",
     "testDataSectionTitle": "Test data",
     "testSeedCardTitle": "Create test walk data",
-    "testSeedCardDesc": "Adds about 2 years of English sample walks (1–2 per day). Pet names like Buddy and Luna, Central Park coordinates, and English memos.",
+    "testSeedCardDesc": "Adds about 2 years of walks (1–2 per day) using the current language setting (%{language}).",
     "testSeedConfirmTitle": "Create test data?",
     "testSeedConfirmMsg": "About %{count} walk records will be added to Firestore. This may take tens of seconds.",
     "testSeedRunning": "Creating… %{done} / %{total}",
@@ -349,9 +349,7 @@
     "testDeleteSuccess": "Deleted %{count} test walk(s).",
     "testDeleteError": "Failed to delete test data.",
     "testDeleteEmptyTitle": "Nothing to delete",
-    "testDeleteEmptyMsg": "No test walk records were found.",
-    "testSeedCardTitleKo": "Create test walk data (Korean)",
-    "testSeedCardDescKo": "Uses Korean default pet names and separators (~2 years of walks)."
+    "testDeleteEmptyMsg": "No test walk records were found."
   },
   "petList": {
     "title": "Pets",
