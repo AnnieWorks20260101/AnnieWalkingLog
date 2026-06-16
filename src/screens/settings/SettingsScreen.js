@@ -690,7 +690,7 @@ export default function SettingsScreen({ navigation }) {
         {__DEV__ ? (
           <>
             <Text style={[styles.sectionTitle, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-              {i18n.t('settings.testDevSectionTitle')}
+              {i18n.t('settings.testDataSectionTitle')}
             </Text>
             <TouchableOpacity
               style={[
@@ -708,7 +708,7 @@ export default function SettingsScreen({ navigation }) {
                     {i18n.t('settings.testSeedCardTitle')}
                   </Text>
                   <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-                    {i18n.t('settings.testSeedCardDesc')}
+                    {i18n.t('settings.testSeedCardDesc', { language: languageLabel })}
                   </Text>
                 </View>
               </View>

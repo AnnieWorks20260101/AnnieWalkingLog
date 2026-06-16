@@ -334,7 +334,7 @@
     "guestLogoutError": "Impossible de supprimer vos données. Vérifiez votre connexion et réessayez.",
     "testDevSectionTitle": "Développement",
     "testSeedCardTitle": "Créer des données de test de promenade",
-    "testSeedCardDesc": "Ajoute environ 2 ans de promenades (1–2 par jour). Distance 1–2 km, 30–50 min, 0–3 cacas.",
+    "testSeedCardDesc": "Ajoute environ 2 ans de promenades (1–2 par jour) selon la langue sélectionnée (%{language}).",
     "testSeedConfirmTitle": "Créer des données de test ?",
     "testSeedConfirmMsg": "Environ %{count} enregistrements de promenade seront ajoutés à Firestore. Cela peut prendre des dizaines de secondes.",
     "testSeedRunning": "Création… %{done} / %{total}",
@@ -349,9 +349,7 @@
     "testDeleteSuccess": "%{count} promenade(s) de test supprimée(s).",
     "testDeleteError": "Échec de la suppression des données de test.",
     "testDeleteEmptyTitle": "Rien à supprimer",
-    "testDeleteEmptyMsg": "Aucun enregistrement de promenade de test trouvé.",
-    "testSeedCardTitleKo": "Créer des données de test de promenade (coréen)",
-    "testSeedCardDescKo": "Utilise les noms d'animaux par défaut en coréen et séparateurs (~2 ans de promenades)."
+    "testDeleteEmptyMsg": "Aucun enregistrement de promenade de test trouvé."
   },
   "petList": {
     "title": "Animaux",

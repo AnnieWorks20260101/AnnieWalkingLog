@@ -1,6 +1,7 @@
 /**
- * TEST ONLY — 本番リリース前にこのファイルと設定画面の呼び出しを削除すること。
- * 過去2年分のダミーお散歩記録を Firestore に投入する。
+ * 設定画面から投入するテスト用お散歩データ（isTestSeed フラグ付き）。
+ * locale=en のときは英語サンプル（Buddy / Luna、Central Park、英語メモ）。
+ * それ以外は家族のペット名と locale ごとの区切り文字を使用。
  */
 import {
   collection,
@@ -19,6 +20,28 @@ import { getTestDataLocaleConfig } from './testDataLocaleConfig';
 const BATCH_SIZE = 400;
 const SEED_YEARS = 2;
 const TEST_SEED_FLAG = 'isTestSeed';
+
+const ENGLISH_TEST_PETS = [
+  { id: 'test_seed_buddy', name: 'Buddy' },
+  { id: 'test_seed_luna', name: 'Luna' },
+  { id: 'test_seed_max', name: 'Max' },
+  { id: 'test_seed_bella', name: 'Bella' },
+  { id: 'test_seed_charlie', name: 'Charlie' },
+];
+
+const ENGLISH_TEST_ROUTE = { lat: 40.7829, lng: -73.9654 };
+
+const ENGLISH_TEST_MEMO_SAMPLES = [
+  'Met a friendly golden retriever at the park.',
+  'Short walk today — rain expected later.',
+  'Great energy this morning!',
+  'Stopped for a water break.',
+  'Tried a new route through the trees.',
+  'Quiet evening stroll.',
+  'Lots of squirrels today.',
+];
+
+const DEFAULT_TEST_ROUTE = { lat: 35.68, lng: 139.76 };
 
 function addDays(date, days) {
   const d = new Date(date);
@@ -51,17 +74,19 @@ function shuffle(array) {
   return copy;
 }
 
-function buildPoops(count) {
-  const baseLat = 35.68 + (Math.random() - 0.5) * 0.02;
-  const baseLng = 139.76 + (Math.random() - 0.5) * 0.02;
+function buildPoops(count, routeBase) {
+  const baseLat = routeBase.lat + (Math.random() - 0.5) * 0.02;
+  const baseLng = routeBase.lng + (Math.random() - 0.5) * 0.02;
   return Array.from({ length: count }, (_, index) => ({
     latitude: baseLat + index * 0.0001,
     longitude: baseLng + index * 0.0001,
   }));
 }
 
-function pickPetsForWalk(pets, defaultPetName, petNameSeparator) {
-  if (!pets.length) {
+function pickPetsForWalk(pets, defaultPetName, petNameSeparator, useEnglishSamples) {
+  const sourcePets = useEnglishSamples ? ENGLISH_TEST_PETS : pets;
+
+  if (!sourcePets.length) {
     return {
       petIds: [],
       petNames: [],
@@ -70,19 +95,38 @@ function pickPetsForWalk(pets, defaultPetName, petNameSeparator) {
     };
   }
 
-  const ordered = shuffle(pets);
+  const ordered = shuffle(sourcePets);
   const take = randomInt(1, Math.min(2, ordered.length));
   const selected = ordered.slice(0, take);
-  const petNames = selected.map((p) => p.name);
+  const petNames = selected.map((pet) => pet.name);
   return {
-    petIds: selected.map((p) => p.id),
+    petIds: selected.map((pet) => pet.id),
     petNames,
     petId: selected[0].id,
     petName: petNames.join(petNameSeparator),
   };
 }
 
-function buildWalkPayload(day, slotIndex, { familyId, userId, pets, defaultPetName, petNameSeparator }) {
+function buildMemos(seedIndex, useEnglishSamples) {
+  if (!useEnglishSamples || Math.random() > 0.28) {
+    return [];
+  }
+
+  const memoCount = randomInt(1, 2);
+  const samples = shuffle(ENGLISH_TEST_MEMO_SAMPLES).slice(0, memoCount);
+  return samples.map((text, index) => ({
+    id: `memo_test_${seedIndex}_${index}`,
+    text,
+    updatedAt: new Date().toISOString(),
+  }));
+}
+
+function buildWalkPayload(
+  day,
+  slotIndex,
+  seedIndex,
+  { familyId, userId, pets, defaultPetName, petNameSeparator, useEnglishSamples, routeBase }
+) {
   const duration = randomFloat(30, 50, 0);
   const distance = randomFloat(1, 2, 2);
   const poopCount = randomInt(0, 3);
@@ -93,7 +137,7 @@ function buildWalkPayload(day, slotIndex, { familyId, userId, pets, defaultPetNa
   start.setHours(hourBase, minute, 0, 0);
 
   const end = new Date(start.getTime() + duration * 60 * 1000);
-  const petFields = pickPetsForWalk(pets, defaultPetName, petNameSeparator);
+  const petFields = pickPetsForWalk(pets, defaultPetName, petNameSeparator, useEnglishSamples);
 
   return {
     familyId,
@@ -104,7 +148,8 @@ function buildWalkPayload(day, slotIndex, { familyId, userId, pets, defaultPetNa
     distance,
     duration,
     route: [],
-    poops: buildPoops(poopCount),
+    poops: buildPoops(poopCount, routeBase),
+    memos: buildMemos(seedIndex, useEnglishSamples),
     [TEST_SEED_FLAG]: true,
     createdAt: serverTimestamp(),
   };
@@ -116,17 +161,35 @@ export function estimateTestWalkSeedCount() {
   return days * 1.5;
 }
 
-function buildAllWalkPayloads({ familyId, userId, pets, defaultPetName, petNameSeparator }) {
+function buildAllWalkPayloads({
+  familyId,
+  userId,
+  pets,
+  defaultPetName,
+  petNameSeparator,
+  useEnglishSamples,
+  routeBase,
+}) {
   const payloads = [];
   const today = startOfDay(new Date());
   const firstDay = addDays(today, -(SEED_YEARS * 365));
+  let seedIndex = 0;
 
   for (let cursor = new Date(firstDay); cursor <= today; cursor = addDays(cursor, 1)) {
     const walksToday = randomInt(1, 2);
     for (let slot = 0; slot < walksToday; slot += 1) {
       payloads.push(
-        buildWalkPayload(cursor, slot, { familyId, userId, pets, defaultPetName, petNameSeparator })
+        buildWalkPayload(cursor, slot, seedIndex, {
+          familyId,
+          userId,
+          pets,
+          defaultPetName,
+          petNameSeparator,
+          useEnglishSamples,
+          routeBase,
+        })
       );
+      seedIndex += 1;
     }
   }
 
@@ -150,14 +213,18 @@ export async function seedTestWalksForFamily({ familyId, userId, locale, onProgr
     throw new Error('seedTestWalks: familyId and userId are required');
   }
 
-  const { defaultPetName, petNameSeparator } = getTestDataLocaleConfig(locale);
-  const pets = await fetchFamilyPets(familyId);
+  const { defaultPetName, petNameSeparator, locale: resolvedLocale } = getTestDataLocaleConfig(locale);
+  const useEnglishSamples = resolvedLocale === 'en';
+  const routeBase = useEnglishSamples ? ENGLISH_TEST_ROUTE : DEFAULT_TEST_ROUTE;
+  const pets = useEnglishSamples ? ENGLISH_TEST_PETS : await fetchFamilyPets(familyId);
   const payloads = buildAllWalkPayloads({
     familyId,
     userId,
     pets,
     defaultPetName,
     petNameSeparator,
+    useEnglishSamples,
+    routeBase,
   });
   const total = payloads.length;
   let done = 0;
@@ -176,7 +243,7 @@ export async function seedTestWalksForFamily({ familyId, userId, locale, onProgr
     onProgress?.(done, total);
   }
 
-  return { created: total, petCount: pets.length };
+  return { created: total, petCount: pets.length, locale: resolvedLocale };
 }
 
 function allTestWalksQuery() {

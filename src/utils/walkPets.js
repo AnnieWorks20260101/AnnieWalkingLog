@@ -1,7 +1,20 @@
+import i18n from '../i18n';
+
+function getPetNameListSeparator() {
+  return i18n.locale === 'ja' ? '、' : ', ';
+}
+
+function splitPetNameLabel(label) {
+  return label
+    .split(/、|,/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 /** お散歩記録のペット表示名（新旧データ形式に対応） */
 export function getWalkPetNamesLabel(walk) {
   if (Array.isArray(walk?.petNames) && walk.petNames.length > 0) {
-    return walk.petNames.join('、');
+    return walk.petNames.join(getPetNameListSeparator());
   }
   if (walk?.petName) {
     return walk.petName;
@@ -32,10 +45,7 @@ export function walkIncludesPet(walk, petId, petNameById = {}) {
     return false;
   }
 
-  return walk.petName
-    .split('、')
-    .map((s) => s.trim())
-    .includes(petName);
+  return splitPetNameLabel(walk.petName).includes(petName);
 }
 
 export function filterWalksByPet(walks, filterPetId, pets = []) {
