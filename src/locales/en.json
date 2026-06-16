@@ -211,6 +211,13 @@
     "languageLabel": "Language",
     "languageJa": "日本語",
     "languageEn": "English",
+    "languageEs": "Español",
+    "languageKo": "한국어",
+    "languageDe": "Deutsch",
+    "languageFr": "Français",
+    "languageIt": "Italiano",
+    "languagePt": "Português",
+    "languageNl": "Nederlands",
     "languageModalTitle": "Choose language",
     "timeFormatLabel": "Time format",
     "timeFormatModalTitle": "Choose time format",
@@ -342,7 +349,9 @@
     "testDeleteSuccess": "Deleted %{count} test walk(s).",
     "testDeleteError": "Failed to delete test data.",
     "testDeleteEmptyTitle": "Nothing to delete",
-    "testDeleteEmptyMsg": "No test walk records were found."
+    "testDeleteEmptyMsg": "No test walk records were found.",
+    "testSeedCardTitleKo": "Create test walk data (Korean)",
+    "testSeedCardDescKo": "Uses Korean default pet names and separators (~2 years of walks)."
   },
   "petList": {
     "title": "Pets",

@@ -1,0 +1,14 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Annie Walking Log",
+    "NSCameraUsageDescription": "산책 기록을 위해 카메라를 사용합니다.",
+    "NSPhotoLibraryUsageDescription": "산책 사진을 사진 보관함에 저장하기 위해 사용합니다.",
+    "NSPhotoLibraryAddUsageDescription": "산책 사진을 사진 앨범에 저장하기 위해 사용합니다.",
+    "NSLocationWhenInUseUsageDescription": "반려동물 산책 경로를 기록하기 위해 위치 정보를 사용합니다.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "화면이 꺼져 있을 때도 산책 경로를 기록하기 위해 위치 정보를 사용합니다.",
+    "NSLocationAlwaysUsageDescription": "화면이 꺼져 있을 때도 산책 경로를 기록하기 위해 위치 정보를 사용합니다."
+  },
+  "android": {
+    "app_name": "Annie Walking Log"
+  }
+}

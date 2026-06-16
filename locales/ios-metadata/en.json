@@ -1,0 +1,14 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Annie Walking Log",
+    "NSCameraUsageDescription": "Used to take photos during walks for your walk log.",
+    "NSPhotoLibraryUsageDescription": "Used to access your photo library when saving walk photos.",
+    "NSPhotoLibraryAddUsageDescription": "Used to save walk photos to your photo album.",
+    "NSLocationWhenInUseUsageDescription": "Used to record your pet's walk route while you use the app.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "Used to record your pet's walk route, including when the screen is off.",
+    "NSLocationAlwaysUsageDescription": "Used to record your pet's walk route, including when the screen is off."
+  },
+  "android": {
+    "app_name": "Annie Walking Log"
+  }
+}

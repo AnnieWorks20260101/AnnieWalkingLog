@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { deleteWalkRecord } from '../services/deleteWalk';
+import { getTestDataLocaleConfig } from './testDataLocaleConfig';
 
 const BATCH_SIZE = 400;
 const SEED_YEARS = 2;
@@ -59,7 +60,7 @@ function buildPoops(count) {
   }));
 }
 
-function pickPetsForWalk(pets, defaultPetName) {
+function pickPetsForWalk(pets, defaultPetName, petNameSeparator) {
   if (!pets.length) {
     return {
       petIds: [],
@@ -77,11 +78,11 @@ function pickPetsForWalk(pets, defaultPetName) {
     petIds: selected.map((p) => p.id),
     petNames,
     petId: selected[0].id,
-    petName: petNames.join('、'),
+    petName: petNames.join(petNameSeparator),
   };
 }
 
-function buildWalkPayload(day, slotIndex, { familyId, userId, pets, defaultPetName }) {
+function buildWalkPayload(day, slotIndex, { familyId, userId, pets, defaultPetName, petNameSeparator }) {
   const duration = randomFloat(30, 50, 0);
   const distance = randomFloat(1, 2, 2);
   const poopCount = randomInt(0, 3);
@@ -92,7 +93,7 @@ function buildWalkPayload(day, slotIndex, { familyId, userId, pets, defaultPetNa
   start.setHours(hourBase, minute, 0, 0);
 
   const end = new Date(start.getTime() + duration * 60 * 1000);
-  const petFields = pickPetsForWalk(pets, defaultPetName);
+  const petFields = pickPetsForWalk(pets, defaultPetName, petNameSeparator);
 
   return {
     familyId,
@@ -115,7 +116,7 @@ export function estimateTestWalkSeedCount() {
   return days * 1.5;
 }
 
-function buildAllWalkPayloads({ familyId, userId, pets, defaultPetName }) {
+function buildAllWalkPayloads({ familyId, userId, pets, defaultPetName, petNameSeparator }) {
   const payloads = [];
   const today = startOfDay(new Date());
   const firstDay = addDays(today, -(SEED_YEARS * 365));
@@ -124,7 +125,7 @@ function buildAllWalkPayloads({ familyId, userId, pets, defaultPetName }) {
     const walksToday = randomInt(1, 2);
     for (let slot = 0; slot < walksToday; slot += 1) {
       payloads.push(
-        buildWalkPayload(cursor, slot, { familyId, userId, pets, defaultPetName })
+        buildWalkPayload(cursor, slot, { familyId, userId, pets, defaultPetName, petNameSeparator })
       );
     }
   }
@@ -142,19 +143,21 @@ async function fetchFamilyPets(familyId) {
 }
 
 /**
- * @param {{ familyId: string, userId: string, defaultPetName: string, onProgress?: (done: number, total: number) => void }} params
+ * @param {{ familyId: string, userId: string, locale?: string, onProgress?: (done: number, total: number) => void }} params
  */
-export async function seedTestWalksForFamily({ familyId, userId, defaultPetName, onProgress }) {
+export async function seedTestWalksForFamily({ familyId, userId, locale, onProgress }) {
   if (!familyId || !userId) {
     throw new Error('seedTestWalks: familyId and userId are required');
   }
 
+  const { defaultPetName, petNameSeparator } = getTestDataLocaleConfig(locale);
   const pets = await fetchFamilyPets(familyId);
   const payloads = buildAllWalkPayloads({
     familyId,
     userId,
     pets,
     defaultPetName,
+    petNameSeparator,
   });
   const total = payloads.length;
   let done = 0;

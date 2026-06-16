@@ -1,0 +1,14 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Annie Walking Log",
+    "NSCameraUsageDescription": "A câmara é usada para tirar fotos durante os passeios e guardá-las no registo.",
+    "NSPhotoLibraryUsageDescription": "A biblioteca de fotos é usada para guardar fotos dos passeios.",
+    "NSPhotoLibraryAddUsageDescription": "Usado para guardar fotos dos passeios no seu álbum.",
+    "NSLocationWhenInUseUsageDescription": "A localização é usada para registar a rota do passeio do seu animal.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "A localização é usada para registar a rota, inclusive com o ecrã desligado.",
+    "NSLocationAlwaysUsageDescription": "A localização é usada para registar a rota, inclusive com o ecrã desligado."
+  },
+  "android": {
+    "app_name": "Annie Walking Log"
+  }
+}

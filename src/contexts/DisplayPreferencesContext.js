@@ -11,6 +11,13 @@ const TIME_FORMAT_STORAGE_KEY = '@app_time_format';
 export const LANGUAGE_OPTIONS = [
   { id: 'ja', labelKey: 'settings.languageJa' },
   { id: 'en', labelKey: 'settings.languageEn' },
+  { id: 'es', labelKey: 'settings.languageEs' },
+  { id: 'ko', labelKey: 'settings.languageKo' },
+  { id: 'de', labelKey: 'settings.languageDe' },
+  { id: 'fr', labelKey: 'settings.languageFr' },
+  { id: 'it', labelKey: 'settings.languageIt' },
+  { id: 'pt', labelKey: 'settings.languagePt' },
+  { id: 'nl', labelKey: 'settings.languageNl' },
 ];
 export const TIME_FORMAT_OPTIONS = ['auto', 'h12', 'h24'];
 
