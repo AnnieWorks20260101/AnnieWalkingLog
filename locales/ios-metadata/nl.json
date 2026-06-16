@@ -1,0 +1,14 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Annie Walking Log",
+    "NSCameraUsageDescription": "De camera wordt gebruikt om foto's te maken tijdens wandelingen voor je logboek.",
+    "NSPhotoLibraryUsageDescription": "De fotobibliotheek wordt gebruikt om wandelfoto's op te slaan.",
+    "NSPhotoLibraryAddUsageDescription": "Wordt gebruikt om wandelfoto's in je fotoalbum op te slaan.",
+    "NSLocationWhenInUseUsageDescription": "Locatie wordt gebruikt om de wandelroute van je huisdier vast te leggen.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "Locatie wordt gebruikt om de wandelroute vast te leggen, ook wanneer het scherm uit staat.",
+    "NSLocationAlwaysUsageDescription": "Locatie wordt gebruikt om de wandelroute vast te leggen, ook wanneer het scherm uit staat."
+  },
+  "android": {
+    "app_name": "Annie Walking Log"
+  }
+}

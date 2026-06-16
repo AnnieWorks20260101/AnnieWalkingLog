@@ -1,6 +1,6 @@
 /**
  * 設定画面から投入するテスト用お散歩データ（isTestSeed フラグ付き）。
- * 英語のサンプル内容（ペット名・メモ・座標）で App Store 等のデモ向け。
+ * locale=en のときは英語サンプル（Buddy / Luna、Central Park、英語メモ）。
  */
 import {
   collection,
@@ -14,15 +14,13 @@ import {
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { deleteWalkRecord } from '../services/deleteWalk';
+import { getTestDataLocaleConfig } from './testDataLocaleConfig';
 
 const BATCH_SIZE = 400;
 const SEED_YEARS = 2;
 const TEST_SEED_FLAG = 'isTestSeed';
-const TEST_PET_NAME_SEPARATOR = ', ';
-const TEST_DEFAULT_PET_NAME = 'Pet';
 
-/** 実在ペットに依存せず、英語名のサンプルペットを使う */
-const TEST_PETS = [
+const ENGLISH_TEST_PETS = [
   { id: 'test_seed_buddy', name: 'Buddy' },
   { id: 'test_seed_luna', name: 'Luna' },
   { id: 'test_seed_max', name: 'Max' },
@@ -30,11 +28,9 @@ const TEST_PETS = [
   { id: 'test_seed_charlie', name: 'Charlie' },
 ];
 
-/** Central Park, New York — 英語圏向けデモ用の座標 */
-const TEST_ROUTE_BASE_LAT = 40.7829;
-const TEST_ROUTE_BASE_LNG = -73.9654;
+const ENGLISH_TEST_ROUTE = { lat: 40.7829, lng: -73.9654 };
 
-const TEST_MEMO_SAMPLES = [
+const ENGLISH_TEST_MEMO_SAMPLES = [
   'Met a friendly golden retriever at the park.',
   'Short walk today — rain expected later.',
   'Great energy this morning!',
@@ -43,6 +39,8 @@ const TEST_MEMO_SAMPLES = [
   'Quiet evening stroll.',
   'Lots of squirrels today.',
 ];
+
+const DEFAULT_TEST_ROUTE = { lat: 35.68, lng: 139.76 };
 
 function addDays(date, days) {
   const d = new Date(date);
@@ -75,17 +73,28 @@ function shuffle(array) {
   return copy;
 }
 
-function buildPoops(count) {
-  const baseLat = TEST_ROUTE_BASE_LAT + (Math.random() - 0.5) * 0.02;
-  const baseLng = TEST_ROUTE_BASE_LNG + (Math.random() - 0.5) * 0.02;
+function buildPoops(count, routeBase) {
+  const baseLat = routeBase.lat + (Math.random() - 0.5) * 0.02;
+  const baseLng = routeBase.lng + (Math.random() - 0.5) * 0.02;
   return Array.from({ length: count }, (_, index) => ({
     latitude: baseLat + index * 0.0001,
     longitude: baseLng + index * 0.0001,
   }));
 }
 
-function pickPetsForWalk() {
-  const ordered = shuffle(TEST_PETS);
+function pickPetsForWalk(pets, defaultPetName, petNameSeparator, useEnglishSamples) {
+  const sourcePets = useEnglishSamples ? ENGLISH_TEST_PETS : pets;
+
+  if (!sourcePets.length) {
+    return {
+      petIds: [],
+      petNames: [],
+      petId: null,
+      petName: defaultPetName,
+    };
+  }
+
+  const ordered = shuffle(sourcePets);
   const take = randomInt(1, Math.min(2, ordered.length));
   const selected = ordered.slice(0, take);
   const petNames = selected.map((pet) => pet.name);
@@ -93,17 +102,17 @@ function pickPetsForWalk() {
     petIds: selected.map((pet) => pet.id),
     petNames,
     petId: selected[0].id,
-    petName: petNames.join(TEST_PET_NAME_SEPARATOR),
+    petName: petNames.join(petNameSeparator),
   };
 }
 
-function buildMemos(seedIndex) {
-  if (Math.random() > 0.28) {
+function buildMemos(seedIndex, useEnglishSamples) {
+  if (!useEnglishSamples || Math.random() > 0.28) {
     return [];
   }
 
   const memoCount = randomInt(1, 2);
-  const samples = shuffle(TEST_MEMO_SAMPLES).slice(0, memoCount);
+  const samples = shuffle(ENGLISH_TEST_MEMO_SAMPLES).slice(0, memoCount);
   return samples.map((text, index) => ({
     id: `memo_test_${seedIndex}_${index}`,
     text,
@@ -111,7 +120,12 @@ function buildMemos(seedIndex) {
   }));
 }
 
-function buildWalkPayload(day, slotIndex, seedIndex, { familyId, userId }) {
+function buildWalkPayload(
+  day,
+  slotIndex,
+  seedIndex,
+  { familyId, userId, pets, defaultPetName, petNameSeparator, useEnglishSamples, routeBase }
+) {
   const duration = randomFloat(30, 50, 0);
   const distance = randomFloat(1, 2, 2);
   const poopCount = randomInt(0, 3);
@@ -122,7 +136,7 @@ function buildWalkPayload(day, slotIndex, seedIndex, { familyId, userId }) {
   start.setHours(hourBase, minute, 0, 0);
 
   const end = new Date(start.getTime() + duration * 60 * 1000);
-  const petFields = pickPetsForWalk();
+  const petFields = pickPetsForWalk(pets, defaultPetName, petNameSeparator, useEnglishSamples);
 
   return {
     familyId,
@@ -133,8 +147,8 @@ function buildWalkPayload(day, slotIndex, seedIndex, { familyId, userId }) {
     distance,
     duration,
     route: [],
-    poops: buildPoops(poopCount),
-    memos: buildMemos(seedIndex),
+    poops: buildPoops(poopCount, routeBase),
+    memos: buildMemos(seedIndex, useEnglishSamples),
     [TEST_SEED_FLAG]: true,
     createdAt: serverTimestamp(),
   };
@@ -146,7 +160,15 @@ export function estimateTestWalkSeedCount() {
   return days * 1.5;
 }
 
-function buildAllWalkPayloads({ familyId, userId }) {
+function buildAllWalkPayloads({
+  familyId,
+  userId,
+  pets,
+  defaultPetName,
+  petNameSeparator,
+  useEnglishSamples,
+  routeBase,
+}) {
   const payloads = [];
   const today = startOfDay(new Date());
   const firstDay = addDays(today, -(SEED_YEARS * 365));
@@ -156,7 +178,15 @@ function buildAllWalkPayloads({ familyId, userId }) {
     const walksToday = randomInt(1, 2);
     for (let slot = 0; slot < walksToday; slot += 1) {
       payloads.push(
-        buildWalkPayload(cursor, slot, seedIndex, { familyId, userId })
+        buildWalkPayload(cursor, slot, seedIndex, {
+          familyId,
+          userId,
+          pets,
+          defaultPetName,
+          petNameSeparator,
+          useEnglishSamples,
+          routeBase,
+        })
       );
       seedIndex += 1;
     }
@@ -165,15 +195,36 @@ function buildAllWalkPayloads({ familyId, userId }) {
   return payloads;
 }
 
+async function fetchFamilyPets(familyId) {
+  const snap = await getDocs(query(collection(db, 'pets'), where('familyId', '==', familyId)));
+  const pets = [];
+  snap.forEach((petDoc) => {
+    pets.push({ id: petDoc.id, ...petDoc.data() });
+  });
+  return pets;
+}
+
 /**
- * @param {{ familyId: string, userId: string, onProgress?: (done: number, total: number) => void }} params
+ * @param {{ familyId: string, userId: string, locale?: string, onProgress?: (done: number, total: number) => void }} params
  */
-export async function seedTestWalksForFamily({ familyId, userId, onProgress }) {
+export async function seedTestWalksForFamily({ familyId, userId, locale, onProgress }) {
   if (!familyId || !userId) {
     throw new Error('seedTestWalks: familyId and userId are required');
   }
 
-  const payloads = buildAllWalkPayloads({ familyId, userId });
+  const { defaultPetName, petNameSeparator, locale: resolvedLocale } = getTestDataLocaleConfig(locale);
+  const useEnglishSamples = resolvedLocale === 'en';
+  const routeBase = useEnglishSamples ? ENGLISH_TEST_ROUTE : DEFAULT_TEST_ROUTE;
+  const pets = useEnglishSamples ? ENGLISH_TEST_PETS : await fetchFamilyPets(familyId);
+  const payloads = buildAllWalkPayloads({
+    familyId,
+    userId,
+    pets,
+    defaultPetName,
+    petNameSeparator,
+    useEnglishSamples,
+    routeBase,
+  });
   const total = payloads.length;
   let done = 0;
 
@@ -191,7 +242,7 @@ export async function seedTestWalksForFamily({ familyId, userId, onProgress }) {
     onProgress?.(done, total);
   }
 
-  return { created: total, petCount: TEST_PETS.length, defaultPetName: TEST_DEFAULT_PET_NAME };
+  return { created: total, petCount: pets.length, locale: resolvedLocale };
 }
 
 function testWalksQuery(familyId) {

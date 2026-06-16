@@ -235,7 +235,7 @@ export default function SettingsScreen({ navigation }) {
     navigation.navigate(SCREEN_PERMISSIONS_CHECK);
   };
 
-  const handleSeedTestWalks = () => {
+  const runSeedTestWalks = (seedLocale) => {
     if (!familyId || !userId) {
       Alert.alert(i18n.t('common.error'), i18n.t('settings.testSeedNoFamily'));
       return;
@@ -256,6 +256,7 @@ export default function SettingsScreen({ navigation }) {
               const { created } = await seedTestWalksForFamily({
                 familyId,
                 userId,
+                locale: seedLocale,
                 onProgress: (done, total) => setTestDevProgress({ done, total }),
               });
               Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('settings.testSeedSuccess', { count: created }));
@@ -269,6 +270,14 @@ export default function SettingsScreen({ navigation }) {
         },
       ]
     );
+  };
+
+  const handleSeedTestWalks = () => {
+    runSeedTestWalks('en');
+  };
+
+  const handleSeedTestWalksKo = () => {
+    runSeedTestWalks('ko');
   };
 
   const handleDeleteTestWalks = async () => {
@@ -705,6 +714,40 @@ export default function SettingsScreen({ navigation }) {
                   </Text>
                   <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
                     {i18n.t('settings.testSeedCardDesc')}
+                  </Text>
+                </View>
+              </View>
+              {testDevRunning ? (
+                <View style={styles.testSeedProgressRow}>
+                  <ActivityIndicator size="small" color={currentTheme.primary} />
+                  <Text style={[styles.testSeedProgressText, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                    {i18n.t('settings.testSeedRunning', {
+                      done: testDevProgress.done,
+                      total: testDevProgress.total,
+                    })}
+                  </Text>
+                </View>
+              ) : (
+                <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.testSeedCard,
+                { backgroundColor: currentTheme.card, borderColor: '#5B8DEF' },
+              ]}
+              onPress={handleSeedTestWalksKo}
+              disabled={testDevRunning}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <Ionicons name="language-outline" size={22} color="#5B8DEF" style={styles.settingIcon} />
+                <View style={styles.settingTextBlock}>
+                  <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                    {i18n.t('settings.testSeedCardTitleKo')}
+                  </Text>
+                  <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                    {i18n.t('settings.testSeedCardDescKo')}
                   </Text>
                 </View>
               </View>

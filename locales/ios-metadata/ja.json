@@ -1,0 +1,14 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Annie Walking Log",
+    "NSCameraUsageDescription": "お散歩の記録のためにカメラを使用します。",
+    "NSPhotoLibraryUsageDescription": "お散歩の写真をフォトに保存するために使用します。",
+    "NSPhotoLibraryAddUsageDescription": "お散歩の写真をフォトアルバムに保存します。",
+    "NSLocationWhenInUseUsageDescription": "ペットのお散歩ルートを記録するために位置情報を使用します。",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "ペットのお散歩ルートを記録するために位置情報を使用します。",
+    "NSLocationAlwaysUsageDescription": "ペットのお散歩ルートを記録するために位置情報を使用します。"
+  },
+  "android": {
+    "app_name": "Annie Walking Log"
+  }
+}

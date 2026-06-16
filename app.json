@@ -35,12 +35,22 @@
         "CFBundleDevelopmentRegion": "ja",
         "CFBundleLocalizations": [
           "ja",
-          "en"
+          "en",
+          "es",
+          "ko",
+          "de",
+          "fr",
+          "it",
+          "pt",
+          "nl"
         ],
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "お散歩の記録のためにカメラを使用します。",
-        "NSPhotoLibraryUsageDescription": "お散歩の写真をフォトに保存するために使用します。",
-        "NSPhotoLibraryAddUsageDescription": "お散歩の写真をフォトアルバムに保存します。"
+        "NSCameraUsageDescription": "Used to take photos during walks for your walk log.",
+        "NSPhotoLibraryUsageDescription": "Used to access your photo library when saving walk photos.",
+        "NSPhotoLibraryAddUsageDescription": "Used to save walk photos to your photo album.",
+        "NSLocationWhenInUseUsageDescription": "Used to record your pet's walk route while you use the app.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Used to record your pet's walk route, including when the screen is off.",
+        "NSLocationAlwaysUsageDescription": "Used to record your pet's walk route, including when the screen is off."
       }
     },
     "android": {
@@ -74,28 +84,49 @@
         "projectId": "7718817f-9965-453a-a6a4-4b5b6223a22e"
       }
     },
+    "locales": {
+      "ja": "./locales/ios-metadata/ja.json",
+      "en": "./locales/ios-metadata/en.json",
+      "es": "./locales/ios-metadata/es.json",
+      "ko": "./locales/ios-metadata/ko.json",
+      "de": "./locales/ios-metadata/de.json",
+      "fr": "./locales/ios-metadata/fr.json",
+      "it": "./locales/ios-metadata/it.json",
+      "pt": "./locales/ios-metadata/pt.json",
+      "nl": "./locales/ios-metadata/nl.json"
+    },
     "plugins": [
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "ペットのお散歩ルートを記録するために位置情報を使用します。",
+          "locationAlwaysAndWhenInUsePermission": "Used to record your pet's walk route, including when the screen is off.",
+          "locationWhenInUsePermission": "Used to record your pet's walk route while you use the app.",
+          "locationAlwaysPermission": "Used to record your pet's walk route, including when the screen is off.",
           "isAndroidBackgroundLocationEnabled": true
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-localization",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": ["ja", "en", "es", "ko", "de", "fr", "it", "pt", "nl"],
+            "android": ["ja", "en", "es", "ko", "de", "fr", "it", "pt", "nl"]
+          }
+        }
+      ],
       "expo-notifications",
       [
         "expo-image-picker",
         {
-          "cameraPermission": "お散歩の記録のためにカメラを使用します。"
+          "cameraPermission": "Used to take photos during walks for your walk log."
         }
       ],
       [
         "expo-media-library",
         {
-          "photosPermission": "お散歩の写真をフォトに保存するために使用します。",
-          "savePhotosPermission": "お散歩の写真をフォトアルバムに保存します。"
+          "photosPermission": "Used to access your photo library when saving walk photos.",
+          "savePhotosPermission": "Used to save walk photos to your photo album."
         }
       ],
       "./modules/expo-walk-tracking/app.plugin.js",

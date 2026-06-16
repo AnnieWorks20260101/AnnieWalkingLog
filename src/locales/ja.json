@@ -211,6 +211,13 @@
     "languageLabel": "言語設定",
     "languageJa": "日本語",
     "languageEn": "English",
+    "languageEs": "Español",
+    "languageKo": "한국어",
+    "languageDe": "Deutsch",
+    "languageFr": "Français",
+    "languageIt": "Italiano",
+    "languagePt": "Português",
+    "languageNl": "Nederlands",
     "languageModalTitle": "言語を選択",
     "timeFormatLabel": "時間表示",
     "timeFormatModalTitle": "時間表示を選択",
@@ -342,7 +349,9 @@
     "testDeleteSuccess": "テストデータを %{count} 件削除しました。",
     "testDeleteError": "テストデータの削除に失敗しました。",
     "testDeleteEmptyTitle": "削除対象なし",
-    "testDeleteEmptyMsg": "テスト用のお散歩記録は見つかりませんでした。"
+    "testDeleteEmptyMsg": "テスト用のお散歩記録は見つかりませんでした。",
+    "testSeedCardTitleKo": "テスト用お散歩データを作成（韓国語）",
+    "testSeedCardDescKo": "ペット名の区切り・デフォルト名を韓国語向けに生成します（約2年分）。"
   },
   "petList": {
     "title": "ペット一覧",
