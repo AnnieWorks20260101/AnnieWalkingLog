@@ -38,6 +38,7 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
   const [legalConsentChecked, setLegalConsentChecked] = useState(false);
   const [oauthLinkRequest, setOauthLinkRequest] = useState(null);
   const [linkSubmitting, setLinkSubmitting] = useState(false);
@@ -114,12 +115,15 @@ export default function LoginScreen({ navigation }) {
       Alert.alert(i18n.t('common.error'), i18n.t('auth.resetEmailRequired'));
       return;
     }
+    setResettingPassword(true);
     try {
       await sendPasswordReset(email);
-      Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('auth.resetSent'));
+      Alert.alert(i18n.t('common.notice'), i18n.t('auth.resetSent'));
     } catch (error) {
       console.error(error);
       Alert.alert(i18n.t('common.error'), i18n.t('auth.resetError'));
+    } finally {
+      setResettingPassword(false);
     }
   };
 
@@ -301,6 +305,22 @@ export default function LoginScreen({ navigation }) {
                 onChangeText={setPassword}
               />
               <TouchableOpacity
+                onPress={handlePasswordReset}
+                disabled={loading || resettingPassword || !legalConsentChecked}
+                style={[
+                  styles.forgotPasswordLink,
+                  { opacity: legalConsentChecked && !resettingPassword ? 1 : 0.45 },
+                ]}
+              >
+                {resettingPassword ? (
+                  <ActivityIndicator size="small" color={currentTheme.primary} />
+                ) : (
+                  <Text style={[styles.forgotPasswordText, { color: currentTheme.primary }]}>
+                    {i18n.t('auth.forgotPassword')}
+                  </Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={[
                   styles.primaryButton,
                   { backgroundColor: currentTheme.primary, opacity: legalConsentChecked ? 1 : 0.45 },
@@ -319,9 +339,6 @@ export default function LoginScreen({ navigation }) {
                 <Text style={[styles.outlineButtonText, { color: currentTheme.primary }]}>
                   {i18n.t('auth.goRegister')}
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handlePasswordReset} style={styles.linkButton}>
-                <Text style={[styles.linkText, { color: currentTheme.textSecondary }]}>{i18n.t('auth.forgotPassword')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -409,8 +426,15 @@ const createStyles = (fs) => ({
     marginBottom: 8,
   },
   outlineButtonText: { fontSize: fs.m, fontWeight: 'bold' },
-  linkButton: { alignItems: 'center', paddingVertical: 8 },
-  linkText: { fontSize: fs.s, textDecorationLine: 'underline' },
+  forgotPasswordLink: {
+    alignSelf: 'flex-end',
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    marginBottom: 12,
+    minHeight: 24,
+    justifyContent: 'center',
+  },
+  forgotPasswordText: { fontSize: fs.s, textDecorationLine: 'underline', fontWeight: '600' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
   dividerLine: { flex: 1, height: 1 },
   dividerText: { marginHorizontal: 12, fontSize: fs.s },
