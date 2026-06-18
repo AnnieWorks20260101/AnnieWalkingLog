@@ -33,6 +33,7 @@
     "expo-modules-core": "~3.0.30",
     "expo-notifications": "~0.32.17",
     "expo-status-bar": "~3.0.9",
+    "expo-store-review": "~9.0.9",
     "expo-task-manager": "~14.0.9",
     "expo-walk-tracking": "file:./modules/expo-walk-tracking",
     "firebase": "^12.12.1",

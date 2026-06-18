@@ -39,6 +39,10 @@ import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { calculateTotalDistance } from '../../utils/locationUtils';
 import { fetchCurrentWeather } from '../../services/openWeather';
 import { openWalkDetail } from '../../navigation/walkNavigation';
+import {
+  incrementCompletedWalkCount,
+  shouldRequestReviewAtCount,
+} from '../../utils/storeReviewPrompt';
 import { setWalkTrackingActive } from '../../navigation/walkSessionFlag';
 import { getCurrentWalkMapCoordinate } from '../../utils/walkMapMarks';
 import {
@@ -651,6 +655,8 @@ export default function WalkScreen({ navigation }) {
       });
 
       const savedWalk = { ...walkData, id: walkId, photos };
+      const completedWalkCount = await incrementCompletedWalkCount();
+      const reviewMilestone = shouldRequestReviewAtCount(completedWalkCount);
       const successTitle = i18n.t('walk.saveSuccess');
       let successMsg = i18n.t('walk.saveSuccessMsg');
       if (photoUploadFailed) {
@@ -665,7 +671,10 @@ export default function WalkScreen({ navigation }) {
         {
           text: i18n.t('walk.viewResult'),
           onPress: () => {
-            openWalkDetail(navigation.getParent(), savedWalk);
+            openWalkDetail(navigation.getParent(), savedWalk, {
+              fromSaveReview: reviewMilestone != null,
+              reviewMilestone,
+            });
           },
         },
       ]);

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useCallback, useState } from 'react';
+import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
 import { parseWalkFromNavigationParams, serializeWalkForNavigation } from '../../utils/walkNavigationParams';
 import {
   StyleSheet,
@@ -22,6 +22,10 @@ import { getWalkPhotoCoordinate, walkHasPhotos, getWalkPhotos } from '../../util
 import { SCREEN_WALK_PHOTOS } from '../../navigation/screenNames';
 import { closeWalkDetailToHistory } from '../../navigation/walkNavigation';
 import { createWalkMemo, persistWalkMemos } from '../../services/walkMemos';
+import {
+  maybeRequestStoreReview,
+  STORE_REVIEW_PROMPT_DELAY_MS,
+} from '../../utils/storeReviewPrompt';
 
 const DEFAULT_REGION = {
   latitude: 35.681236,
@@ -38,6 +42,8 @@ export default function WalkDetailScreen({ route, navigation }) {
     [route.params?.walk]
   );
   const walkId = walk.id;
+  const fromSaveReview = route.params?.fromSaveReview === true;
+  const reviewMilestone = route.params?.reviewMilestone ?? null;
   const walkRoute = walk.route || [];
   const poops = walk.poops || [];
   const customMarks = walk.customMarks || [];
@@ -81,6 +87,20 @@ export default function WalkDetailScreen({ route, navigation }) {
   const showWeather = hasStartWeatherDisplay(walk.startWeather);
   const hasPhotos = walkHasPhotos(walk);
   const photoCount = getWalkPhotos(walk).length;
+
+  useEffect(() => {
+    if (!fromSaveReview || reviewMilestone == null) {
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      maybeRequestStoreReview({ milestone: reviewMilestone }).catch((error) => {
+        console.warn('maybeRequestStoreReview failed:', error);
+      });
+    }, STORE_REVIEW_PROMPT_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [fromSaveReview, reviewMilestone]);
 
   const openNewMemo = () => {
     if (!walkId) {

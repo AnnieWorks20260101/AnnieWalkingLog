@@ -88,14 +88,20 @@ function dispatchWalkLogPopToTop(navigation, rootState) {
 }
 
 /** 詳細を開く（保存後・通知・一覧タップで共通） */
-export function openWalkDetail(navigation, walk) {
+export function openWalkDetail(navigation, walk, options = {}) {
   if (!navigation || !walk) {
     return;
   }
 
+  const { fromSaveReview = false, reviewMilestone = null } = options;
+
   navigation.navigate(TAB_WALK_LOG, {
     screen: SCREEN_WALK_DETAIL,
-    params: { walk: serializeWalkForNavigation(walk) },
+    params: {
+      walk: serializeWalkForNavigation(walk),
+      fromSaveReview: fromSaveReview === true,
+      reviewMilestone: typeof reviewMilestone === 'number' ? reviewMilestone : null,
+    },
   });
 }
 
