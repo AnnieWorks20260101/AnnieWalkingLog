@@ -4,10 +4,10 @@ const LEGAL_SITE_ORIGIN = 'https://www.annie-works.com';
 const LEGAL_APP_PATH = 'AnnieWalkingLog';
 
 /** ポリシー改定時は日付を更新し、未同意ユーザーに再同意を求める */
-export const PRIVACY_POLICY_VERSION = '2026-05-29';
+export const PRIVACY_POLICY_VERSION = '2026-06-16';
 
 /** 利用規約改定時は日付を更新し、未同意ユーザーに再同意を求める */
-export const TERMS_OF_SERVICE_VERSION = '2026-05-29';
+export const TERMS_OF_SERVICE_VERSION = '2026-06-16';
 
 /**
  * アプリ locale（ja.json 等の先頭2文字）→ 製品HPの言語パス。
