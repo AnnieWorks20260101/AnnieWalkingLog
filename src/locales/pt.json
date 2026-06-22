@@ -569,6 +569,22 @@
       }
     }
   },
+  "onboarding": {
+    "skip": "Saltar",
+    "next": "Seguinte",
+    "getStarted": "Começar",
+    "registerPet": "Registar animal",
+    "welcomeTitle": "Bem-vindo ao Annie Walking Log 🐾",
+    "welcomeDesc": "Registe e partilhe passeios em família — distância, rota e fotos.",
+    "petsTitle": "Registe primeiro os seus animais",
+    "petsDesc": "Abra o separador Animais em baixo para adicionar o seu cão ou gato. Sem animais não pode iniciar um passeio.",
+    "petsHint": "Toque em «Animais» na barra de separadores",
+    "customButtonTitle": "Personalize os botões",
+    "customButtonDesc": "Durante o passeio, o botão personalizado junto ao mapa (água, pausa, etc.) muda em Definições → Personalizar botão. O botão 💩 mantém-se.",
+    "lockScreenTitle": "Registar no ecrã de bloqueio",
+    "lockScreenDescIos": "Depois de iniciar, o registo continua com o ecrã desligado. 💩 e o botão personalizado estão na Live Activity.",
+    "lockScreenDescAndroid": "Depois de iniciar, o registo continua com o ecrã desligado. 💩 e o botão personalizado estão nas notificações."
+  },
   "legal": {
     "privacyPolicy": "Política de privacidade",
     "termsOfService": "Termos de serviço",

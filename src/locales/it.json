@@ -569,6 +569,22 @@
       }
     }
   },
+  "onboarding": {
+    "skip": "Salta",
+    "next": "Avanti",
+    "getStarted": "Inizia",
+    "registerPet": "Registra un animale",
+    "welcomeTitle": "Benvenuto in Annie Walking Log 🐾",
+    "welcomeDesc": "Registra e condividi le passeggiate in famiglia — distanza, percorso e foto.",
+    "petsTitle": "Registra prima i tuoi animali",
+    "petsDesc": "Apri la scheda Animali in basso per aggiungere cane o gatto. Senza animali non puoi iniziare una passeggiata.",
+    "petsHint": "Tocca «Animali» nella barra delle schede",
+    "customButtonTitle": "Personalizza i pulsanti",
+    "customButtonDesc": "Durante la passeggiata, il pulsante personalizzato accanto alla mappa (acqua, pausa, ecc.) si cambia in Impostazioni → Personalizza pulsante. Il pulsante 💩 resta com'è.",
+    "lockScreenTitle": "Registra dalla schermata di blocco",
+    "lockScreenDescIos": "Dopo l'avvio, la registrazione continua a schermo spento. 💩 e il pulsante personalizzato sono nella Live Activity.",
+    "lockScreenDescAndroid": "Dopo l'avvio, la registrazione continua a schermo spento. 💩 e il pulsante personalizzato sono nelle notifiche."
+  },
   "legal": {
     "privacyPolicy": "Informativa sulla privacy",
     "termsOfService": "Termini di servizio",

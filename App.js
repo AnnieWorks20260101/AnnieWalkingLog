@@ -1,6 +1,6 @@
 // App.js 
 import 'react-native-gesture-handler';
-import React from 'react';
+import React, { useState } from 'react';
 import { useNotificationObserver } from './src/hooks/useNotificationObserver';
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
@@ -40,7 +40,9 @@ import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
 import FamilySetupScreen from './src/screens/auth/FamilySetupScreen';
 import PrivacyPolicyReconsentScreen from './src/screens/auth/PrivacyPolicyReconsentScreen';
+import OnboardingScreen from './src/screens/onboarding/OnboardingScreen';
 import { usePrivacyPolicyConsent } from './src/hooks/usePrivacyPolicyConsent';
+import { useOnboardingStatus } from './src/hooks/useOnboardingStatus';
 
 import HistoryScreen from './src/screens/walk/HistoryScreen';
 import WalkGraphScreen from './src/screens/walk/WalkGraphScreen';
@@ -110,7 +112,7 @@ function AuthNavigator() {
   );
 }
 
-function MainApp() {
+function MainApp({ initialTab = TAB_WALK }) {
   const navigationRef = useNavigationContainerRef();
   useNotificationObserver(navigationRef);
 
@@ -120,7 +122,7 @@ function MainApp() {
         <AppBackHandler />
         <ThemedStatusBar />
         <Tab.Navigator
-          initialRouteName={TAB_WALK}
+          initialRouteName={initialTab}
           backBehavior="none"
           tabBar={(props) => <AppTabBar {...props} />}
           screenOptions={{ headerShown: false }}
@@ -165,8 +167,14 @@ function RootNavigator() {
   const { loading, userId, needsFamilySetup } = useAuth();
   const { policyConsentAccepted, policyConsentLoading, refreshPolicyConsent } =
     usePrivacyPolicyConsent(userId);
+  const {
+    onboardingCompleted,
+    onboardingLoading,
+    markOnboardingCompleted,
+  } = useOnboardingStatus(userId);
+  const [mainInitialTab, setMainInitialTab] = useState(TAB_WALK);
 
-  if (loading || policyConsentLoading) {
+  if (loading || policyConsentLoading || onboardingLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: currentTheme.background }}>
         <ActivityIndicator size="large" color={currentTheme.primary} />
@@ -201,7 +209,21 @@ function RootNavigator() {
     );
   }
 
-  return <MainApp key={language} />;
+  if (!onboardingCompleted) {
+    return (
+      <View key={language} style={{ flex: 1, backgroundColor: currentTheme.background }}>
+        <ThemedStatusBar />
+        <OnboardingScreen
+          markCompleted={markOnboardingCompleted}
+          onComplete={(initialTab) => {
+            setMainInitialTab(initialTab);
+          }}
+        />
+      </View>
+    );
+  }
+
+  return <MainApp key={`${language}-${mainInitialTab}`} initialTab={mainInitialTab} />;
 }
 
 export default function App() {

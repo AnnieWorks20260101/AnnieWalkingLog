@@ -571,6 +571,22 @@
       }
     }
   },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "getStarted": "Get started",
+    "registerPet": "Register a pet",
+    "welcomeTitle": "Welcome to Annie Walking Log 🐾",
+    "welcomeDesc": "Record and share walks with your family — distance, route, and photos included.",
+    "petsTitle": "Register your pets first",
+    "petsDesc": "Open the Pets tab at the bottom to add your dog or cat. You cannot start a walk until at least one pet is registered.",
+    "petsHint": "Tap \"Pets\" in the tab bar",
+    "customButtonTitle": "Customize your buttons",
+    "customButtonDesc": "During a walk, the custom button beside the map (water, break, etc.) can be changed in Settings → Customize button. The 💩 button stays as is.",
+    "lockScreenTitle": "Record from the lock screen",
+    "lockScreenDescIos": "After you start a walk, tracking continues when the screen is off. Tap 💩 and your custom button from the Live Activity on the lock screen.",
+    "lockScreenDescAndroid": "After you start a walk, tracking continues when the screen is off. Tap 💩 and your custom button from the notification shade."
+  },
   "legal": {
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",

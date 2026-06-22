@@ -569,6 +569,22 @@
       }
     }
   },
+  "onboarding": {
+    "skip": "Überspringen",
+    "next": "Weiter",
+    "getStarted": "Los geht's",
+    "registerPet": "Haustier registrieren",
+    "welcomeTitle": "Willkommen bei Annie Walking Log 🐾",
+    "welcomeDesc": "Spaziergänge mit der Familie festhalten — Distanz, Route und Fotos.",
+    "petsTitle": "Zuerst Haustiere registrieren",
+    "petsDesc": "Öffnen Sie unten den Tab „Haustiere“, um Hund oder Katze anzulegen. Ohne Haustier können Sie keinen Spaziergang starten.",
+    "petsHint": "„Haustiere“ in der Tab-Leiste antippen",
+    "customButtonTitle": "Buttons anpassen",
+    "customButtonDesc": "Während des Spaziergangs können Sie den benutzerdefinierten Button neben der Karte (Wasser, Pause usw.) unter Einstellungen → Button anpassen ändern. Der 💩-Button bleibt unverändert.",
+    "lockScreenTitle": "Vom Sperrbildschirm aus aufzeichnen",
+    "lockScreenDescIos": "Nach dem Start läuft die Aufzeichnung weiter, auch wenn der Bildschirm aus ist. 💩 und Ihr Button sind über die Live Activity erreichbar.",
+    "lockScreenDescAndroid": "Nach dem Start läuft die Aufzeichnung weiter, auch wenn der Bildschirm aus ist. 💩 und Ihr Button sind in der Benachrichtigungsleiste erreichbar."
+  },
   "legal": {
     "privacyPolicy": "Datenschutzerklärung",
     "termsOfService": "Nutzungsbedingungen",

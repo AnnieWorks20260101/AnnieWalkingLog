@@ -569,6 +569,22 @@
       }
     }
   },
+  "onboarding": {
+    "skip": "건너뛰기",
+    "next": "다음",
+    "getStarted": "시작하기",
+    "registerPet": "반려동물 등록",
+    "welcomeTitle": "Annie Walking Log에 오신 것을 환영합니다 🐾",
+    "welcomeDesc": "가족과 함께 산책 거리, 경로, 사진을 기록하고 공유하세요.",
+    "petsTitle": "먼저 반려동물을 등록하세요",
+    "petsDesc": "하단의 「반려동물」 탭에서 강아지·고양이를 등록하세요. 등록하지 않으면 산책을 기록할 수 없습니다.",
+    "petsHint": "하단 탭에서 「반려동물」을 탭",
+    "customButtonTitle": "버튼을 원하는 대로",
+    "customButtonDesc": "산책 중 지도 옆 커스텀 버튼(물, 휴식 등)은 「설정」→「버튼 사용자 지정」에서 바꿀 수 있습니다. 💩 버튼은 그대로입니다.",
+    "lockScreenTitle": "잠금 화면에서도 기록",
+    "lockScreenDescIos": "산책을 시작하면 화면을 꺼도 기록이 계속됩니다. 💩과 커스텀 버튼은 잠금 화면의 Live Activity에서 누를 수 있습니다.",
+    "lockScreenDescAndroid": "산책을 시작하면 화면을 꺼도 기록이 계속됩니다. 💩과 커스텀 버튼은 알림창에서 누를 수 있습니다."
+  },
   "legal": {
     "privacyPolicy": "개인정보 처리방침",
     "termsOfService": "이용약관",

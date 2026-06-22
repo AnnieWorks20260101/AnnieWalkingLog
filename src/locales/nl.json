@@ -569,6 +569,22 @@
       }
     }
   },
+  "onboarding": {
+    "skip": "Overslaan",
+    "next": "Volgende",
+    "getStarted": "Aan de slag",
+    "registerPet": "Huisdier registreren",
+    "welcomeTitle": "Welkom bij Annie Walking Log 🐾",
+    "welcomeDesc": "Leg wandelingen vast en deel ze met je gezin — afstand, route en foto's.",
+    "petsTitle": "Registreer eerst je huisdieren",
+    "petsDesc": "Open het tabblad Huisdieren onderaan om je hond of kat toe te voegen. Zonder huisdier kun je niet wandelen.",
+    "petsHint": "Tik op «Huisdieren» in de tabbalk",
+    "customButtonTitle": "Knoppen aanpassen",
+    "customButtonDesc": "Tijdens de wandeling kun je de aangepaste knop naast de kaart (water, pauze, enz.) wijzigen via Instellingen → Knop aanpassen. De 💩-knop blijft hetzelfde.",
+    "lockScreenTitle": "Registreren vanaf het vergrendelscherm",
+    "lockScreenDescIos": "Na het starten gaat de registratie door als het scherm uit is. 💩 en je knop zijn bereikbaar via Live Activity.",
+    "lockScreenDescAndroid": "Na het starten gaat de registratie door als het scherm uit is. 💩 en je knop zijn bereikbaar via de meldingen."
+  },
   "legal": {
     "privacyPolicy": "Privacybeleid",
     "termsOfService": "Servicevoorwaarden",
