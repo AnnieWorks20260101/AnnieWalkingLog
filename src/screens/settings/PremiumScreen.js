@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -241,7 +242,11 @@ export default function PremiumScreen() {
           ) : null}
 
           <Text style={[styles.autoRenewNote, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-            {i18n.t('settings.premiumAutoRenewNote')}
+            {i18n.t(
+              Platform.OS === 'ios'
+                ? 'settings.premiumAutoRenewNoteIos'
+                : 'settings.premiumAutoRenewNoteAndroid'
+            )}
           </Text>
         </View>
 
