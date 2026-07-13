@@ -49,6 +49,35 @@ import {
   isBackgroundLocationGranted,
   isWalkBackgroundLocationReady,
 } from '../../utils/walkPermissions';
+
+function isLightHexColor(hex) {
+  if (!hex || typeof hex !== 'string') {
+    return false;
+  }
+  const normalized = hex.replace('#', '');
+  if (normalized.length < 6) {
+    return false;
+  }
+  const r = parseInt(normalized.slice(0, 2), 16);
+  const g = parseInt(normalized.slice(2, 4), 16);
+  const b = parseInt(normalized.slice(4, 6), 16);
+  if ([r, g, b].some((value) => Number.isNaN(value))) {
+    return false;
+  }
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55;
+}
+
+/** スタート有効時はヘッダーと同系の濃い色で、終了ボタンと同程度にくっきり見せる */
+function getWalkStartButtonBackground(theme, enabled) {
+  if (!enabled) {
+    return theme.primaryMuted ?? theme.primary;
+  }
+  const headerText = theme.headerText;
+  if (headerText && !isLightHexColor(headerText)) {
+    return headerText;
+  }
+  return theme.primary;
+}
 import { getWalkPhotoLimits } from '../../constants/walkPhotoLimits';
 import { createPendingWalkPhoto, persistWalkPhotoUri } from '../../utils/walkPhotos';
 import { resolveWalkPhotoUploadPolicy } from '../../utils/walkPhotoUploadPolicy';
@@ -771,6 +800,8 @@ export default function WalkScreen({ navigation }) {
     ]);
   };
 
+  const canStartWalk = !isTracking && selectedPetIds.length > 0;
+
   if (!initialRegion) {
     return (
       <View style={[styles.container, styles.locationLoading, { backgroundColor: currentTheme.background }]}>
@@ -820,11 +851,12 @@ export default function WalkScreen({ navigation }) {
         <TouchableOpacity
           style={[
             styles.walkActionButton,
-            { backgroundColor: currentTheme.primary },
-            (isTracking || selectedPetIds.length === 0) && styles.walkActionButtonDisabled,
+            canStartWalk && styles.walkActionButtonEmphasized,
+            { backgroundColor: getWalkStartButtonBackground(currentTheme, canStartWalk) },
+            !canStartWalk && styles.walkActionButtonDisabled,
           ]}
           onPress={startTracking}
-          disabled={isTracking || selectedPetIds.length === 0}
+          disabled={!canStartWalk}
           activeOpacity={0.85}
         >
           <Text style={[styles.walkActionButtonText, { color: currentTheme.card }]}>
@@ -957,6 +989,11 @@ const createStyles = (fs) => ({
   },
   walkActionButtonDisabled: {
     opacity: 0.45,
+  },
+  walkActionButtonEmphasized: {
+    elevation: 5,
+    shadowOpacity: 0.22,
+    shadowRadius: 4,
   },
   walkActionButtonText: {
     fontSize: fs.l,
