@@ -4,7 +4,7 @@
 
 Estos Términos de Servicio (los «Términos») establecen las condiciones para la prestación de la aplicación «Diario de paseos de Annie» (el «Servicio») y los derechos y obligaciones entre los usuarios del Servicio («Usuarios») y el operador. Debe leer estos Términos en su totalidad y aceptarlos antes de utilizar el Servicio.
 
-El uso del Servicio también está sujeto a nuestra [Política de Privacidad](https://www.annie-works.com/es/AnnieWalkingLog/Privacy-Policy) independiente.
+El uso del Servicio también está sujeto a nuestra [Política de Privacidad](https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807) independiente.
 
 ---
 
@@ -126,4 +126,4 @@ Estos Términos entran en vigor el 9 de junio de 2026.
 
 ---
 
-*Publicado en: https://www.annie-works.com/es/AnnieWalkingLog/ToS*
+*Publicado en: https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Terms-of-Service-39daf1786c27809ea788cec0a7f6427b?pvs=73*

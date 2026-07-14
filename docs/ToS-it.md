@@ -4,7 +4,7 @@
 
 I presenti Termini di servizio (i “Termini”) stabiliscono le condizioni per la fornitura dell’applicazione “Registro passeggiate di Annie” (il “Servizio”) e i diritti e gli obblighi tra gli utenti del Servizio (“Utenti”) e l’operatore. È necessario leggere per intero i presenti Termini e accettarli prima di utilizzare il Servizio.
 
-L’utilizzo del Servizio è altresì soggetto alla nostra [Informativa sulla privacy](https://www.annie-works.com/it/AnnieWalkingLog/Privacy-Policy) separata.
+L’utilizzo del Servizio è altresì soggetto alla nostra [Informativa sulla privacy](https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807) separata.
 
 ---
 
@@ -126,4 +126,4 @@ I presenti Termini entrano in vigore il 9 giugno 2026.
 
 ---
 
-*Pubblicato su: https://www.annie-works.com/it/AnnieWalkingLog/ToS*
+*Pubblicato su: https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Terms-of-Service-39daf1786c27809ea788cec0a7f6427b?pvs=73*

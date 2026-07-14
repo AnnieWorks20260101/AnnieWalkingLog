@@ -4,7 +4,7 @@
 
 Diese Nutzungsbedingungen (die „Bedingungen“) legen die Bedingungen für die Bereitstellung der Anwendung „Annies Gassi-Tagebuch“ (der „Dienst“) sowie die Rechte und Pflichten zwischen den Nutzern des Dienstes („Nutzer“) und dem Betreiber fest. Sie müssen diese Bedingungen vollständig lesen und ihnen zustimmen, bevor Sie den Dienst nutzen.
 
-Die Nutzung des Dienstes unterliegt außerdem unserer separaten [Datenschutzerklärung](https://www.annie-works.com/de/AnnieWalkingLog/Privacy-Policy).
+Die Nutzung des Dienstes unterliegt außerdem unserer separaten [Datenschutzerklärung](https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807).
 
 ---
 
@@ -126,4 +126,4 @@ Diese Bedingungen treten am 9. Juni 2026 in Kraft.
 
 ---
 
-*Veröffentlicht unter: https://www.annie-works.com/de/AnnieWalkingLog/ToS*
+*Veröffentlicht unter: https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Terms-of-Service-39daf1786c27809ea788cec0a7f6427b?pvs=73*

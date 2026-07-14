@@ -4,7 +4,7 @@
 
 본 이용약관(이하 "약관")은 애플리케이션 "애니의 산책 기록"(앱명: Annie's Walking Log, 이하 "서비스")의 제공 조건 및 서비스 이용자(이하 "이용자")와 운영자 간의 권리·의무 관계를 정합니다. 서비스를 이용하기 전에 본 약관의 전문을 읽고 동의해야 합니다.
 
-서비스 이용에는 별도로 정한 [개인정보 처리방침](https://www.annie-works.com/ko/AnnieWalkingLog/Privacy-Policy)도 적용됩니다.
+서비스 이용에는 별도로 정한 [개인정보 처리방침](https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807)도 적용됩니다.
 
 ---
 
@@ -126,4 +126,4 @@
 
 ---
 
-*게시 URL: https://www.annie-works.com/ko/AnnieWalkingLog/ToS*
+*게시 URL: https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Terms-of-Service-39daf1786c27809ea788cec0a7f6427b?pvs=73*

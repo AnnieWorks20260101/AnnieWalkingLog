@@ -330,4 +330,4 @@ Wij kunnen dit Beleid herzien wanneer wetten of de Dienst wijzigen. Het herziene
 
 ---
 
-*Gepubliceerd op: https://www.annie-works.com/nl/AnnieWalkingLog/Privacy-Policy*
+*Gepubliceerd op: https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807*

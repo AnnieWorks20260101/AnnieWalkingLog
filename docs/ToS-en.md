@@ -4,7 +4,7 @@
 
 These Terms of Service (the “Terms”) set forth the conditions for providing the application “Annie's Walking Log” (the “Service”) and the rights and obligations between users of the Service (“Users”) and the operator. You must read these Terms in full and agree to them before using the Service.
 
-Use of the Service is also subject to our separate [Privacy Policy](https://www.annie-works.com/en/AnnieWalkingLog/Privacy-Policy).
+Use of the Service is also subject to our separate [Privacy Policy](https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807).
 
 ---
 
@@ -126,4 +126,4 @@ These Terms take effect on June 9, 2026.
 
 ---
 
-*Published at: https://www.annie-works.com/en/AnnieWalkingLog/ToS*
+*Published at: https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Terms-of-Service-39daf1786c27809ea788cec0a7f6427b?pvs=73*

@@ -4,7 +4,7 @@
 
 Les présentes Conditions générales d'utilisation (les « Conditions ») définissent les conditions de fourniture de l'application « Le journal de balade d'Annie » (le « Service ») ainsi que les droits et obligations entre les utilisateurs du Service (« Utilisateurs ») et l'exploitant. Vous devez lire intégralement les présentes Conditions et les accepter avant d'utiliser le Service.
 
-L'utilisation du Service est également soumise à notre [Politique de confidentialité](https://www.annie-works.com/fr/AnnieWalkingLog/Privacy-Policy) distincte.
+L'utilisation du Service est également soumise à notre [Politique de confidentialité](https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807) distincte.
 
 ---
 
@@ -126,4 +126,4 @@ Les présentes Conditions entrent en vigueur le 9 juin 2026.
 
 ---
 
-*Publié à : https://www.annie-works.com/fr/AnnieWalkingLog/ToS*
+*Publié à : https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Terms-of-Service-39daf1786c27809ea788cec0a7f6427b?pvs=73*

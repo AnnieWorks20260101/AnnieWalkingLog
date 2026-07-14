@@ -4,7 +4,7 @@
 
 この利用規約（以下「本規約」といいます）は、アプリケーション「アニーのお散歩記録」（アプリ名：Annie's Walking Log、以下「本サービス」といいます）の提供条件及び本サービスの利用者（以下「ユーザー」といいます）と運営者との間の権利義務関係を定めるものです。本サービスの利用に際しては、本規約の全文をお読みいただいたうえで、本規約に同意いただく必要があります。
 
-本サービスの利用にあたっては、別途定める[プライバシーポリシー](https://www.annie-works.com/jp/AnnieWalkingLog/Privacy-Policy)も適用されます。
+本サービスの利用にあたっては、別途定める[プライバシーポリシー](https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807)も適用されます。
 
 ---
 
@@ -126,4 +126,4 @@
 
 ---
 
-*本ドキュメントの掲載 URL：https://www.annie-works.com/jp/AnnieWalkingLog/ToS*
+*本ドキュメントの掲載 URL：https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Terms-of-Service-39daf1786c27809ea788cec0a7f6427b?pvs=73*

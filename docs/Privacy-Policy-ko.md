@@ -330,4 +330,4 @@ EU에 거주하는 이용자는 거주 국가의 감독 기관에 불만을 제�
 
 ---
 
-*게시 URL: https://www.annie-works.com/ko/AnnieWalkingLog/Privacy-Policy*
+*게시 URL: https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807*

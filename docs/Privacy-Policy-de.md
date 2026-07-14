@@ -330,4 +330,4 @@ Wir können diese Erklärung überarbeiten, wenn sich Gesetze oder der Dienst ä
 
 ---
 
-*Veröffentlicht unter: https://www.annie-works.com/de/AnnieWalkingLog/Privacy-Policy*
+*Veröffentlicht unter: https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807*

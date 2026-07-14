@@ -1,7 +1,9 @@
-import { normalizeAppLocale } from '../i18n/localeConfig';
+/** Notion 上の法的文書（全言語共通） */
+export const PRIVACY_POLICY_URL =
+  'https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807';
 
-const LEGAL_SITE_ORIGIN = 'https://www.annie-works.com';
-const LEGAL_APP_PATH = 'AnnieWalkingLog';
+export const TERMS_OF_SERVICE_URL =
+  'https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Terms-of-Service-39daf1786c27809ea788cec0a7f6427b?pvs=73';
 
 /** ポリシー改定時は日付を更新し、未同意ユーザーに再同意を求める */
 export const PRIVACY_POLICY_VERSION = '2026-06-16';
@@ -10,39 +12,17 @@ export const PRIVACY_POLICY_VERSION = '2026-06-16';
 export const TERMS_OF_SERVICE_VERSION = '2026-06-16';
 
 /**
- * アプリ locale（ja.json 等の先頭2文字）→ 製品HPの言語パス。
- * 日本語のみ Web 側が `jp`（`ja` ではない）。
- * @param {string | undefined | null} locale
+ * @param {string | undefined | null} [_locale] 互換のため残置（全言語同一 URL）
  * @returns {string}
  */
-export function getLegalWebsiteLangCode(locale) {
-  const appLocale = normalizeAppLocale(locale);
-  if (appLocale === 'ja') {
-    return 'jp';
-  }
-  return appLocale;
+export function getPrivacyPolicyUrl(_locale = 'ja') {
+  return PRIVACY_POLICY_URL;
 }
 
 /**
- * @param {string | undefined | null} [locale] 省略時は日本語（jp）
+ * @param {string | undefined | null} [_locale] 互換のため残置（全言語同一 URL）
  * @returns {string}
  */
-export function getPrivacyPolicyUrl(locale = 'ja') {
-  const lang = getLegalWebsiteLangCode(locale);
-  return `${LEGAL_SITE_ORIGIN}/${lang}/${LEGAL_APP_PATH}/Privacy-Policy`;
+export function getTermsOfServiceUrl(_locale = 'ja') {
+  return TERMS_OF_SERVICE_URL;
 }
-
-/**
- * @param {string | undefined | null} [locale] 省略時は日本語（jp）
- * @returns {string}
- */
-export function getTermsOfServiceUrl(locale = 'ja') {
-  const lang = getLegalWebsiteLangCode(locale);
-  return `${LEGAL_SITE_ORIGIN}/${lang}/${LEGAL_APP_PATH}/ToS`;
-}
-
-/** @deprecated getPrivacyPolicyUrl(i18n.locale) を使用 */
-export const PRIVACY_POLICY_URL = getPrivacyPolicyUrl('ja');
-
-/** @deprecated getTermsOfServiceUrl(i18n.locale) を使用 */
-export const TERMS_OF_SERVICE_URL = getTermsOfServiceUrl('ja');

@@ -4,7 +4,7 @@
 
 Deze Servicevoorwaarden (de “Voorwaarden”) stellen de voorwaarden vast voor het aanbieden van de applicatie “Annie's Wandelboek” (de “Dienst”) en de rechten en plichten tussen gebruikers van de Dienst (“Gebruikers”) en de exploitant. U dient deze Voorwaarden volledig te lezen en ermee akkoord te gaan voordat u de Dienst gebruikt.
 
-Het gebruik van de Dienst valt ook onder ons aparte [Privacybeleid](https://www.annie-works.com/nl/AnnieWalkingLog/Privacy-Policy).
+Het gebruik van de Dienst valt ook onder ons aparte [Privacybeleid](https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807).
 
 ---
 
@@ -126,4 +126,4 @@ Deze Voorwaarden treden in werking op 9 juni 2026.
 
 ---
 
-*Gepubliceerd op: https://www.annie-works.com/nl/AnnieWalkingLog/ToS*
+*Gepubliceerd op: https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Terms-of-Service-39daf1786c27809ea788cec0a7f6427b?pvs=73*

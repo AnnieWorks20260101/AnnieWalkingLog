@@ -330,4 +330,4 @@ Nous pouvons réviser la présente Politique lorsque les lois ou le Service chan
 
 ---
 
-*Publié à : https://www.annie-works.com/fr/AnnieWalkingLog/Privacy-Policy*
+*Publié à : https://peppered-marigold-b52.notion.site/Annie-s-Walking-Log-Privacy-Policy-39daf1786c2780838a54e9b60efa0807*
