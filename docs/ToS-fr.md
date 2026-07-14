@@ -1,8 +1,8 @@
-# Conditions générales d'utilisation — Annie Walking Log
+# Conditions générales d'utilisation — Le journal de balade d'Annie
 
 **Dernière mise à jour : 16 juin 2026**
 
-Les présentes Conditions générales d'utilisation (les « Conditions ») définissent les conditions de fourniture de l'application « Annie Walking Log » (le « Service ») ainsi que les droits et obligations entre les utilisateurs du Service (« Utilisateurs ») et l'exploitant. Vous devez lire intégralement les présentes Conditions et les accepter avant d'utiliser le Service.
+Les présentes Conditions générales d'utilisation (les « Conditions ») définissent les conditions de fourniture de l'application « Le journal de balade d'Annie » (le « Service ») ainsi que les droits et obligations entre les utilisateurs du Service (« Utilisateurs ») et l'exploitant. Vous devez lire intégralement les présentes Conditions et les accepter avant d'utiliser le Service.
 
 L'utilisation du Service est également soumise à notre [Politique de confidentialité](https://www.annie-works.com/fr/AnnieWalkingLog/Privacy-Policy) distincte.
 

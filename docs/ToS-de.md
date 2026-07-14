@@ -1,8 +1,8 @@
-# Nutzungsbedingungen — Annie Walking Log
+# Nutzungsbedingungen — Annies Gassi-Tagebuch
 
 **Letzte Aktualisierung: 16. Juni 2026**
 
-Diese Nutzungsbedingungen (die „Bedingungen“) legen die Bedingungen für die Bereitstellung der Anwendung „Annie Walking Log“ (der „Dienst“) sowie die Rechte und Pflichten zwischen den Nutzern des Dienstes („Nutzer“) und dem Betreiber fest. Sie müssen diese Bedingungen vollständig lesen und ihnen zustimmen, bevor Sie den Dienst nutzen.
+Diese Nutzungsbedingungen (die „Bedingungen“) legen die Bedingungen für die Bereitstellung der Anwendung „Annies Gassi-Tagebuch“ (der „Dienst“) sowie die Rechte und Pflichten zwischen den Nutzern des Dienstes („Nutzer“) und dem Betreiber fest. Sie müssen diese Bedingungen vollständig lesen und ihnen zustimmen, bevor Sie den Dienst nutzen.
 
 Die Nutzung des Dienstes unterliegt außerdem unserer separaten [Datenschutzerklärung](https://www.annie-works.com/de/AnnieWalkingLog/Privacy-Policy).
 

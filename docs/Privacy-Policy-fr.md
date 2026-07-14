@@ -1,8 +1,8 @@
-# Politique de confidentialité — Annie Walking Log
+# Politique de confidentialité — Le journal de balade d'Annie
 
 **Dernière mise à jour : 16 juin 2026**
 
-Annie Works (« nous », « notre » ou « le Développeur ») établit la présente Politique de confidentialité (la « Politique ») concernant le traitement des informations personnelles et des données utilisateur dans l'application Annie Walking Log (l'« Application »).
+Annie Works (« nous », « notre » ou « le Développeur ») établit la présente Politique de confidentialité (la « Politique ») concernant le traitement des informations personnelles et des données utilisateur dans l'application Le journal de balade d'Annie (l'« Application »).
 
 ---
 

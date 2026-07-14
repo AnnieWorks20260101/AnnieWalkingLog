@@ -1,8 +1,8 @@
-# Termos de Serviço — Annie Walking Log
+# Termos de Serviço — Diário de Passeios da Annie
 
 **Última atualização: 16 de junho de 2026**
 
-Estes Termos de Serviço (os “Termos”) estabelecem as condições para a prestação do aplicativo “Annie Walking Log” (o “Serviço”) e os direitos e obrigações entre os usuários do Serviço (“Usuários”) e o operador. Você deve ler estes Termos na íntegra e concordar com eles antes de utilizar o Serviço.
+Estes Termos de Serviço (os “Termos”) estabelecem as condições para a prestação do aplicativo “Diário de Passeios da Annie” (o “Serviço”) e os direitos e obrigações entre os usuários do Serviço (“Usuários”) e o operador. Você deve ler estes Termos na íntegra e concordar com eles antes de utilizar o Serviço.
 
 A utilização do Serviço também está sujeita à nossa [Política de Privacidade](https://www.annie-works.com/pt/AnnieWalkingLog/Privacy-Policy) separada.
 

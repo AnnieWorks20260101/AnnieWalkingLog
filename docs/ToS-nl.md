@@ -1,8 +1,8 @@
-# Servicevoorwaarden — Annie Walking Log
+# Servicevoorwaarden — Annie's Wandelboek
 
 **Laatst bijgewerkt: 16 juni 2026**
 
-Deze Servicevoorwaarden (de “Voorwaarden”) stellen de voorwaarden vast voor het aanbieden van de applicatie “Annie Walking Log” (de “Dienst”) en de rechten en plichten tussen gebruikers van de Dienst (“Gebruikers”) en de exploitant. U dient deze Voorwaarden volledig te lezen en ermee akkoord te gaan voordat u de Dienst gebruikt.
+Deze Servicevoorwaarden (de “Voorwaarden”) stellen de voorwaarden vast voor het aanbieden van de applicatie “Annie's Wandelboek” (de “Dienst”) en de rechten en plichten tussen gebruikers van de Dienst (“Gebruikers”) en de exploitant. U dient deze Voorwaarden volledig te lezen en ermee akkoord te gaan voordat u de Dienst gebruikt.
 
 Het gebruik van de Dienst valt ook onder ons aparte [Privacybeleid](https://www.annie-works.com/nl/AnnieWalkingLog/Privacy-Policy).
 

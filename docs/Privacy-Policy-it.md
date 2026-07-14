@@ -1,8 +1,8 @@
-# Informativa sulla privacy — Annie Walking Log
+# Informativa sulla privacy — Registro passeggiate di Annie
 
 **Ultimo aggiornamento: 16 giugno 2026**
 
-Annie Works (“noi”, “ci” o “lo Sviluppatore”) stabilisce la presente Informativa sulla privacy (“Informativa”) in merito al trattamento delle informazioni personali e dei dati degli utenti nell’applicazione Annie Walking Log (“l’App”).
+Annie Works (“noi”, “ci” o “lo Sviluppatore”) stabilisce la presente Informativa sulla privacy (“Informativa”) in merito al trattamento delle informazioni personali e dei dati degli utenti nell’applicazione Registro passeggiate di Annie (“l’App”).
 
 ---
 

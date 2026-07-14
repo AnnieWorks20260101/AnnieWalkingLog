@@ -1,8 +1,8 @@
-# Política de Privacidade — Annie Walking Log
+# Política de Privacidade — Diário de Passeios da Annie
 
 **Última atualização: 16 de junho de 2026**
 
-A Annie Works (“nós”, “nos” ou “o Desenvolvedor”) estabelece esta Política de Privacidade (“Política”) em relação ao tratamento de informações pessoais e dados de usuários no aplicativo Annie Walking Log (“o App”).
+A Annie Works (“nós”, “nos” ou “o Desenvolvedor”) estabelece esta Política de Privacidade (“Política”) em relação ao tratamento de informações pessoais e dados de usuários no aplicativo Diário de Passeios da Annie (“o App”).
 
 ---
 

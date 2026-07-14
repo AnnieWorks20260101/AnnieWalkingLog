@@ -1,8 +1,8 @@
-# Termini di servizio — Annie Walking Log
+# Termini di servizio — Registro passeggiate di Annie
 
 **Ultimo aggiornamento: 16 giugno 2026**
 
-I presenti Termini di servizio (i “Termini”) stabiliscono le condizioni per la fornitura dell’applicazione “Annie Walking Log” (il “Servizio”) e i diritti e gli obblighi tra gli utenti del Servizio (“Utenti”) e l’operatore. È necessario leggere per intero i presenti Termini e accettarli prima di utilizzare il Servizio.
+I presenti Termini di servizio (i “Termini”) stabiliscono le condizioni per la fornitura dell’applicazione “Registro passeggiate di Annie” (il “Servizio”) e i diritti e gli obblighi tra gli utenti del Servizio (“Utenti”) e l’operatore. È necessario leggere per intero i presenti Termini e accettarli prima di utilizzare il Servizio.
 
 L’utilizzo del Servizio è altresì soggetto alla nostra [Informativa sulla privacy](https://www.annie-works.com/it/AnnieWalkingLog/Privacy-Policy) separata.
 

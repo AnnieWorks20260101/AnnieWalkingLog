@@ -1,8 +1,8 @@
-# Terms of Service — Annie Walking Log
+# Terms of Service — Annie's Walking Log
 
 **Last updated: June 16, 2026**
 
-These Terms of Service (the “Terms”) set forth the conditions for providing the application “Annie Walking Log” (the “Service”) and the rights and obligations between users of the Service (“Users”) and the operator. You must read these Terms in full and agree to them before using the Service.
+These Terms of Service (the “Terms”) set forth the conditions for providing the application “Annie's Walking Log” (the “Service”) and the rights and obligations between users of the Service (“Users”) and the operator. You must read these Terms in full and agree to them before using the Service.
 
 Use of the Service is also subject to our separate [Privacy Policy](https://www.annie-works.com/en/AnnieWalkingLog/Privacy-Policy).
 

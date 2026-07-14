@@ -1,8 +1,8 @@
-# Privacy Policy — Annie Walking Log
+# Privacy Policy — Annie's Walking Log
 
 **Last updated: June 16, 2026**
 
-Annie Works (“we”, “us”, or “the Developer”) sets forth this Privacy Policy (“Policy”) regarding the handling of personal information and user data in the application Annie Walking Log (“the App”).
+Annie Works (“we”, “us”, or “the Developer”) sets forth this Privacy Policy (“Policy”) regarding the handling of personal information and user data in the application Annie's Walking Log (“the App”).
 
 ---
 

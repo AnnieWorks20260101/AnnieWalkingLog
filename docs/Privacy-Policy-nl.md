@@ -1,8 +1,8 @@
-# Privacybeleid — Annie Walking Log
+# Privacybeleid — Annie's Wandelboek
 
 **Laatst bijgewerkt: 16 juni 2026**
 
-Annie Works (“wij”, “ons” of “de Ontwikkelaar”) stelt dit Privacybeleid (“Beleid”) vast met betrekking tot de verwerking van persoonsgegevens en gebruikersgegevens in de applicatie Annie Walking Log (“de App”).
+Annie Works (“wij”, “ons” of “de Ontwikkelaar”) stelt dit Privacybeleid (“Beleid”) vast met betrekking tot de verwerking van persoonsgegevens en gebruikersgegevens in de applicatie Annie's Wandelboek (“de App”).
 
 ---
 

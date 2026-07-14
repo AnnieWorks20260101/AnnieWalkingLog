@@ -1,8 +1,8 @@
-# Datenschutzerklärung — Annie Walking Log
+# Datenschutzerklärung — Annies Gassi-Tagebuch
 
 **Letzte Aktualisierung: 16. Juni 2026**
 
-Annie Works („wir“, „uns“ oder „der Entwickler“) legt in dieser Datenschutzerklärung („Erklärung“) die Handhabung personenbezogener Informationen und Nutzerdaten in der Anwendung Annie Walking Log („die App“) fest.
+Annie Works („wir“, „uns“ oder „der Entwickler“) legt in dieser Datenschutzerklärung („Erklärung“) die Handhabung personenbezogener Informationen und Nutzerdaten in der Anwendung Annies Gassi-Tagebuch („die App“) fest.
 
 ---
 
