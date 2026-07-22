@@ -1,4 +1,10 @@
-import { calculateAverageSpeedKmh } from './walkFormat';
+import {
+  calculateAverageSpeedKmh,
+  convertDistanceKm,
+  convertSpeedKmh,
+  getDistanceUnitLabel,
+  getSpeedUnitLabel,
+} from './walkFormat';
 
 /** 画面に収まる目安の本数（1スロット幅は GRAPH_COLUMN_WIDTH と揃える） */
 export const GRAPH_VISIBLE_SLOTS = 7;
@@ -52,13 +58,13 @@ function movingAverage(values, windowSize) {
  * 直近履歴から傾向を判定（移動平均の前半/後半比較）
  * @returns {'increasing'|'decreasing'|'stable'|null} null = 件数不足
  */
-export function computeWalkMetricTrend(walks, metric) {
+export function computeWalkMetricTrend(walks, metric, unitSystem = 'metric') {
   const sorted = sortWalksChronologically(walks);
   if (sorted.length < GRAPH_TREND_MIN_COUNT) {
     return null;
   }
 
-  const values = sorted.map((w) => getWalkGraphMetricValue(w, metric));
+  const values = sorted.map((w) => getWalkGraphMetricValue(w, metric, unitSystem));
   const smoothed = movingAverage(values, GRAPH_TREND_MA_WINDOW);
   const mid = Math.max(1, Math.floor(smoothed.length / 2));
   const early = smoothed.slice(0, mid);
@@ -116,14 +122,14 @@ export function computeVisibleAverage(points, scrollX, viewportWidth, columnWidt
   return slice.reduce((sum, p) => sum + p.value, 0) / slice.length;
 }
 
-export function getWalkGraphMetricValue(walk, metric) {
+export function getWalkGraphMetricValue(walk, metric, unitSystem = 'metric') {
   switch (metric) {
     case 'distance':
-      return walk.distance ?? 0;
+      return convertDistanceKm(walk.distance ?? 0, unitSystem);
     case 'duration':
       return walk.duration ?? 0;
     case 'speed':
-      return calculateAverageSpeedKmh(walk.distance, walk.duration) ?? 0;
+      return convertSpeedKmh(calculateAverageSpeedKmh(walk.distance, walk.duration) ?? 0, unitSystem);
     case 'poop':
       return walk.poops?.length ?? 0;
     default:
@@ -173,15 +179,15 @@ export function formatWalkGraphXTimeLabel(startTime) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export function formatWalkGraphMetricValue(metric, value, i18n) {
+export function formatWalkGraphMetricValue(metric, value, i18n, unitSystem = 'metric') {
   if (metric === 'distance') {
-    return `${Number(value).toFixed(2)}${i18n.t('walk.graphUnitKm')}`;
+    return `${Number(value).toFixed(2)}${getDistanceUnitLabel(unitSystem, i18n)}`;
   }
   if (metric === 'duration') {
     return `${Math.round(value)}${i18n.t('walk.graphUnitMin')}`;
   }
   if (metric === 'speed') {
-    return `${Number(value).toFixed(1)}${i18n.t('walk.graphUnitKmh')}`;
+    return `${Number(value).toFixed(1)}${getSpeedUnitLabel(unitSystem, i18n)}`;
   }
   if (metric === 'poop') {
     return `${Math.round(value)}${i18n.t('walk.graphUnitTimes')}`;

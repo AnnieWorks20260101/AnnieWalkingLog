@@ -11,11 +11,18 @@ import {
 import MapView, { Polyline, Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useDisplayPreferences } from '../../contexts/DisplayPreferencesContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import ScreenHeader from '../../components/ScreenHeader';
 import WalkMemoModal from '../../components/walk/WalkMemoModal';
 import i18n from '../../i18n';
-import { formatAverageSpeedKmh, formatDurationMinutes } from '../../utils/walkFormat';
+import {
+  formatAverageSpeed,
+  formatDistanceValue,
+  formatDurationMinutes,
+  getDistanceUnitLabel,
+  getSpeedUnitLabel,
+} from '../../utils/walkFormat';
 import WalkStartWeather, { hasStartWeatherDisplay } from '../../components/WalkStartWeather';
 import { fitMapToCoordinates, getRegionForCoordinates } from '../../utils/mapRegion';
 import { getWalkPhotoCoordinate, walkHasPhotos, getWalkPhotos } from '../../utils/walkPhotos';
@@ -36,6 +43,7 @@ const DEFAULT_REGION = {
 
 export default function WalkDetailScreen({ route, navigation }) {
   const { currentTheme, fontSizes } = useTheme();
+  const { unitSystem } = useDisplayPreferences();
   const styles = useThemedStyles(createStyles);
   const walk = useMemo(
     () => parseWalkFromNavigationParams(route.params?.walk),
@@ -76,14 +84,15 @@ export default function WalkDetailScreen({ route, navigation }) {
     fitMapToCoordinates(mapRef, mapCoordinates);
   }, [mapCoordinates]);
 
-  const distanceStr = `${(walk.distance ?? 0).toFixed(2)}km`;
+  const distanceStr = `${formatDistanceValue(walk.distance, unitSystem)}${getDistanceUnitLabel(unitSystem, i18n)}`;
   const durationStr = formatDurationMinutes(walk.duration, i18n);
   const poopCountStr = i18n.t('walk.poopCountShort', { count: poops.length });
-  const speedStr = formatAverageSpeedKmh(walk.distance, walk.duration);
+  const speedStr = formatAverageSpeed(walk.distance, walk.duration, unitSystem);
+  const speedUnit = getSpeedUnitLabel(unitSystem, i18n);
   const speedDisplay =
     speedStr != null
-      ? i18n.t('walk.speedValue', { speed: speedStr })
-      : i18n.t('walk.speedValue', { speed: '—' });
+      ? i18n.t('walk.speedValue', { speed: speedStr, speedUnit })
+      : i18n.t('walk.speedValue', { speed: '—', speedUnit });
   const showWeather = hasStartWeatherDisplay(walk.startWeather);
   const hasPhotos = walkHasPhotos(walk);
   const photoCount = getWalkPhotos(walk).length;

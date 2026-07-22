@@ -1,4 +1,4 @@
-import { calculateAverageSpeedKmh } from './walkFormat';
+import { calculateAverageSpeedKmh, convertSpeedKmh } from './walkFormat';
 import {
   toWalkStartDate,
   sortWalksChronologically,
@@ -194,13 +194,13 @@ export function getGraphAggregationLabel(aggregation, i18n) {
   return key ? i18n.t(key) : aggregation;
 }
 
-export function buildGraphChartPoints(walks, metric, aggregation) {
+export function buildGraphChartPoints(walks, metric, aggregation, unitSystem = 'metric') {
   const sorted = sortWalksChronologically(walks);
 
   if (aggregation === GRAPH_AGGREGATION.none) {
     return sorted.map((walk) => ({
       id: walk.id,
-      value: getWalkGraphMetricValue(walk, metric),
+      value: getWalkGraphMetricValue(walk, metric, unitSystem),
       xDateLabel: formatWalkGraphXDateLabel(walk.startTime),
       xTimeLabel: formatWalkGraphXTimeLabel(walk.startTime),
       startWeather: walk.startWeather,
@@ -229,12 +229,12 @@ export function buildGraphChartPoints(walks, metric, aggregation) {
         if (metric === 'speed') {
           const dist = dayWalks.reduce((sum, w) => sum + (w.distance ?? 0), 0);
           const dur = dayWalks.reduce((sum, w) => sum + (w.duration ?? 0), 0);
-          value = calculateAverageSpeedKmh(dist, dur) ?? 0;
+          value = convertSpeedKmh(calculateAverageSpeedKmh(dist, dur) ?? 0, unitSystem);
         } else {
-          value = dayWalks.reduce((sum, w) => sum + getWalkGraphMetricValue(w, metric), 0);
+          value = dayWalks.reduce((sum, w) => sum + getWalkGraphMetricValue(w, metric, unitSystem), 0);
         }
       } else {
-        const values = dayWalks.map((w) => getWalkGraphMetricValue(w, metric));
+        const values = dayWalks.map((w) => getWalkGraphMetricValue(w, metric, unitSystem));
         value = values.reduce((sum, v) => sum + v, 0) / values.length;
       }
 
@@ -261,7 +261,7 @@ export function downsampleGraphPointsForFit(points) {
   return result;
 }
 
-export function computeGraphPlotStats(points, metric, sourceWalks) {
+export function computeGraphPlotStats(points, metric, sourceWalks, unitSystem = 'metric') {
   const count = points.length;
   if (count === 0) {
     return { count: 0, avg: 0, sum: 0 };
@@ -274,7 +274,7 @@ export function computeGraphPlotStats(points, metric, sourceWalks) {
   if (metric === 'speed') {
     const dist = sourceWalks.reduce((s, w) => s + (w.distance ?? 0), 0);
     const dur = sourceWalks.reduce((s, w) => s + (w.duration ?? 0), 0);
-    sum = calculateAverageSpeedKmh(dist, dur) ?? 0;
+    sum = convertSpeedKmh(calculateAverageSpeedKmh(dist, dur) ?? 0, unitSystem);
   } else {
     sum = values.reduce((s, v) => s + v, 0);
   }
@@ -293,9 +293,9 @@ export function getGraphStatLabel(kind, i18n) {
   return key ? i18n.t(key) : kind;
 }
 
-export function formatGraphStatValue(kind, metric, value, i18n) {
+export function formatGraphStatValue(kind, metric, value, i18n, unitSystem = 'metric') {
   if (kind === 'count') {
     return String(Math.round(value));
   }
-  return formatWalkGraphMetricValue(metric, value, i18n);
+  return formatWalkGraphMetricValue(metric, value, i18n, unitSystem);
 }

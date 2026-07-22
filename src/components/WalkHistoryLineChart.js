@@ -86,6 +86,7 @@ export default function WalkHistoryLineChart({
   borderColor,
   averageColor,
   i18n,
+  unitSystem = 'metric',
   horizontalScroll = true,
   showWeather = true,
   averageValue,
@@ -359,7 +360,7 @@ export default function WalkHistoryLineChart({
                   { color: labelColor, top: y - 8 },
                 ]}
               >
-                {formatWalkGraphMetricValue(metric, tick, i18n)}
+                {formatWalkGraphMetricValue(metric, tick, i18n, unitSystem)}
               </Text>
             ))}
           </View>

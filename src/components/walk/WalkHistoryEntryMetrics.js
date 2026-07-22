@@ -1,8 +1,14 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
+import { useDisplayPreferences } from '../../contexts/DisplayPreferencesContext';
 import i18n from '../../i18n';
-import { formatAverageSpeedKmh } from '../../utils/walkFormat';
+import {
+  formatAverageSpeed,
+  formatDistanceValue,
+  getDistanceUnitLabel,
+  getSpeedUnitLabel,
+} from '../../utils/walkFormat';
 
 const createStyles = (fs) => ({
   statsLine: {
@@ -39,14 +45,17 @@ function StyledSegment({ type, text, valueStyle, mutedStyle }) {
 
 export function WalkHistoryStatsText({ walk, valueStyle, mutedStyle, style }) {
   const styles = useThemedStyles(createStyles);
-  const distance = (walk.distance ?? 0).toFixed(2);
-  const speed = formatAverageSpeedKmh(walk.distance, walk.duration) ?? '—';
+  const { unitSystem } = useDisplayPreferences();
+  const distance = formatDistanceValue(walk.distance, unitSystem);
+  const speed = formatAverageSpeed(walk.distance, walk.duration, unitSystem) ?? '—';
   const durationParts = getDurationParts(walk.duration);
+  const distanceUnit = getDistanceUnitLabel(unitSystem, i18n);
+  const speedUnit = getSpeedUnitLabel(unitSystem, i18n);
 
   return (
     <Text style={[styles.statsLine, style]} numberOfLines={2}>
       <StyledSegment type="value" text={distance} valueStyle={valueStyle} mutedStyle={mutedStyle} />
-      <StyledSegment type="unit" text="km" valueStyle={valueStyle} mutedStyle={mutedStyle} />
+      <StyledSegment type="unit" text={distanceUnit} valueStyle={valueStyle} mutedStyle={mutedStyle} />
       <StyledSegment type="unit" text=" / " valueStyle={valueStyle} mutedStyle={mutedStyle} />
       {durationParts.map((part, i) => (
         <StyledSegment
@@ -65,7 +74,7 @@ export function WalkHistoryStatsText({ walk, valueStyle, mutedStyle, style }) {
         mutedStyle={mutedStyle}
       />
       <StyledSegment type="value" text={speed} valueStyle={valueStyle} mutedStyle={mutedStyle} />
-      <StyledSegment type="unit" text="km/h" valueStyle={valueStyle} mutedStyle={mutedStyle} />
+      <StyledSegment type="unit" text={speedUnit} valueStyle={valueStyle} mutedStyle={mutedStyle} />
     </Text>
   );
 }

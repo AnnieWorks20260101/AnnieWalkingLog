@@ -2,18 +2,21 @@ import React from 'react';
 import { View, Image, Text, StyleSheet } from 'react-native';
 import { getOpenWeatherIconUrl } from '../services/openWeather';
 import { formatStartWeatherTemp } from '../utils/walkFormat';
+import { useDisplayPreferences } from '../contexts/DisplayPreferencesContext';
 
 export function hasStartWeatherDisplay(startWeather) {
   if (!startWeather) {
     return false;
   }
-  const temp = formatStartWeatherTemp(startWeather);
-  return !!(getOpenWeatherIconUrl(startWeather.icon) || temp);
+  // tempC presence is enough; unit formatting is display-only
+  const hasTemp = startWeather.tempC != null && !Number.isNaN(startWeather.tempC);
+  return !!(getOpenWeatherIconUrl(startWeather.icon) || hasTemp);
 }
 
 export default function WalkStartWeather({ startWeather, iconSize = 28, textStyle, style }) {
+  const { unitSystem } = useDisplayPreferences();
   const iconUrl = getOpenWeatherIconUrl(startWeather?.icon);
-  const temp = formatStartWeatherTemp(startWeather);
+  const temp = formatStartWeatherTemp(startWeather, unitSystem);
 
   if (!iconUrl && !temp) {
     return null;

@@ -7,6 +7,7 @@ import { getTimeFormatLabel } from '../utils/formatTime';
 
 const LANGUAGE_STORAGE_KEY = '@app_language';
 const TIME_FORMAT_STORAGE_KEY = '@app_time_format';
+const UNIT_SYSTEM_STORAGE_KEY = '@app_unit_system';
 
 export const LANGUAGE_OPTIONS = [
   { id: 'ja', labelKey: 'settings.languageJa' },
@@ -20,20 +21,23 @@ export const LANGUAGE_OPTIONS = [
   { id: 'nl', labelKey: 'settings.languageNl' },
 ];
 export const TIME_FORMAT_OPTIONS = ['auto', 'h12', 'h24'];
+export const UNIT_SYSTEM_OPTIONS = ['metric', 'imperial'];
 
 const DisplayPreferencesContext = createContext(null);
 
 export function DisplayPreferencesProvider({ children }) {
   const [language, setLanguageState] = useState('ja');
   const [timeFormat, setTimeFormatState] = useState('auto');
+  const [unitSystem, setUnitSystemState] = useState('metric');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [savedLang, savedTimeFormat] = await Promise.all([
+        const [savedLang, savedTimeFormat, savedUnitSystem] = await Promise.all([
           AsyncStorage.getItem(LANGUAGE_STORAGE_KEY),
           AsyncStorage.getItem(TIME_FORMAT_STORAGE_KEY),
+          AsyncStorage.getItem(UNIT_SYSTEM_STORAGE_KEY),
         ]);
         if (savedLang) {
           const lang = normalizeAppLocale(savedLang);
@@ -54,6 +58,9 @@ export function DisplayPreferencesProvider({ children }) {
         }
         if (savedTimeFormat && TIME_FORMAT_OPTIONS.includes(savedTimeFormat)) {
           setTimeFormatState(savedTimeFormat);
+        }
+        if (savedUnitSystem && UNIT_SYSTEM_OPTIONS.includes(savedUnitSystem)) {
+          setUnitSystemState(savedUnitSystem);
         }
       } catch (error) {
         console.error('Failed to load display preferences', error);
@@ -90,6 +97,18 @@ export function DisplayPreferencesProvider({ children }) {
     }
   }, []);
 
+  const setUnitSystem = useCallback(async (system) => {
+    if (!UNIT_SYSTEM_OPTIONS.includes(system)) {
+      return;
+    }
+    setUnitSystemState(system);
+    try {
+      await AsyncStorage.setItem(UNIT_SYSTEM_STORAGE_KEY, system);
+    } catch (error) {
+      console.error('Failed to save unit system', error);
+    }
+  }, []);
+
   const languageLabel = useMemo(() => {
     const option = LANGUAGE_OPTIONS.find((o) => o.id === language);
     return option ? i18n.t(option.labelKey) : language;
@@ -98,6 +117,11 @@ export function DisplayPreferencesProvider({ children }) {
   const timeFormatLabel = useMemo(
     () => getTimeFormatLabel(timeFormat, i18n),
     [timeFormat, language]
+  );
+
+  const unitSystemLabel = useMemo(
+    () => i18n.t(`settings.unitSystem_${unitSystem}`),
+    [unitSystem, language]
   );
 
   return (
@@ -109,6 +133,9 @@ export function DisplayPreferencesProvider({ children }) {
         timeFormat,
         timeFormatLabel,
         setTimeFormat,
+        unitSystem,
+        unitSystemLabel,
+        setUnitSystem,
         loading,
       }}
     >

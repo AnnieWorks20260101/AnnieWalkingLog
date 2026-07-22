@@ -36,6 +36,7 @@ import {
   useDisplayPreferences,
   LANGUAGE_OPTIONS,
   TIME_FORMAT_OPTIONS,
+  UNIT_SYSTEM_OPTIONS,
 } from '../../contexts/DisplayPreferencesContext';
 import { getTimeFormatLabel } from '../../utils/formatTime';
 import i18n from '../../i18n';
@@ -68,8 +69,17 @@ export default function SettingsScreen({ navigation }) {
     useTheme();
   const { userId, familyId, isGuest, joinFamily, signOut, discardGuestSession } = useAuth();
   const { isPremium } = usePremium();
-  const { language, languageLabel, timeFormat, timeFormatLabel, setLanguage, setTimeFormat } =
-    useDisplayPreferences();
+  const {
+    language,
+    languageLabel,
+    timeFormat,
+    timeFormatLabel,
+    setLanguage,
+    setTimeFormat,
+    unitSystem,
+    unitSystemLabel,
+    setUnitSystem,
+  } = useDisplayPreferences();
   const {
     customButtonId,
     customButtonIcon,
@@ -87,6 +97,7 @@ export default function SettingsScreen({ navigation }) {
   const [isThemeModalVisible, setIsThemeModalVisible] = useState(false);
   const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
   const [isTimeFormatModalVisible, setIsTimeFormatModalVisible] = useState(false);
+  const [isUnitSystemModalVisible, setIsUnitSystemModalVisible] = useState(false);
   const [isFontSizeModalVisible, setIsFontSizeModalVisible] = useState(false);
   const [isCustomButtonModalVisible, setIsCustomButtonModalVisible] = useState(false);
   const [editFamilyId, setEditFamilyId] = useState('');
@@ -512,6 +523,21 @@ export default function SettingsScreen({ navigation }) {
                 </Text>
                 <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
                   {timeFormatLabel}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
+          </SettingRow>
+          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
+          <SettingRow onPress={() => setIsUnitSystemModalVisible(true)}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="speedometer-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+              <View style={styles.settingTextBlock}>
+                <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                  {i18n.t('settings.unitSystemLabel')}
+                </Text>
+                <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                  {unitSystemLabel}
                 </Text>
               </View>
             </View>
@@ -1117,6 +1143,48 @@ export default function SettingsScreen({ navigation }) {
                     ]}
                   >
                     {getTimeFormatLabel(format, i18n)}
+                  </Text>
+                  {selected ? <Ionicons name="checkmark" size={24} color={currentTheme.primary} /> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={isUnitSystemModalVisible} animationType="slide" transparent>
+        <View style={[styles.modalOverlay, styles.themeModalOverlay]}>
+          <View style={[styles.themeModalContent, { backgroundColor: currentTheme.card }]}>
+            <View style={styles.themeModalHeader}>
+              <Text style={[styles.modalTitle, { color: currentTheme.text, fontSize: fontSizes.l, marginBottom: 0 }]}>
+                {i18n.t('settings.unitSystemModalTitle')}
+              </Text>
+              <TouchableOpacity onPress={() => setIsUnitSystemModalVisible(false)} hitSlop={12}>
+                <Ionicons name="close-circle" size={28} color={currentTheme.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            {UNIT_SYSTEM_OPTIONS.map((system) => {
+              const selected = unitSystem === system;
+              return (
+                <TouchableOpacity
+                  key={system}
+                  style={[styles.themeOptionRow, { borderBottomColor: currentTheme.border }]}
+                  onPress={() => {
+                    setUnitSystem(system);
+                    setIsUnitSystemModalVisible(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.themeOptionLabel,
+                      {
+                        color: currentTheme.text,
+                        fontSize: fontSizes.m,
+                        fontWeight: selected ? 'bold' : 'normal',
+                      },
+                    ]}
+                  >
+                    {i18n.t(`settings.unitSystem_${system}`)}
                   </Text>
                   {selected ? <Ionicons name="checkmark" size={24} color={currentTheme.primary} /> : null}
                 </TouchableOpacity>

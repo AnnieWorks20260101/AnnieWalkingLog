@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { showPremiumLockedAlert } from '../../utils/premiumLockedAlert';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useDisplayPreferences } from '../../contexts/DisplayPreferencesContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import WalkHistoryLineChart from '../WalkHistoryLineChart';
 import GraphSelectDropdown from '../GraphSelectDropdown';
@@ -60,6 +61,7 @@ export default function WalkGraphPanel({
 }) {
   const navigation = useNavigation();
   const { currentTheme } = useTheme();
+  const { unitSystem } = useDisplayPreferences();
   const styles = useThemedStyles(createStyles);
   const [period, setPeriod] = useState(defaultPeriod);
   const [aggregation, setAggregation] = useState(defaultAggregation);
@@ -76,8 +78,8 @@ export default function WalkGraphPanel({
   );
 
   const chartPointsFull = useMemo(
-    () => (locked ? [] : buildGraphChartPoints(periodWalks, metric, aggregation)),
-    [locked, periodWalks, metric, aggregation]
+    () => (locked ? [] : buildGraphChartPoints(periodWalks, metric, aggregation, unitSystem)),
+    [locked, periodWalks, metric, aggregation, unitSystem]
   );
 
   const horizontalScroll = !locked && isGraphScrollPeriod(period);
@@ -95,8 +97,10 @@ export default function WalkGraphPanel({
 
   const plotStats = useMemo(
     () =>
-      locked ? { count: 0, avg: 0, sum: 0 } : computeGraphPlotStats(chartPointsFull, metric, periodWalks),
-    [locked, chartPointsFull, metric, periodWalks]
+      locked
+        ? { count: 0, avg: 0, sum: 0 }
+        : computeGraphPlotStats(chartPointsFull, metric, periodWalks, unitSystem),
+    [locked, chartPointsFull, metric, periodWalks, unitSystem]
   );
 
   const averageValue = useMemo(() => {
@@ -110,9 +114,9 @@ export default function WalkGraphPanel({
     if (locked) {
       return null;
     }
-    const trend = computeWalkMetricTrend(periodWalks, metric);
+    const trend = computeWalkMetricTrend(periodWalks, metric, unitSystem);
     return getWalkGraphTrendMessage(trend, periodWalks.length, i18n);
-  }, [locked, periodWalks, metric]);
+  }, [locked, periodWalks, metric, unitSystem]);
 
   const canGoNext = !locked && canAdvanceGraphCursor(period, cursor);
   const showPeriodNav = isGraphPeriodNavigable(period);
@@ -145,7 +149,7 @@ export default function WalkGraphPanel({
         {getGraphStatLabel(kind, i18n)}
       </Text>
       <Text style={[styles.statValue, { color: currentTheme.primary }]} numberOfLines={1}>
-        {formatGraphStatValue(kind, metric, value, i18n)}
+        {formatGraphStatValue(kind, metric, value, i18n, unitSystem)}
       </Text>
     </View>
   );
@@ -267,6 +271,7 @@ export default function WalkGraphPanel({
               borderColor={currentTheme.accentBorder}
               averageColor={blendColors(currentTheme.primary, currentTheme.text, 0.55)}
               i18n={i18n}
+              unitSystem={unitSystem}
               horizontalScroll={horizontalScroll}
               showWeather={showWeather}
               averageValue={averageValue}
