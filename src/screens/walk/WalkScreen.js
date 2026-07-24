@@ -18,6 +18,7 @@ import BackgroundActivityGuideModal from '../../components/BackgroundActivityGui
 import * as Location from 'expo-location';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWalkPreferences } from '../../contexts/WalkPreferencesContext';
+import { useDisplayPreferences } from '../../contexts/DisplayPreferencesContext';
 import { useAuth } from '../../contexts/AuthContext';
 import ScreenHeader from '../../components/ScreenHeader';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,6 +38,11 @@ import { collection, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/fi
 
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { calculateTotalDistance } from '../../utils/locationUtils';
+import {
+  formatDistanceValue,
+  formatLiveDuration,
+  getDistanceUnitLabel,
+} from '../../utils/walkFormat';
 import { fetchCurrentWeather } from '../../services/openWeather';
 import { openWalkDetail } from '../../navigation/walkNavigation';
 import {
@@ -131,6 +137,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 
 export default function WalkScreen({ navigation }) {
   const { currentTheme } = useTheme();
+  const { unitSystem } = useDisplayPreferences();
   const { customButtonId, customButtonIcon, customButtonLabel, uploadPhotosOnCellular, savePhotoToLibrary } =
     useWalkPreferences();
   const { tier, entitlements } = usePlanTier();
@@ -151,12 +158,14 @@ export default function WalkScreen({ navigation }) {
   const [isSavingWalk, setIsSavingWalk] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
   const [startTime, setStartTime] = useState(null);
+  const [liveNowMs, setLiveNowMs] = useState(() => Date.now());
   const [initialRegion, setInitialRegion] = useState(null);
   const [isDisclosureVisible, setIsDisclosureVisible] = useState(false);
   const [isDeviceGuideVisible, setIsDeviceGuideVisible] = useState(false);
   const [deviceGuideCategory, setDeviceGuideCategory] = useState('generic');
   const mapRef = useRef(null);
   const timerRef = useRef(null);
+  const liveClockRef = useRef(null);
   const waitingForSettingsReturnRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
   const startWeatherRef = useRef(null);
@@ -164,6 +173,28 @@ export default function WalkScreen({ navigation }) {
   useEffect(() => {
     setWalkTrackingActive(isTracking);
     return () => setWalkTrackingActive(false);
+  }, [isTracking]);
+
+  useEffect(() => {
+    if (!isTracking) {
+      if (liveClockRef.current) {
+        clearInterval(liveClockRef.current);
+        liveClockRef.current = null;
+      }
+      return undefined;
+    }
+
+    setLiveNowMs(Date.now());
+    liveClockRef.current = setInterval(() => {
+      setLiveNowMs(Date.now());
+    }, 1000);
+
+    return () => {
+      if (liveClockRef.current) {
+        clearInterval(liveClockRef.current);
+        liveClockRef.current = null;
+      }
+    };
   }, [isTracking]);
 
   useEffect(() => {
@@ -802,6 +833,12 @@ export default function WalkScreen({ navigation }) {
 
   const canStartWalk = !isTracking && selectedPetIds.length > 0;
 
+  const liveDistanceKm = useMemo(() => calculateTotalDistance(route), [route]);
+  const liveDistanceLabel = `${formatDistanceValue(liveDistanceKm, unitSystem)}${getDistanceUnitLabel(unitSystem, i18n)}`;
+  const liveDurationLabel = formatLiveDuration(
+    startTime ? liveNowMs - startTime.getTime() : 0
+  );
+
   if (!initialRegion) {
     return (
       <View style={[styles.container, styles.locationLoading, { backgroundColor: currentTheme.background }]}>
@@ -946,6 +983,36 @@ export default function WalkScreen({ navigation }) {
           </View>
         )}
       </View>
+
+      {isTracking ? (
+        <View
+          style={[
+            styles.liveStatsBar,
+            {
+              backgroundColor: currentTheme.surface,
+              borderTopColor: currentTheme.accentBorder,
+            },
+          ]}
+        >
+          <View style={styles.liveStatItem}>
+            <Text style={[styles.liveStatLabel, { color: currentTheme.textSecondary }]}>
+              {i18n.t('walk.distance')}
+            </Text>
+            <Text style={[styles.liveStatValue, { color: currentTheme.primary }]}>
+              {liveDistanceLabel}
+            </Text>
+          </View>
+          <View style={[styles.liveStatDivider, { backgroundColor: currentTheme.accentBorder }]} />
+          <View style={styles.liveStatItem}>
+            <Text style={[styles.liveStatLabel, { color: currentTheme.textSecondary }]}>
+              {i18n.t('walk.time')}
+            </Text>
+            <Text style={[styles.liveStatValue, { color: currentTheme.primary }]}>
+              {liveDurationLabel}
+            </Text>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -1001,6 +1068,31 @@ const createStyles = (fs) => ({
   },
   mapContainer: { flex: 1, borderWidth: 1 },
   map: { width: '100%', height: '100%' },
+  liveStatsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  liveStatItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  liveStatDivider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+    marginVertical: 2,
+  },
+  liveStatLabel: {
+    fontSize: fs.s,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  liveStatValue: {
+    fontSize: fs.l,
+    fontWeight: '700',
+  },
   trackingActionsColumn: {
     position: 'absolute',
     bottom: 88,

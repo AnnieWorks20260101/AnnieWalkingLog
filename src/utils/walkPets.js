@@ -1,4 +1,5 @@
 import i18n from '../i18n';
+import { getPetPhotoUrl } from '../services/petPhotoUpload';
 
 function getPetNameListSeparator() {
   return i18n.locale === 'ja' ? '、' : ', ';
@@ -31,6 +32,70 @@ export function getWalkPetIds(walk) {
     return [walk.petId];
   }
   return [];
+}
+
+/**
+ * 表示用のペット一覧（id / name / photoUrl）
+ * 並びは常に現在のペット設定順（引数 pets の順）を優先する。
+ * @returns {{ id: string, name: string, photoUrl: string | null }[]}
+ */
+export function resolveWalkPetsForDisplay(walk, pets = []) {
+  const petIds = getWalkPetIds(walk);
+  const walkIdSet = new Set(petIds);
+
+  if (petIds.length > 0) {
+    const fromMaster = pets
+      .filter((pet) => walkIdSet.has(pet.id))
+      .map((pet) => ({
+        id: pet.id,
+        name: pet.name || i18n.t('walk.defaultPetName'),
+        photoUrl: getPetPhotoUrl(pet),
+      }));
+
+    const knownIds = new Set(fromMaster.map((pet) => pet.id));
+    const orphans = petIds
+      .filter((id) => !knownIds.has(id))
+      .map((id) => {
+        const originalIndex = petIds.indexOf(id);
+        return {
+          id,
+          name: walk.petNames?.[originalIndex] || walk.petName || i18n.t('walk.defaultPetName'),
+          photoUrl: null,
+        };
+      });
+
+    return [...fromMaster, ...orphans];
+  }
+
+  const names = splitPetNameLabel(getWalkPetNamesLabel(walk));
+  if (names.length === 0) {
+    return [{ id: 'fallback', name: i18n.t('walk.defaultPetName'), photoUrl: null }];
+  }
+
+  const remainingNames = [...names];
+  const fromMaster = [];
+  pets.forEach((pet) => {
+    const index = remainingNames.indexOf(pet.name);
+    if (index === -1) {
+      return;
+    }
+    remainingNames.splice(index, 1);
+    fromMaster.push({
+      id: pet.id,
+      name: pet.name,
+      photoUrl: getPetPhotoUrl(pet),
+    });
+  });
+
+  const orphans = remainingNames.map((name, index) => ({
+    id: `name-${index}`,
+    name,
+    photoUrl: null,
+  }));
+
+  return fromMaster.length > 0 || orphans.length > 0
+    ? [...fromMaster, ...orphans]
+    : [{ id: 'fallback', name: i18n.t('walk.defaultPetName'), photoUrl: null }];
 }
 
 /** 指定ペットがそのお散歩に含まれるか（旧形式の petName も名前で照合） */

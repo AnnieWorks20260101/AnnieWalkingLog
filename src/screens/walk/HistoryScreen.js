@@ -22,9 +22,10 @@ import PetFilterRow, { PET_FILTER_ALL } from '../../components/PetFilterRow';
 import i18n from '../../i18n';
 import { useDisplayPreferences } from '../../contexts/DisplayPreferencesContext';
 import { formatTimestampTime } from '../../utils/formatTime';
-import { getWalkPetNamesLabel, filterWalksByPet } from '../../utils/walkPets';
+import { resolveWalkPetsForDisplay, filterWalksByPet } from '../../utils/walkPets';
 import WalkStartWeather, { hasStartWeatherDisplay } from '../../components/WalkStartWeather';
 import { WalkHistoryStatsText, WalkHistoryPoopText } from '../../components/walk/WalkHistoryEntryMetrics';
+import WalkPetChips from '../../components/walk/WalkPetChips';
 import { blendColors } from '../../utils/enrichTheme';
 import { walkHasMemos } from '../../services/walkMemos';
 import { walkHasPhotos, getWalkPhotos } from '../../utils/walkPhotos';
@@ -143,9 +144,7 @@ export default function HistoryScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            <Text style={[styles.petNames, { color: currentTheme.text }]}>
-              🐾 {getWalkPetNamesLabel(item) || i18n.t('walk.defaultPetName')}
-            </Text>
+            <WalkPetChips pets={resolveWalkPetsForDisplay(item, pets)} layout="column" />
             <View style={styles.detailsStatsRow}>
               <WalkHistoryStatsText
                 walk={item}
@@ -273,7 +272,6 @@ const createStyles = (fs) => ({
   timeText: { fontSize: fs.l, fontWeight: '600' },
   weatherChip: { marginLeft: 8 },
   weatherTemp: { fontSize: fs.s },
-  petNames: { fontSize: fs.m, fontWeight: 'bold', marginBottom: 6 },
   detailsStatsRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',

@@ -62,6 +62,18 @@ export function formatDurationMinutes(minutes, i18n) {
   return h > 0 ? `${h}${i18n.t('common.hour')}${m}${i18n.t('common.minute')}` : `${m}${i18n.t('common.minute')}`;
 }
 
+/** お散歩中の経過時間（例: 12:34 / 1:05:09） */
+export function formatLiveDuration(elapsedMs) {
+  const totalSec = Math.max(0, Math.floor((elapsedMs ?? 0) / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
 /** 開始時気温（例: 12°C / 54°F） */
 export function formatStartWeatherTemp(startWeather, unitSystem = 'metric') {
   if (!startWeather || startWeather.tempC == null || Number.isNaN(startWeather.tempC)) {
