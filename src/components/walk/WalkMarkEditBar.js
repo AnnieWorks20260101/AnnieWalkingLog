@@ -1,9 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import i18n from '../../i18n';
+
+/** WalkDetailScreen の mapPadding / 中央ピン位置と揃える */
+export const WALK_MARK_EDIT_BAR_HEIGHT = 152;
 
 export default function WalkMarkEditBar({ title, hint, onSave, onCancel, saving = false }) {
   const { currentTheme, fontSizes } = useTheme();
@@ -18,7 +21,7 @@ export default function WalkMarkEditBar({ title, hint, onSave, onCancel, saving 
         {
           backgroundColor: currentTheme.card,
           borderColor: currentTheme.accentBorder,
-          paddingBottom: Math.max(12, insets.bottom + 8),
+          paddingBottom: Math.max(8, insets.bottom + 4),
         },
       ]}
     >
@@ -55,26 +58,26 @@ const createStyles = (fs) => ({
     position: 'absolute',
     left: 12,
     right: 12,
-    bottom: 12,
-    borderRadius: 16,
+    bottom: 8,
+    borderRadius: 14,
     borderWidth: 1,
-    paddingTop: 14,
-    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingHorizontal: 14,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowRadius: 5,
   },
   title: { fontWeight: '700', marginBottom: 4 },
-  hint: { lineHeight: Math.round(fs.s * 1.4), marginBottom: 12 },
-  actions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 12 },
-  cancelBtn: { paddingVertical: 10, paddingHorizontal: 8 },
+  hint: { lineHeight: Math.round(fs.s * 1.45), marginBottom: 10 },
+  actions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 10 },
+  cancelBtn: { paddingVertical: 8, paddingHorizontal: 6 },
   saveBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 22,
-    borderRadius: 10,
-    minWidth: 96,
+    paddingVertical: 9,
+    paddingHorizontal: 20,
+    borderRadius: 9,
+    minWidth: 88,
     alignItems: 'center',
   },
 });

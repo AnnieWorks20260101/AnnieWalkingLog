@@ -23,6 +23,10 @@ import { getThemeDisplayName } from '../../utils/themeDisplayName';
 import { useTheme, FONT_SIZE_OPTIONS } from '../../contexts/ThemeContext';
 import { useWalkPreferences } from '../../contexts/WalkPreferencesContext';
 import { WALK_CUSTOM_BUTTON_OPTIONS } from '../../constants/walkCustomButtonOptions';
+import {
+  WALK_SHARE_PRIVACY_RADIUS_OPTIONS,
+  getWalkSharePrivacyRadiusLabel,
+} from '../../constants/walkSharePrivacyOptions';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePremium } from '../../hooks/usePremium';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -46,6 +50,7 @@ import { openTermsOfService } from '../../utils/openTermsOfService';
 import { buildFamilyExportPayload } from '../../services/exportFamilyData';
 import { shareExportJsonFile } from '../../utils/shareExportJson';
 import FamilyMembersModal from '../../components/settings/FamilyMembersModal';
+import { clearWalkMarkEditTipSeen } from '../../utils/walkMarkEditTipStorage';
 import {
   seedTestWalksForFamily,
   estimateTestWalkSeedCount,
@@ -89,6 +94,8 @@ export default function SettingsScreen({ navigation }) {
     setUploadPhotosOnCellular,
     savePhotoToLibrary,
     setSavePhotoToLibrary,
+    sharePrivacyRadiusMeters,
+    setSharePrivacyRadiusMeters,
   } = useWalkPreferences();
 
   const [isFamilyModalVisible, setIsFamilyModalVisible] = useState(false);
@@ -100,6 +107,13 @@ export default function SettingsScreen({ navigation }) {
   const [isUnitSystemModalVisible, setIsUnitSystemModalVisible] = useState(false);
   const [isFontSizeModalVisible, setIsFontSizeModalVisible] = useState(false);
   const [isCustomButtonModalVisible, setIsCustomButtonModalVisible] = useState(false);
+  const [isSharePrivacyModalVisible, setIsSharePrivacyModalVisible] = useState(false);
+  const sharePrivacyLabel = getWalkSharePrivacyRadiusLabel(
+    sharePrivacyRadiusMeters,
+    unitSystem,
+    i18n
+  );
+
   const [editFamilyId, setEditFamilyId] = useState('');
   const [testDevRunning, setTestDevRunning] = useState(false);
   const [testDevProgress, setTestDevProgress] = useState({ done: 0, total: 0 });
@@ -289,6 +303,19 @@ export default function SettingsScreen({ navigation }) {
 
   const handleSeedTestWalksKo = () => {
     runSeedTestWalks('ko');
+  };
+
+  const handleResetWalkDetailTip = async () => {
+    try {
+      await clearWalkMarkEditTipSeen();
+      Alert.alert(
+        i18n.t('settings.devResetWalkDetailTipDoneTitle'),
+        i18n.t('settings.devResetWalkDetailTipDoneMessage')
+      );
+    } catch (error) {
+      console.error('reset walk detail tip failed:', error);
+      Alert.alert(i18n.t('common.error'), i18n.t('settings.devResetWalkDetailTipError'));
+    }
   };
 
   const handleDeleteTestWalks = async () => {
@@ -498,6 +525,21 @@ export default function SettingsScreen({ navigation }) {
               trackColor={{ false: currentTheme.border, true: currentTheme.primary }}
               thumbColor={currentTheme.card}
             />
+          </SettingRow>
+          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
+          <SettingRow onPress={() => setIsSharePrivacyModalVisible(true)}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="eye-off-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+              <View style={styles.settingTextBlock}>
+                <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                  {i18n.t('settings.sharePrivacyLabel')}
+                </Text>
+                <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                  {sharePrivacyLabel}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
           </SettingRow>
         </View>
 
@@ -830,6 +872,28 @@ export default function SettingsScreen({ navigation }) {
           </>
         ) : null}
 
+        <TouchableOpacity
+          style={[
+            styles.testSeedCard,
+            { backgroundColor: currentTheme.card, borderColor: currentTheme.border, marginTop: 24 },
+          ]}
+          onPress={handleResetWalkDetailTip}
+          activeOpacity={0.7}
+        >
+          <View style={styles.settingLeft}>
+            <Ionicons name="refresh-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+            <View style={styles.settingTextBlock}>
+              <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                {i18n.t('settings.devResetWalkDetailTipTitle')}
+              </Text>
+              <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                {i18n.t('settings.devResetWalkDetailTipDesc')}
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
+        </TouchableOpacity>
+
       </ScrollView>
 
       <FamilyMembersModal
@@ -1070,6 +1134,51 @@ export default function SettingsScreen({ navigation }) {
                 })}
               </View>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={isSharePrivacyModalVisible} animationType="slide" transparent>
+        <View style={[styles.modalOverlay, styles.themeModalOverlay]}>
+          <View style={[styles.themeModalContent, { backgroundColor: currentTheme.card }]}>
+            <View style={styles.themeModalHeader}>
+              <Text style={[styles.modalTitle, { color: currentTheme.text, fontSize: fontSizes.l, marginBottom: 0 }]}>
+                {i18n.t('settings.sharePrivacyModalTitle')}
+              </Text>
+              <TouchableOpacity onPress={() => setIsSharePrivacyModalVisible(false)} hitSlop={12}>
+                <Ionicons name="close-circle" size={28} color={currentTheme.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.modalDesc, { color: currentTheme.textSecondary, fontSize: fontSizes.s, marginBottom: 12 }]}>
+              {i18n.t('settings.sharePrivacyDesc')}
+            </Text>
+            {WALK_SHARE_PRIVACY_RADIUS_OPTIONS.map((radiusMeters) => {
+              const selected = sharePrivacyRadiusMeters === radiusMeters;
+              return (
+                <TouchableOpacity
+                  key={radiusMeters}
+                  style={[styles.themeOptionRow, { borderBottomColor: currentTheme.border }]}
+                  onPress={() => {
+                    setSharePrivacyRadiusMeters(radiusMeters);
+                    setIsSharePrivacyModalVisible(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.themeOptionLabel,
+                      {
+                        color: currentTheme.text,
+                        fontSize: fontSizes.m,
+                        fontWeight: selected ? 'bold' : 'normal',
+                      },
+                    ]}
+                  >
+                    {getWalkSharePrivacyRadiusLabel(radiusMeters, unitSystem, i18n)}
+                  </Text>
+                  {selected ? <Ionicons name="checkmark" size={24} color={currentTheme.primary} /> : null}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
       </Modal>

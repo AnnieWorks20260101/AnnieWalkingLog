@@ -7,12 +7,10 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  ActivityIndicator,
   BackHandler,
 } from 'react-native';
 import MapView, { Polyline, Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
-import ViewShot from 'react-native-view-shot';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useDisplayPreferences } from '../../contexts/DisplayPreferencesContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,7 +20,8 @@ import { useFamilyPets } from '../../hooks/useFamilyPets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import WalkMemoModal from '../../components/walk/WalkMemoModal';
-import WalkMarkEditBar from '../../components/walk/WalkMarkEditBar';
+import WalkSharePreviewModal from '../../components/walk/WalkSharePreviewModal';
+import WalkMarkEditBar, { WALK_MARK_EDIT_BAR_HEIGHT } from '../../components/walk/WalkMarkEditBar';
 import WalkPetChips from '../../components/walk/WalkPetChips';
 import i18n from '../../i18n';
 import {
@@ -42,11 +41,11 @@ import { SCREEN_WALK_PHOTOS } from '../../navigation/screenNames';
 import { closeWalkDetailToHistory } from '../../navigation/walkNavigation';
 import { createWalkMemo, persistWalkMemos } from '../../services/walkMemos';
 import { moveWalkMark, persistWalkMapMarks, createPoopMark, createCustomMark, removeWalkMark } from '../../services/walkMapMarks';
-import { shareViewScreenshot } from '../../utils/shareViewScreenshot';
 import {
   maybeRequestStoreReview,
   STORE_REVIEW_PROMPT_DELAY_MS,
 } from '../../utils/storeReviewPrompt';
+import { hasSeenWalkMarkEditTip, setWalkMarkEditTipSeen } from '../../utils/walkMarkEditTipStorage';
 
 const DEFAULT_REGION = {
   latitude: 35.681236,
@@ -56,14 +55,14 @@ const DEFAULT_REGION = {
 };
 
 /** 編集バー分だけ地図の視覚中央を上にずらす */
-const MARK_EDIT_MAP_BOTTOM_INSET = 168;
+const MARK_EDIT_MAP_BOTTOM_INSET = WALK_MARK_EDIT_BAR_HEIGHT;
 
 export default function WalkDetailScreen({ route, navigation }) {
   const { currentTheme, fontSizes } = useTheme();
   const { unitSystem, timeFormat, language } = useDisplayPreferences();
   const { familyId, userId } = useAuth();
   const { pets } = useFamilyPets(familyId, userId);
-  const { customButtonId, customButtonIcon } = useWalkPreferences();
+  const { customButtonId, customButtonIcon, sharePrivacyRadiusMeters } = useWalkPreferences();
   const insets = useSafeAreaInsets();
   const styles = useThemedStyles(createStyles);
   const walk = useMemo(
@@ -76,7 +75,6 @@ export default function WalkDetailScreen({ route, navigation }) {
   const walkRoute = walk.route || [];
   const photos = walk.photos || [];
   const mapRef = useRef(null);
-  const shareShotRef = useRef(null);
 
   const [poops, setPoops] = useState(() => (Array.isArray(walk.poops) ? walk.poops : []));
   const [customMarks, setCustomMarks] = useState(() =>
@@ -91,7 +89,7 @@ export default function WalkDetailScreen({ route, navigation }) {
   const [memoDraft, setMemoDraft] = useState('');
   const [editingMemoId, setEditingMemoId] = useState(null);
   const [memoSaving, setMemoSaving] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
+  const [isSharePreviewVisible, setIsSharePreviewVisible] = useState(false);
 
   useEffect(() => {
     setPoops(Array.isArray(walk.poops) ? walk.poops : []);
@@ -159,6 +157,34 @@ export default function WalkDetailScreen({ route, navigation }) {
 
     return () => clearTimeout(timer);
   }, [fromSaveReview, reviewMilestone]);
+
+  useEffect(() => {
+    if (!walkId) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        if (await hasSeenWalkMarkEditTip()) {
+          return;
+        }
+        if (cancelled) {
+          return;
+        }
+        await setWalkMarkEditTipSeen();
+        Alert.alert(i18n.t('walk.markEditTipTitle'), i18n.t('walk.markEditTipMessage'), [
+          { text: i18n.t('common.ok') },
+        ]);
+      } catch (error) {
+        console.warn('walk mark edit tip failed:', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [walkId]);
 
   const isEditingMark = useCallback(
     (type, index) => editingMark?.type === type && editingMark?.index === index,
@@ -444,23 +470,11 @@ export default function WalkDetailScreen({ route, navigation }) {
       })
     : i18n.t('walk.memoNewTitle');
 
-  const handleShareResult = async () => {
-    if (isSharing) {
+  const handleShareResult = () => {
+    if (editingMark) {
       return;
     }
-    setIsSharing(true);
-    try {
-      await shareViewScreenshot(shareShotRef);
-    } catch (error) {
-      console.warn('share walk result failed:', error);
-      const message =
-        error?.message === 'shareViewScreenshot: sharing unavailable'
-          ? i18n.t('walk.shareResultUnavailable')
-          : i18n.t('walk.shareResultError');
-      Alert.alert(i18n.t('common.error'), message);
-    } finally {
-      setIsSharing(false);
-    }
+    setIsSharePreviewVisible(true);
   };
 
   const renderStatColumn = (label, value) => (
@@ -480,33 +494,25 @@ export default function WalkDetailScreen({ route, navigation }) {
         rightAction={
           <TouchableOpacity
             onPress={handleShareResult}
-            disabled={isSharing || !!editingMark}
+            disabled={!!editingMark || isSharePreviewVisible}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel={i18n.t('walk.shareResult')}
           >
-            {isSharing ? (
-              <ActivityIndicator size="small" color={currentTheme.headerText || currentTheme.primary} />
-            ) : (
-              <Ionicons
-                name="share-outline"
-                size={24}
-                color={currentTheme.headerText || currentTheme.primary}
-              />
-            )}
+            <Ionicons
+              name="share-outline"
+              size={24}
+              color={currentTheme.headerText || currentTheme.primary}
+            />
           </TouchableOpacity>
         }
       />
 
-      <ViewShot
-        ref={shareShotRef}
-        style={styles.shareShot}
-        options={{ format: 'png', quality: 1, result: 'tmpfile' }}
-        collapsable={false}
-      >
+      <View style={styles.content}>
         <View
           style={[
             styles.statsContainer,
+            editingMark && styles.statsContainerCompact,
             { backgroundColor: currentTheme.primaryMuted, borderBottomColor: currentTheme.accentBorder },
           ]}
         >
@@ -515,7 +521,7 @@ export default function WalkDetailScreen({ route, navigation }) {
               <Text
                 style={[
                   styles.headerEndTime,
-                  { color: currentTheme.text, fontSize: fontSizes.l },
+                  { color: currentTheme.text, fontSize: fontSizes.m },
                 ]}
                 numberOfLines={1}
               >
@@ -525,29 +531,33 @@ export default function WalkDetailScreen({ route, navigation }) {
             <WalkPetChips pets={walkPets} layout="row" style={styles.headerPetsScroll} />
           </View>
 
-          <View style={[styles.statsRow, { borderTopColor: currentTheme.accentBorder }]}>
-            {renderStatColumn(i18n.t('walk.distance'), distanceStr)}
-            {renderStatColumn(i18n.t('walk.time'), durationStr)}
-            {renderStatColumn(i18n.t('walk.poopLabel'), poopCountStr)}
-          </View>
-
-          <View style={[styles.speedWeatherRow, { borderTopColor: currentTheme.accentBorder }]}>
-            <View style={styles.speedBlock}>
-              <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>
-                {i18n.t('walk.averageSpeed')}
-              </Text>
-              <Text style={[styles.speedValue, { color: currentTheme.primary }]}>{speedDisplay}</Text>
-            </View>
-            {showWeather ? (
-              <View style={styles.weatherBlock}>
-                <WalkStartWeather
-                  startWeather={walk.startWeather}
-                  iconSize={40}
-                  textStyle={[styles.weatherValue, { color: currentTheme.primary }]}
-                />
+          {!editingMark ? (
+            <>
+              <View style={[styles.statsRow, { borderTopColor: currentTheme.accentBorder }]}>
+                {renderStatColumn(i18n.t('walk.distance'), distanceStr)}
+                {renderStatColumn(i18n.t('walk.time'), durationStr)}
+                {renderStatColumn(i18n.t('walk.poopLabel'), poopCountStr)}
               </View>
-            ) : null}
-          </View>
+
+              <View style={[styles.speedWeatherRow, { borderTopColor: currentTheme.accentBorder }]}>
+                <View style={styles.speedBlock}>
+                  <Text style={[styles.statLabel, { color: currentTheme.textSecondary }]}>
+                    {i18n.t('walk.averageSpeed')}
+                  </Text>
+                  <Text style={[styles.speedValue, { color: currentTheme.primary }]}>{speedDisplay}</Text>
+                </View>
+                {showWeather ? (
+                  <View style={styles.weatherBlock}>
+                    <WalkStartWeather
+                      startWeather={walk.startWeather}
+                      iconSize={32}
+                      textStyle={[styles.weatherValue, { color: currentTheme.primary }]}
+                    />
+                  </View>
+                ) : null}
+              </View>
+            </>
+          ) : null}
         </View>
 
         {memos.length > 0 ? (
@@ -654,7 +664,21 @@ export default function WalkDetailScreen({ route, navigation }) {
             </View>
           ) : null}
         </View>
-      </ViewShot>
+      </View>
+
+      <WalkSharePreviewModal
+        visible={isSharePreviewVisible}
+        onClose={() => setIsSharePreviewVisible(false)}
+        walk={walk}
+        walkPets={walkPets}
+        memos={memos}
+        poops={poops}
+        customMarks={customMarks}
+        privacyRadiusMeters={sharePrivacyRadiusMeters}
+        unitSystem={unitSystem}
+        timeFormat={timeFormat}
+        language={language}
+      />
 
       {walkId && !editingMark ? (
         <View style={[styles.detailActionsColumn, { bottom: Math.max(24, insets.bottom + 12) }]}>
@@ -720,7 +744,7 @@ export default function WalkDetailScreen({ route, navigation }) {
 
 const createStyles = (fs) => ({
   container: { flex: 1 },
-  shareShot: { flex: 1 },
+  content: { flex: 1 },
   headerMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -753,19 +777,23 @@ const createStyles = (fs) => ({
     borderWidth: 2,
   },
   statsContainer: {
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
     elevation: 3,
     zIndex: 10,
   },
+  statsContainerCompact: {
+    paddingTop: 6,
+    paddingBottom: 6,
+  },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'flex-end',
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 8,
+    paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   statColumn: {
@@ -774,11 +802,11 @@ const createStyles = (fs) => ({
   },
   statLabel: {
     fontSize: fs.s,
-    marginBottom: 6,
+    marginBottom: 3,
     textAlign: 'center',
   },
   statValue: {
-    fontSize: fs.l,
+    fontSize: fs.m,
     fontWeight: 'bold',
     textAlign: 'center',
   },
@@ -786,8 +814,8 @@ const createStyles = (fs) => ({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    marginTop: 16,
-    paddingTop: 12,
+    marginTop: 8,
+    paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   speedBlock: {
@@ -795,9 +823,9 @@ const createStyles = (fs) => ({
     alignItems: 'center',
   },
   speedValue: {
-    fontSize: fs.xl,
+    fontSize: fs.l,
     fontWeight: 'bold',
-    marginTop: 6,
+    marginTop: 3,
     textAlign: 'center',
   },
   weatherBlock: {
@@ -806,14 +834,14 @@ const createStyles = (fs) => ({
     paddingLeft: 12,
   },
   weatherValue: {
-    fontSize: fs.l,
+    fontSize: fs.m,
     fontWeight: 'bold',
-    marginTop: 6,
+    marginTop: 3,
     textAlign: 'right',
   },
   memoBar: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   memoBarContent: {
     paddingHorizontal: 12,
