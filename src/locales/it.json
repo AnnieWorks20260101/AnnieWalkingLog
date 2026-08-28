@@ -88,7 +88,8 @@
     "markAddPoop": "Aggiungi cacca",
     "markAddCustom": "Aggiungi %{icon}",
     "markEditTipTitle": "Sposta i segnalini",
-    "markEditTipMessage": "Tocca i segnalini di cacca, pipì e altri per cambiarne la posizione. Con il pulsante Condividi in alto a destra puoi condividere il percorso. Nelle impostazioni puoi mascherare il percorso vicino a inizio e fine.",
+    "markEditTipMessageLine1": "Tocca i segnalini di cacca, pipì e altri per cambiarne la posizione.",
+    "markEditTipMessageLine2": "Con il pulsante Condividi in alto a destra puoi condividere il percorso. Nelle impostazioni puoi mascherare il percorso vicino a inizio e fine.",
     "start": "Inizia!",
     "walking": "In passeggiata…",
     "end": "Fine!",
@@ -200,11 +201,6 @@
     "uploadPhotosOnCellularDesc": "Attivo: conferma prima del caricamento con dati mobili. Disattivo: conferma prima di salvare senza foto con dati mobili (le foto si caricano con Wi‑Fi)",
     "savePhotoToLibrary": "Salva anche le foto sul dispositivo",
     "savePhotoToLibraryDesc": "Quando attivo, le foto scattate durante una passeggiata vengono salvate anche nella libreria foto del dispositivo. Il caricamento cloud resta invariato.",
-    "devResetWalkDetailTipTitle": "Mostra di nuovo la guida della passeggiata",
-    "devResetWalkDetailTipDesc": "Per verifica. Mostra la guida al prossimo accesso a un record (rimuovere prima del rilascio).",
-    "devResetWalkDetailTipDoneTitle": "Reimpostazione completata",
-    "devResetWalkDetailTipDoneMessage": "La guida apparirà la prossima volta che apri un record di passeggiata.",
-    "devResetWalkDetailTipError": "Impossibile reimpostare il flag della guida.",
     "sharePrivacyLabel": "Nascondi inizio/fine nei record condivisi",
     "sharePrivacyDesc": "Nasconde percorso e segnalini vicino a partenza e ritorno nelle immagini condivise.",
     "sharePrivacyModalTitle": "Privacy nella condivisione",
@@ -342,9 +338,8 @@
       },
       "premium": {
         "q": "Informazioni su Premium",
-        "aIntro": "Se un membro della famiglia si abbona, tutti con lo stesso codice famiglia ottengono Premium. Prezzo previsto: ¥180/mese o ¥1.800/anno (fatturazione store in arrivo).",
-        "aDowngrade": "[Dopo la fine di Premium] Se avevi 3+ animali registrati, solo i primi 2 nell'ordine della lista restano utilizzabili in Gratuito. Gli altri sono in grigio nella lista (nessun riordino), le passeggiate consentono max 2 animali e i filtri cronologia/grafico corrispondono. I record degli animali non vengono eliminati. Riordina la lista per riportare un animale nelle prime posizioni.",
-        "aNote": "Per i test, imposta premiumExpiresAt sul documento families in Firestore a un timestamp futuro. Impostalo nel passato per simulare il comportamento Gratuito."
+        "aIntro": "Se un membro della famiglia si abbona, tutti con lo stesso codice famiglia ottengono Premium. Prezzi secondo App Store / Google Play. Acquisto o ripristino da Impostazioni → Premium.",
+        "aDowngrade": "[Dopo la fine di Premium] Se avevi 3+ animali registrati, solo i primi 2 nell'ordine della lista restano utilizzabili in Gratuito. Gli altri sono in grigio nella lista (nessun riordino), le passeggiate consentono max 2 animali e i filtri cronologia/grafico corrispondono. I record degli animali non vengono eliminati. Riordina la lista per riportare un animale nelle prime posizioni."
       }
     },
     "exportData": "Esporta dati",

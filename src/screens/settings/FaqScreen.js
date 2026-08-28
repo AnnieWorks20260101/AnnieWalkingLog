@@ -31,9 +31,6 @@ function FaqAnswer({ item, fontSizes, currentTheme }) {
             <Text style={[styles.answerNote, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
               {i18n.t('settings.faq.premium.aDowngrade')}
             </Text>
-            <Text style={[styles.answerNote, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-              {i18n.t('settings.faq.premium.aNote')}
-            </Text>
           </View>
         ) : null}
       </View>

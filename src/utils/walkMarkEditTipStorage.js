@@ -10,7 +10,3 @@ export async function hasSeenWalkMarkEditTip() {
 export async function setWalkMarkEditTipSeen() {
   await AsyncStorage.setItem(WALK_MARK_EDIT_TIP_KEY, 'true');
 }
-
-export async function clearWalkMarkEditTipSeen() {
-  await AsyncStorage.removeItem(WALK_MARK_EDIT_TIP_KEY);
-}

@@ -88,7 +88,8 @@
     "markAddPoop": "Add poop",
     "markAddCustom": "Add %{icon}",
     "markEditTipTitle": "Move pins on the map",
-    "markEditTipMessage": "Tap poop, pee, and other pins to change their location. Use the share button in the top-right to share your walk route. You can mask routes near the start and end in Settings.",
+    "markEditTipMessageLine1": "Tap poop, pee, and other pins to change their location.",
+    "markEditTipMessageLine2": "Use the share button in the top-right to share your walk route. You can mask routes near the start and end in Settings.",
     "start": "Start!",
     "walking": "Walking…",
     "end": "End!",
@@ -200,11 +201,6 @@
     "uploadPhotosOnCellularDesc": "On: confirm before upload on cellular. Off: confirm before saving without photos on cellular (photos upload on Wi‑Fi)",
     "savePhotoToLibrary": "Also save photos to device",
     "savePhotoToLibraryDesc": "When on, photos taken during a walk are also saved to your device photo library. Cloud upload is unchanged.",
-    "devResetWalkDetailTipTitle": "Show walk detail tip again",
-    "devResetWalkDetailTipDesc": "For verification. Shows the tip next time you open a walk record (remove before release).",
-    "devResetWalkDetailTipDoneTitle": "Reset complete",
-    "devResetWalkDetailTipDoneMessage": "The tip will appear the next time you open a walk record.",
-    "devResetWalkDetailTipError": "Could not reset the tip flag.",
     "sharePrivacyLabel": "Hide start/end on shared records",
     "sharePrivacyDesc": "Hides the route and marks near departure and return points on shared images.",
     "sharePrivacyModalTitle": "Sharing privacy",
@@ -342,9 +338,8 @@
       },
       "premium": {
         "q": "About Premium",
-        "aIntro": "If one family member subscribes, everyone with the same family code gets Premium. Pricing follows the App Store / Google Play listing (approx. ¥180/month or ¥1,800/year). Purchase or restore from Settings → Premium plan.",
-        "aDowngrade": "[After Premium ends] If you had 3+ pets registered, only the first 2 in list order stay usable on Free. Others are grayed out in the pet list (no reordering), walks allow 2 pets max, and history/graph pet filters match. Pet records are not deleted. Reorder the list to bring a pet into the top slots to use it again.",
-        "aNote": "For testing, set premiumExpiresAt on the families document in Firestore to a future timestamp. Set it in the past to simulate Free plan behavior."
+        "aIntro": "If one family member subscribes, everyone with the same family code gets Premium. Pricing follows the App Store / Google Play listing. Purchase or restore from Settings → Premium plan.",
+        "aDowngrade": "[After Premium ends] If you had 3+ pets registered, only the first 2 in list order stay usable on Free. Others are grayed out in the pet list (no reordering), walks allow 2 pets max, and history/graph pet filters match. Pet records are not deleted. Reorder the list to bring a pet into the top slots to use it again."
       }
     },
     "exportData": "Export data",

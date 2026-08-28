@@ -88,7 +88,8 @@
     "markAddPoop": "Kot hinzufügen",
     "markAddCustom": "%{icon} hinzufügen",
     "markEditTipTitle": "Markierungen verschieben",
-    "markEditTipMessage": "Tippe auf Kot-, Pipi- und andere Markierungen, um den Ort zu ändern. Mit der Teilen-Schaltfläche oben rechts kannst du deine Gassi-Route teilen. In den Einstellungen kannst du Strecken in der Nähe von Start und Ende ausblenden.",
+    "markEditTipMessageLine1": "Tippe auf Kot-, Pipi- und andere Markierungen, um den Ort zu ändern.",
+    "markEditTipMessageLine2": "Mit der Teilen-Schaltfläche oben rechts kannst du deine Gassi-Route teilen. In den Einstellungen kannst du Strecken in der Nähe von Start und Ende ausblenden.",
     "start": "Start!",
     "walking": "Unterwegs…",
     "end": "Ende!",
@@ -200,11 +201,6 @@
     "uploadPhotosOnCellularDesc": "An: Bestätigung vor Upload über Mobilfunk. Aus: Bestätigung vor Speichern ohne Fotos über Mobilfunk (Fotos werden über Wi‑Fi hochgeladen)",
     "savePhotoToLibrary": "Fotos auch auf Gerät speichern",
     "savePhotoToLibraryDesc": "Wenn an, werden während eines Spaziergangs aufgenommene Fotos auch in der Geräte-Fotobibliothek gespeichert. Cloud-Upload bleibt unverändert.",
-    "devResetWalkDetailTipTitle": "Spaziergang-Hinweis erneut anzeigen",
-    "devResetWalkDetailTipDesc": "Zur Überprüfung. Zeigt den Hinweis beim nächsten Öffnen eines Spaziergangs (vor Release entfernen).",
-    "devResetWalkDetailTipDoneTitle": "Zurücksetzen abgeschlossen",
-    "devResetWalkDetailTipDoneMessage": "Der Hinweis erscheint beim nächsten Öffnen eines Spaziergangs.",
-    "devResetWalkDetailTipError": "Hinweis-Flag konnte nicht zurückgesetzt werden.",
     "sharePrivacyLabel": "Start/Ende bei geteilten Aufzeichnungen verbergen",
     "sharePrivacyDesc": "Blendet Route und Markierungen in der Nähe von Start und Ende auf geteilten Bildern aus.",
     "sharePrivacyModalTitle": "Datenschutz beim Teilen",
@@ -342,9 +338,8 @@
       },
       "premium": {
         "q": "Über Premium",
-        "aIntro": "Wenn ein Familienmitglied abonniert, erhält jeder mit demselben Familiencode Premium. Geplanter Preis: ¥180/Monat oder ¥1.800/Jahr (Store-Abrechnung kommt bald).",
-        "aDowngrade": "[Nach Premium-Ende] Bei 3+ registrierten Haustieren bleiben auf Kostenlos nur die ersten 2 in Listenreihenfolge nutzbar. Andere sind in der Liste ausgegraut (keine Neuordnung), Spaziergänge erlauben max. 2 Haustiere, Verlaufs-/Diagrammfilter entsprechend. Haustier-Einträge werden nicht gelöscht. Liste neu ordnen, um ein Haustier wieder nutzbar zu machen.",
-        "aNote": "Zum Testen premiumExpiresAt im families-Dokument in Firestore auf einen zukünftigen Zeitstempel setzen. In der Vergangenheit setzen, um Kostenlos-Verhalten zu simulieren."
+        "aIntro": "Wenn ein Familienmitglied abonniert, erhält jeder mit demselben Familiencode Premium. Kauf oder Wiederherstellung unter Einstellungen → Premium-Plan.",
+        "aDowngrade": "[Nach Premium-Ende] Bei 3+ registrierten Haustieren bleiben auf Kostenlos nur die ersten 2 in Listenreihenfolge nutzbar. Andere sind in der Liste ausgegraut (keine Neuordnung), Spaziergänge erlauben max. 2 Haustiere, Verlaufs-/Diagrammfilter entsprechend. Haustier-Einträge werden nicht gelöscht. Liste neu ordnen, um ein Haustier wieder nutzbar zu machen."
       }
     },
     "exportData": "Daten exportieren",

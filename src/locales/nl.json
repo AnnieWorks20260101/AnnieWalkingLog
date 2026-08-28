@@ -88,7 +88,8 @@
     "markAddPoop": "Poep toevoegen",
     "markAddCustom": "%{icon} toevoegen",
     "markEditTipTitle": "Markeringen verplaatsen",
-    "markEditTipMessage": "Tik op poep-, plas- en andere markeringen om de locatie te wijzigen. Gebruik de Deel-knop rechtsboven om je wandelroute te delen. In Instellingen kun je de route nabij start en einde maskeren.",
+    "markEditTipMessageLine1": "Tik op poep-, plas- en andere markeringen om de locatie te wijzigen.",
+    "markEditTipMessageLine2": "Gebruik de Deel-knop rechtsboven om je wandelroute te delen. In Instellingen kun je de route nabij start en einde maskeren.",
     "start": "Start!",
     "walking": "Wandelen…",
     "end": "Einde!",
@@ -210,11 +211,6 @@
     "sharePrivacyImperial_300": "¾ mijl",
     "sharePrivacyImperial_400": "1 mijl",
     "sharePrivacyImperial_500": "1¼ mijl",
-    "devResetWalkDetailTipTitle": "Wandeltip opnieuw tonen",
-    "devResetWalkDetailTipDesc": "Ter controle. Toont de tip bij de volgende keer dat je een wandeling opent (voor release verwijderen).",
-    "devResetWalkDetailTipDoneTitle": "Reset voltooid",
-    "devResetWalkDetailTipDoneMessage": "De tip verschijnt de volgende keer dat je een wandeling opent.",
-    "devResetWalkDetailTipError": "Kon de tip-vlag niet resetten.",
     "customButton": {
       "pee": "Plas",
       "dog": "Hond",
@@ -342,9 +338,8 @@
       },
       "premium": {
         "q": "Over Premium",
-        "aIntro": "Als één familielid abonneert, krijgt iedereen met dezelfde gezinscode Premium. Geplande prijs: ¥180/maand of ¥1.800/jaar (store-facturering binnenkort).",
-        "aDowngrade": "[Na afloop Premium] Bij 3+ geregistreerde huisdieren blijven op Gratis alleen de eerste 2 in lijstvolgorde bruikbaar. Anderen zijn grijs in de lijst (geen herschikking), wandelingen staan max. 2 huisdieren toe en historie/grafiekfilters komen overeen. Huisdierrecords worden niet verwijderd. Herschik de lijst om een huisdier weer bruikbaar te maken.",
-        "aNote": "Voor testen, stel premiumExpiresAt in op het families-document in Firestore op een toekomstige timestamp. Zet in het verleden om Gratis-gedrag te simuleren."
+        "aIntro": "Als één familielid abonneert, krijgt iedereen met dezelfde gezinscode Premium. Prijzen volgens App Store / Google Play. Koop of herstel via Instellingen → Premium.",
+        "aDowngrade": "[Na afloop Premium] Bij 3+ geregistreerde huisdieren blijven op Gratis alleen de eerste 2 in lijstvolgorde bruikbaar. Anderen zijn grijs in de lijst (geen herschikking), wandelingen staan max. 2 huisdieren toe en historie/grafiekfilters komen overeen. Huisdierrecords worden niet verwijderd. Herschik de lijst om een huisdier weer bruikbaar te maken."
       }
     },
     "exportData": "Gegevens exporteren",

@@ -88,7 +88,8 @@
     "markAddPoop": "Adicionar cocó",
     "markAddCustom": "Adicionar %{icon}",
     "markEditTipTitle": "Mover marcadores",
-    "markEditTipMessage": "Toque nos marcadores de cocó, xixi e outros para alterar a localização. Use o botão Partilhar no canto superior direito para partilhar a rota. Nas definições pode mascarar a rota perto do início e do fim.",
+    "markEditTipMessageLine1": "Toque nos marcadores de cocó, xixi e outros para alterar a localização.",
+    "markEditTipMessageLine2": "Use o botão Partilhar no canto superior direito para partilhar a rota. Nas definições pode mascarar a rota perto do início e do fim.",
     "start": "Iniciar!",
     "walking": "A passear…",
     "end": "Terminar!",
@@ -210,11 +211,6 @@
     "sharePrivacyImperial_300": "¾ milha",
     "sharePrivacyImperial_400": "1 milha",
     "sharePrivacyImperial_500": "1¼ milhas",
-    "devResetWalkDetailTipTitle": "Mostrar novamente a dica do passeio",
-    "devResetWalkDetailTipDesc": "Para verificação. Mostra a dica na próxima abertura de um registo (remover antes do lançamento).",
-    "devResetWalkDetailTipDoneTitle": "Repor concluído",
-    "devResetWalkDetailTipDoneMessage": "A dica aparecerá na próxima vez que abrir um registo de passeio.",
-    "devResetWalkDetailTipError": "Não foi possível repor o indicador da dica.",
     "customButton": {
       "pee": "Xixi",
       "dog": "Cão",
@@ -342,9 +338,8 @@
       },
       "premium": {
         "q": "Sobre o Premium",
-        "aIntro": "Se um membro da família subscrever, todos com o mesmo código familiar obtêm Premium. Preço previsto: ¥180/mês ou ¥1.800/ano (faturação na loja em breve).",
-        "aDowngrade": "[Após fim do Premium] Se tinha 3+ animais registados, apenas os 2 primeiros na ordem da lista permanecem utilizáveis no Gratuito. Os outros aparecem a cinzento na lista (sem reordenação), os passeios permitem no máx. 2 animais e os filtros de histórico/gráfico correspondem. Os registos de animais não são eliminados. Reordene a lista para trazer um animal para as primeiras posições.",
-        "aNote": "Para testes, defina premiumExpiresAt no documento families no Firestore com um timestamp futuro. Defina no passado para simular comportamento Gratuito."
+        "aIntro": "Se um membro da família subscrever, todos com o mesmo código familiar obtêm Premium. Preços conforme App Store / Google Play. Compra ou restauro em Definições → Premium.",
+        "aDowngrade": "[Após fim do Premium] Se tinha 3+ animais registados, apenas os 2 primeiros na ordem da lista permanecem utilizáveis no Gratuito. Os outros aparecem a cinzento na lista (sem reordenação), os passeios permitem no máx. 2 animais e os filtros de histórico/gráfico correspondem. Os registos de animais não são eliminados. Reordene a lista para trazer um animal para as primeiras posições."
       }
     },
     "exportData": "Exportar dados",

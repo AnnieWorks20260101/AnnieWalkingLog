@@ -50,7 +50,6 @@ import { openTermsOfService } from '../../utils/openTermsOfService';
 import { buildFamilyExportPayload } from '../../services/exportFamilyData';
 import { shareExportJsonFile } from '../../utils/shareExportJson';
 import FamilyMembersModal from '../../components/settings/FamilyMembersModal';
-import { clearWalkMarkEditTipSeen } from '../../utils/walkMarkEditTipStorage';
 import {
   seedTestWalksForFamily,
   estimateTestWalkSeedCount,
@@ -303,19 +302,6 @@ export default function SettingsScreen({ navigation }) {
 
   const handleSeedTestWalksKo = () => {
     runSeedTestWalks('ko');
-  };
-
-  const handleResetWalkDetailTip = async () => {
-    try {
-      await clearWalkMarkEditTipSeen();
-      Alert.alert(
-        i18n.t('settings.devResetWalkDetailTipDoneTitle'),
-        i18n.t('settings.devResetWalkDetailTipDoneMessage')
-      );
-    } catch (error) {
-      console.error('reset walk detail tip failed:', error);
-      Alert.alert(i18n.t('common.error'), i18n.t('settings.devResetWalkDetailTipError'));
-    }
   };
 
   const handleDeleteTestWalks = async () => {
@@ -871,28 +857,6 @@ export default function SettingsScreen({ navigation }) {
             </TouchableOpacity>
           </>
         ) : null}
-
-        <TouchableOpacity
-          style={[
-            styles.testSeedCard,
-            { backgroundColor: currentTheme.card, borderColor: currentTheme.border, marginTop: 24 },
-          ]}
-          onPress={handleResetWalkDetailTip}
-          activeOpacity={0.7}
-        >
-          <View style={styles.settingLeft}>
-            <Ionicons name="refresh-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
-            <View style={styles.settingTextBlock}>
-              <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
-                {i18n.t('settings.devResetWalkDetailTipTitle')}
-              </Text>
-              <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-                {i18n.t('settings.devResetWalkDetailTipDesc')}
-              </Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
-        </TouchableOpacity>
 
       </ScrollView>
 

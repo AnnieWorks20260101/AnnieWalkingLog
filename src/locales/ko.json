@@ -88,7 +88,8 @@
     "markAddPoop": "배변 추가",
     "markAddCustom": "%{icon} 추가",
     "markEditTipTitle": "핀 위치 변경",
-    "markEditTipMessage": "배변, 소변 등의 핀을 탭하면 위치를 변경할 수 있습니다. 화면 오른쪽 위 공유 버튼으로 산책 경로를 공유할 수 있습니다. 설정에서 시작·종료 지점 근처 경로를 가릴 수 있습니다.",
+    "markEditTipMessageLine1": "배변, 소변 등의 핀을 탭하면 위치를 변경할 수 있습니다.",
+    "markEditTipMessageLine2": "화면 오른쪽 위 공유 버튼으로 산책 경로를 공유할 수 있습니다. 설정에서 시작·종료 지점 근처 경로를 가릴 수 있습니다.",
     "start": "시작!",
     "walking": "산책 중…",
     "end": "종료!",
@@ -210,11 +211,6 @@
     "sharePrivacyImperial_300": "¾마일",
     "sharePrivacyImperial_400": "1마일",
     "sharePrivacyImperial_500": "1¼마일",
-    "devResetWalkDetailTipTitle": "산책 기록 안내 다시 표시",
-    "devResetWalkDetailTipDesc": "확인용. 다음에 산책 기록을 열 때 안내를 다시 표시합니다(출시 전 삭제).",
-    "devResetWalkDetailTipDoneTitle": "초기화 완료",
-    "devResetWalkDetailTipDoneMessage": "다음에 산책 기록을 열면 안내가 표시됩니다.",
-    "devResetWalkDetailTipError": "안내 플래그를 초기화하지 못했습니다.",
     "customButton": {
       "pee": "소변",
       "dog": "강아지",
@@ -342,9 +338,8 @@
       },
       "premium": {
         "q": "프리미엄 안내",
-        "aIntro": "가족 중 한 명이 구독하면 같은 가족 코드를 사용하는 모든 구성원이 프리미엄을 이용할 수 있습니다. 예정 가격: 월 ¥180 또는 연 ¥1,800 (스토어 결제 곧 제공).",
-        "aDowngrade": "[프리미엄 종료 후] 3마리 이상 등록한 경우 무료에서는 목록 순서상 상위 2마리만 사용 가능합니다. 나머지는 목록에서 회색으로 표시되며 (순서 변경 불가), 산책은 최대 2마리, 기록/그래프 필터도 동일합니다. 반려동물 기록은 삭제되지 않습니다. 목록 순서를 변경하여 상위에 두면 다시 사용할 수 있습니다.",
-        "aNote": "테스트 시 Firestore의 families 문서에 premiumExpiresAt을 미래 타임스탬프로 설정하세요. 과거로 설정하면 무료 요금제 동작을 시뮬레이션할 수 있습니다."
+        "aIntro": "가족 중 한 명이 구독하면 같은 가족 코드를 사용하는 모든 구성원이 프리미엄을 이용할 수 있습니다. 요금은 App Store / Google Play 표시를 따릅니다. 설정 → 프리미엄에서 구매·복원할 수 있습니다.",
+        "aDowngrade": "[프리미엄 종료 후] 3마리 이상 등록한 경우 무료에서는 목록 순서상 상위 2마리만 사용 가능합니다. 나머지는 목록에서 회색으로 표시되며 (순서 변경 불가), 산책은 최대 2마리, 기록/그래프 필터도 동일합니다. 반려동물 기록은 삭제되지 않습니다. 목록 순서를 변경하여 상위에 두면 다시 사용할 수 있습니다."
       }
     },
     "exportData": "데이터 내보내기",

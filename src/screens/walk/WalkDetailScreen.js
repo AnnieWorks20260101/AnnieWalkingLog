@@ -20,6 +20,7 @@ import { useFamilyPets } from '../../hooks/useFamilyPets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import WalkMemoModal from '../../components/walk/WalkMemoModal';
+import WalkDetailTipModal from '../../components/walk/WalkDetailTipModal';
 import WalkSharePreviewModal from '../../components/walk/WalkSharePreviewModal';
 import WalkMarkEditBar, { WALK_MARK_EDIT_BAR_HEIGHT } from '../../components/walk/WalkMarkEditBar';
 import WalkPetChips from '../../components/walk/WalkPetChips';
@@ -90,6 +91,7 @@ export default function WalkDetailScreen({ route, navigation }) {
   const [editingMemoId, setEditingMemoId] = useState(null);
   const [memoSaving, setMemoSaving] = useState(false);
   const [isSharePreviewVisible, setIsSharePreviewVisible] = useState(false);
+  const [isMarkEditTipVisible, setIsMarkEditTipVisible] = useState(false);
 
   useEffect(() => {
     setPoops(Array.isArray(walk.poops) ? walk.poops : []);
@@ -173,9 +175,10 @@ export default function WalkDetailScreen({ route, navigation }) {
           return;
         }
         await setWalkMarkEditTipSeen();
-        Alert.alert(i18n.t('walk.markEditTipTitle'), i18n.t('walk.markEditTipMessage'), [
-          { text: i18n.t('common.ok') },
-        ]);
+        if (cancelled) {
+          return;
+        }
+        setIsMarkEditTipVisible(true);
       } catch (error) {
         console.warn('walk mark edit tip failed:', error);
       }
@@ -665,6 +668,14 @@ export default function WalkDetailScreen({ route, navigation }) {
           ) : null}
         </View>
       </View>
+
+      <WalkDetailTipModal
+        visible={isMarkEditTipVisible}
+        title={i18n.t('walk.markEditTipTitle')}
+        messageLine1={i18n.t('walk.markEditTipMessageLine1')}
+        messageLine2={i18n.t('walk.markEditTipMessageLine2')}
+        onClose={() => setIsMarkEditTipVisible(false)}
+      />
 
       <WalkSharePreviewModal
         visible={isSharePreviewVisible}

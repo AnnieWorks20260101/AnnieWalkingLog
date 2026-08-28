@@ -88,7 +88,8 @@
     "markAddPoop": "Ajouter un caca",
     "markAddCustom": "Ajouter %{icon}",
     "markEditTipTitle": "Déplacer les marqueurs",
-    "markEditTipMessage": "Appuyez sur les marqueurs caca, pipi, etc. pour modifier leur emplacement. Le bouton Partager en haut à droite permet de partager votre itinéraire. Dans les réglages, vous pouvez masquer l'itinéraire près du départ et du retour.",
+    "markEditTipMessageLine1": "Appuyez sur les marqueurs caca, pipi, etc. pour modifier leur emplacement.",
+    "markEditTipMessageLine2": "Le bouton Partager en haut à droite permet de partager votre itinéraire. Dans les réglages, vous pouvez masquer l'itinéraire près du départ et du retour.",
     "start": "Démarrer !",
     "walking": "En promenade…",
     "end": "Terminer !",
@@ -200,11 +201,6 @@
     "uploadPhotosOnCellularDesc": "Activé : confirmer avant l'envoi via données mobiles. Désactivé : confirmer avant d'enregistrer sans photos via données mobiles (les photos s'envoient via Wi‑Fi)",
     "savePhotoToLibrary": "Enregistrer aussi les photos sur l'appareil",
     "savePhotoToLibraryDesc": "Lorsque activé, les photos prises pendant une promenade sont aussi enregistrées dans la photothèque de l'appareil. L'envoi cloud reste inchangé.",
-    "devResetWalkDetailTipTitle": "Réafficher l'aide de la promenade",
-    "devResetWalkDetailTipDesc": "Pour vérification. Réaffiche l'aide à la prochaine ouverture d'un enregistrement (à supprimer avant la release).",
-    "devResetWalkDetailTipDoneTitle": "Réinitialisation terminée",
-    "devResetWalkDetailTipDoneMessage": "L'aide s'affichera à la prochaine ouverture d'un enregistrement de promenade.",
-    "devResetWalkDetailTipError": "Impossible de réinitialiser le drapeau d'aide.",
     "sharePrivacyLabel": "Masquer départ/arrivée sur les enregistrements partagés",
     "sharePrivacyDesc": "Masque l'itinéraire et les marqueurs près du départ et du retour sur les images partagées.",
     "sharePrivacyModalTitle": "Confidentialité du partage",
@@ -342,9 +338,8 @@
       },
       "premium": {
         "q": "À propos de Premium",
-        "aIntro": "Si un membre de la famille s'abonne, tous ceux avec le même code famille obtiennent Premium. Prix prévu : ¥180/mois ou ¥1 800/an (facturation en boutique bientôt).",
-        "aDowngrade": "[Après la fin de Premium] Si vous aviez 3+ animaux enregistrés, seuls les 2 premiers dans l'ordre de la liste restent utilisables en Gratuit. Les autres sont grisés dans la liste (pas de réorganisation), les promenades autorisent max. 2 animaux, et les filtres historique/graphique correspondent. Les enregistrements d'animaux ne sont pas supprimés. Réorganisez la liste pour remettre un animal dans les premières places.",
-        "aNote": "Pour les tests, définissez premiumExpiresAt sur le document families dans Firestore à un horodatage futur. Mettez-le dans le passé pour simuler le comportement Gratuit."
+        "aIntro": "Si un membre de la famille s'abonne, tous ceux avec le même code famille obtiennent Premium. Tarifs selon l'App Store / Google Play. Achat ou restauration via Réglages → Premium.",
+        "aDowngrade": "[Après la fin de Premium] Si vous aviez 3+ animaux enregistrés, seuls les 2 premiers dans l'ordre de la liste restent utilisables en Gratuit. Les autres sont grisés dans la liste (pas de réorganisation), les promenades autorisent max. 2 animaux, et les filtres historique/graphique correspondent. Les enregistrements d'animaux ne sont pas supprimés. Réorganisez la liste pour remettre un animal dans les premières places."
       }
     },
     "exportData": "Exporter les données",
