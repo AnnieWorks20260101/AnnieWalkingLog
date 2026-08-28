@@ -1,0 +1,149 @@
+rules_version = '2';
+
+// Firebase Console → Firestore Database → ルール に貼り付けて公開してください。
+// 方針: 同じ家族（family_members/{familyId}_{uid}）なら閲覧・編集可。他人の家族は不可。
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAnonymous() {
+      return request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    function memberPath(familyId) {
+      return /databases/$(database)/documents/family_members/$(familyId + '_' + request.auth.uid);
+    }
+
+    function isFamilyMember(familyId) {
+      return isSignedIn()
+        && familyId is string
+        && familyId.size() > 0
+        && exists(memberPath(familyId));
+    }
+
+    function isOwnUser(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function familyIdUnchanged() {
+      return request.resource.data.familyId == resource.data.familyId;
+    }
+
+    function activeFamilyIdAllowed() {
+      return !('activeFamilyId' in request.resource.data)
+        || request.resource.data.activeFamilyId == null
+        || isFamilyMember(request.resource.data.activeFamilyId);
+    }
+
+    function isOwnMemberDocId(memberId) {
+      return memberId.split('_').size() == 2
+        && memberId.split('_')[1] == request.auth.uid;
+    }
+
+    // users/{uid}
+    // 自分のプロフィールは読み書き。家族一覧・散歩終了通知のため、
+    // 同じ家族の users も activeFamilyId クエリで読める（メールや push token も見える点に注意）。
+    match /users/{userId} {
+      allow read: if isOwnUser(userId)
+        || (
+          resource.data.activeFamilyId is string
+          && isFamilyMember(resource.data.activeFamilyId)
+        );
+
+      allow create: if isOwnUser(userId) && activeFamilyIdAllowed();
+
+      allow update: if isOwnUser(userId) && activeFamilyIdAllowed();
+
+      allow delete: if isOwnUser(userId);
+    }
+
+    // families/{familyId}
+    // get のみログイン済みなら可（家族コードでの参加確認）。一覧はメンバーまたは作成者だけ。
+    match /families/{familyId} {
+      allow get: if isSignedIn();
+
+      allow list: if isSignedIn()
+        && (
+          resource.data.createdBy == request.auth.uid
+          || isFamilyMember(familyId)
+        );
+
+      allow create: if isSignedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && !('premiumExpiresAt' in request.resource.data);
+
+      // premiumExpiresAt はクライアントから RevenueCat 同期で書いている（Cloud Functions の方が安全）
+      allow update: if isFamilyMember(familyId)
+        && request.resource.data.createdBy == resource.data.createdBy;
+
+      allow delete: if isFamilyMember(familyId)
+        || (isSignedIn() && resource.data.createdBy == request.auth.uid);
+    }
+
+    // family_members/{familyId}_{uid}
+    match /family_members/{memberId} {
+      allow get: if isSignedIn()
+        && (
+          isOwnMemberDocId(memberId)
+          || (
+            resource.data.familyId is string
+            && isFamilyMember(resource.data.familyId)
+          )
+        );
+
+      allow list: if isSignedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || isFamilyMember(resource.data.familyId)
+        );
+
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.familyId is string
+        && memberId == request.resource.data.familyId + '_' + request.auth.uid
+        && exists(/databases/$(database)/documents/families/$(request.resource.data.familyId))
+        && (
+          (
+            request.resource.data.role == 'owner'
+            && get(/databases/$(database)/documents/families/$(request.resource.data.familyId)).data.createdBy == request.auth.uid
+          )
+          || (
+            request.resource.data.role == 'member'
+            && !isAnonymous()
+          )
+        );
+
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow update: if false;
+    }
+
+    // walks/{walkId} — 家族なら閲覧・追加・メモ/ピン修正・削除
+    match /walks/{walkId} {
+      allow read: if isFamilyMember(resource.data.familyId);
+
+      allow create: if isFamilyMember(request.resource.data.familyId)
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isFamilyMember(resource.data.familyId)
+        && familyIdUnchanged();
+
+      allow delete: if isFamilyMember(resource.data.familyId);
+    }
+
+    // pets/{petId} — 家族なら閲覧・登録・編集・削除
+    match /pets/{petId} {
+      allow read: if isFamilyMember(resource.data.familyId);
+
+      allow create: if isFamilyMember(request.resource.data.familyId)
+        && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if isFamilyMember(resource.data.familyId)
+        && familyIdUnchanged();
+
+      allow delete: if isFamilyMember(resource.data.familyId);
+    }
+  }
+}

@@ -292,9 +292,14 @@ export default function SettingsScreen({ navigation }) {
   };
 
   const handleDeleteTestWalks = async () => {
+    if (!familyId) {
+      Alert.alert(i18n.t('common.error'), i18n.t('settings.testSeedNoFamily'));
+      return;
+    }
+
     let count = 0;
     try {
-      count = await countAllTestWalks();
+      count = await countAllTestWalks(familyId);
     } catch (error) {
       console.error('count test walks error:', error);
       Alert.alert(i18n.t('common.error'), i18n.t('settings.testDeleteError'));
@@ -319,6 +324,7 @@ export default function SettingsScreen({ navigation }) {
             setTestDevProgress({ done: 0, total: count });
             try {
               const { deleted } = await deleteAllTestWalks({
+                familyId,
                 onProgress: (done, total) => setTestDevProgress({ done, total }),
               });
               Alert.alert(i18n.t('walk.saveSuccess'), i18n.t('settings.testDeleteSuccess', { count: deleted }));

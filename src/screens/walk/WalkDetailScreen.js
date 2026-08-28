@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  BackHandler,
 } from 'react-native';
 import MapView, { Polyline, Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,10 +16,13 @@ import ViewShot from 'react-native-view-shot';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useDisplayPreferences } from '../../contexts/DisplayPreferencesContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useWalkPreferences } from '../../contexts/WalkPreferencesContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useFamilyPets } from '../../hooks/useFamilyPets';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import WalkMemoModal from '../../components/walk/WalkMemoModal';
+import WalkMarkEditBar from '../../components/walk/WalkMarkEditBar';
 import WalkPetChips from '../../components/walk/WalkPetChips';
 import i18n from '../../i18n';
 import {
@@ -37,6 +41,7 @@ import { getWalkPhotoCoordinate, walkHasPhotos, getWalkPhotos } from '../../util
 import { SCREEN_WALK_PHOTOS } from '../../navigation/screenNames';
 import { closeWalkDetailToHistory } from '../../navigation/walkNavigation';
 import { createWalkMemo, persistWalkMemos } from '../../services/walkMemos';
+import { moveWalkMark, persistWalkMapMarks, createPoopMark, createCustomMark, removeWalkMark } from '../../services/walkMapMarks';
 import { shareViewScreenshot } from '../../utils/shareViewScreenshot';
 import {
   maybeRequestStoreReview,
@@ -50,11 +55,16 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.005,
 };
 
+/** 編集バー分だけ地図の視覚中央を上にずらす */
+const MARK_EDIT_MAP_BOTTOM_INSET = 168;
+
 export default function WalkDetailScreen({ route, navigation }) {
   const { currentTheme, fontSizes } = useTheme();
   const { unitSystem, timeFormat, language } = useDisplayPreferences();
   const { familyId, userId } = useAuth();
   const { pets } = useFamilyPets(familyId, userId);
+  const { customButtonId, customButtonIcon } = useWalkPreferences();
+  const insets = useSafeAreaInsets();
   const styles = useThemedStyles(createStyles);
   const walk = useMemo(
     () => parseWalkFromNavigationParams(route.params?.walk),
@@ -64,18 +74,31 @@ export default function WalkDetailScreen({ route, navigation }) {
   const fromSaveReview = route.params?.fromSaveReview === true;
   const reviewMilestone = route.params?.reviewMilestone ?? null;
   const walkRoute = walk.route || [];
-  const poops = walk.poops || [];
-  const customMarks = walk.customMarks || [];
   const photos = walk.photos || [];
   const mapRef = useRef(null);
   const shareShotRef = useRef(null);
 
+  const [poops, setPoops] = useState(() => (Array.isArray(walk.poops) ? walk.poops : []));
+  const [customMarks, setCustomMarks] = useState(() =>
+    Array.isArray(walk.customMarks) ? walk.customMarks : []
+  );
+  const [editingMark, setEditingMark] = useState(null);
+  const [editingIsNew, setEditingIsNew] = useState(false);
+  const [markSaving, setMarkSaving] = useState(false);
+  const addingMarkRef = useRef(false);
   const [memos, setMemos] = useState(() => (Array.isArray(walk.memos) ? walk.memos : []));
   const [isMemoModalVisible, setIsMemoModalVisible] = useState(false);
   const [memoDraft, setMemoDraft] = useState('');
   const [editingMemoId, setEditingMemoId] = useState(null);
   const [memoSaving, setMemoSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+
+  useEffect(() => {
+    setPoops(Array.isArray(walk.poops) ? walk.poops : []);
+    setCustomMarks(Array.isArray(walk.customMarks) ? walk.customMarks : []);
+    setEditingMark(null);
+    setEditingIsNew(false);
+  }, [walk.id]);
 
   const photoCoordinates = useMemo(
     () =>
@@ -136,6 +159,221 @@ export default function WalkDetailScreen({ route, navigation }) {
 
     return () => clearTimeout(timer);
   }, [fromSaveReview, reviewMilestone]);
+
+  const isEditingMark = useCallback(
+    (type, index) => editingMark?.type === type && editingMark?.index === index,
+    [editingMark]
+  );
+
+  const beginMarkEdit = useCallback(
+    (type, index) => {
+      if (!walkId || markSaving) {
+        return;
+      }
+      if (editingMark) {
+        return;
+      }
+      const source = type === 'poop' ? poops[index] : customMarks[index];
+      if (!source) {
+        return;
+      }
+      setEditingMark({ type, index });
+      setEditingIsNew(false);
+      requestAnimationFrame(() => {
+        mapRef.current?.animateCamera?.({
+          center: {
+            latitude: source.latitude,
+            longitude: source.longitude,
+          },
+        });
+      });
+    },
+    [walkId, markSaving, editingMark, poops, customMarks]
+  );
+
+  const cancelMarkEdit = useCallback(() => {
+    if (markSaving) {
+      return;
+    }
+    if (editingMark && editingIsNew) {
+      if (editingMark.type === 'poop') {
+        setPoops((prev) => removeWalkMark(prev, editingMark.index));
+      } else {
+        setCustomMarks((prev) => removeWalkMark(prev, editingMark.index));
+      }
+    }
+    setEditingMark(null);
+    setEditingIsNew(false);
+  }, [markSaving, editingMark, editingIsNew]);
+
+  const clearMarkEdit = useCallback(() => {
+    setEditingMark(null);
+    setEditingIsNew(false);
+  }, []);
+
+  const resolveAddCoordinate = useCallback(async () => {
+    try {
+      const camera = await mapRef.current?.getCamera?.();
+      if (camera?.center?.latitude != null && camera?.center?.longitude != null) {
+        return {
+          latitude: camera.center.latitude,
+          longitude: camera.center.longitude,
+        };
+      }
+    } catch (error) {
+      console.warn('getCamera failed:', error);
+    }
+    const lastRoute = walkRoute[walkRoute.length - 1];
+    if (lastRoute?.latitude != null && lastRoute?.longitude != null) {
+      return {
+        latitude: lastRoute.latitude,
+        longitude: lastRoute.longitude,
+      };
+    }
+    return {
+      latitude: initialRegion.latitude,
+      longitude: initialRegion.longitude,
+    };
+  }, [walkRoute, initialRegion]);
+
+  const handleSaveMarkEdit = useCallback(async () => {
+    if (!walkId || !editingMark || markSaving) {
+      return;
+    }
+
+    setMarkSaving(true);
+    try {
+      const coordinate = await resolveAddCoordinate();
+      const nextPoops =
+        editingMark.type === 'poop'
+          ? moveWalkMark(poops, editingMark.index, coordinate)
+          : poops;
+      const nextCustomMarks =
+        editingMark.type === 'custom'
+          ? moveWalkMark(customMarks, editingMark.index, coordinate)
+          : customMarks;
+      setPoops(nextPoops);
+      setCustomMarks(nextCustomMarks);
+      await persistWalkMapMarks(walkId, { poops: nextPoops, customMarks: nextCustomMarks });
+      clearMarkEdit();
+    } catch (error) {
+      console.error('walk mark save error:', error);
+      Alert.alert(i18n.t('common.error'), i18n.t('walk.markEditSaveError'));
+    } finally {
+      setMarkSaving(false);
+    }
+  }, [
+    walkId,
+    editingMark,
+    markSaving,
+    poops,
+    customMarks,
+    clearMarkEdit,
+    resolveAddCoordinate,
+  ]);
+
+  const beginAddMark = useCallback(
+    async (type) => {
+      if (!walkId || markSaving || editingMark || addingMarkRef.current) {
+        return;
+      }
+      addingMarkRef.current = true;
+      try {
+        const coordinate = await resolveAddCoordinate();
+        if (type === 'poop') {
+          const next = [...poops, createPoopMark(coordinate)];
+          setPoops(next);
+          setEditingMark({ type: 'poop', index: next.length - 1 });
+        } else {
+          const next = [
+            ...customMarks,
+            createCustomMark(coordinate, {
+              icon: customButtonIcon,
+              buttonId: customButtonId,
+            }),
+          ];
+          setCustomMarks(next);
+          setEditingMark({ type: 'custom', index: next.length - 1 });
+        }
+        setEditingIsNew(true);
+      } catch (error) {
+        console.error('beginAddMark failed:', error);
+        Alert.alert(i18n.t('common.error'), i18n.t('walk.markEditSaveError'));
+      } finally {
+        addingMarkRef.current = false;
+      }
+    },
+    [
+      walkId,
+      markSaving,
+      editingMark,
+      resolveAddCoordinate,
+      poops,
+      customMarks,
+      customButtonIcon,
+      customButtonId,
+    ]
+  );
+
+  const handleBackPress = useCallback(() => {
+    if (editingMark) {
+      cancelMarkEdit();
+      return;
+    }
+    closeWalkDetailToHistory(navigation);
+  }, [editingMark, cancelMarkEdit, navigation]);
+
+  useEffect(() => {
+    if (!editingMark) {
+      return undefined;
+    }
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      cancelMarkEdit();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [editingMark, cancelMarkEdit]);
+
+  const editingMarkTitle = useMemo(() => {
+    if (!editingMark) {
+      return '';
+    }
+    if (editingMark.type === 'poop') {
+      return i18n.t(editingIsNew ? 'walk.markAddTitlePoop' : 'walk.markEditTitlePoop');
+    }
+    const icon = customMarks[editingMark.index]?.icon || customButtonIcon || '💦';
+    return i18n.t(editingIsNew ? 'walk.markAddTitleCustom' : 'walk.markEditTitleCustom', { icon });
+  }, [editingMark, editingIsNew, customMarks, customButtonIcon]);
+
+  const editingOverlayIcon = useMemo(() => {
+    if (!editingMark) {
+      return '';
+    }
+    if (editingMark.type === 'poop') {
+      return '💩';
+    }
+    return customMarks[editingMark.index]?.icon || customButtonIcon || '💦';
+  }, [editingMark, customMarks, customButtonIcon]);
+
+  const renderEditMarker = (type, mark, index, label) => {
+    if (isEditingMark(type, index)) {
+      return null;
+    }
+    return (
+      <Marker
+        key={`${type}-${index}`}
+        coordinate={mark}
+        anchor={{ x: 0.5, y: 0.5 }}
+        tracksViewChanges
+        onPress={(event) => {
+          event?.stopPropagation?.();
+          beginMarkEdit(type, index);
+        }}
+      >
+        <Text style={{ fontSize: 30 }}>{label}</Text>
+      </Marker>
+    );
+  };
 
   const openNewMemo = () => {
     if (!walkId) {
@@ -238,11 +476,11 @@ export default function WalkDetailScreen({ route, navigation }) {
         title={i18n.t('walk.detailTitle')}
         showBack
         compact
-        onBackPress={() => closeWalkDetailToHistory(navigation)}
+        onBackPress={handleBackPress}
         rightAction={
           <TouchableOpacity
             onPress={handleShareResult}
-            disabled={isSharing}
+            disabled={isSharing || !!editingMark}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel={i18n.t('walk.shareResult')}
@@ -334,7 +572,12 @@ export default function WalkDetailScreen({ route, navigation }) {
                     styles.memoChip,
                     { backgroundColor: currentTheme.card, borderColor: currentTheme.primary },
                   ]}
-                  onPress={() => openEditMemo(memo)}
+                  onPress={() => {
+                    if (editingMark) {
+                      return;
+                    }
+                    openEditMemo(memo);
+                  }}
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.memoChipText, { color: currentTheme.primary, fontSize: fontSizes.m }]}>
@@ -355,9 +598,12 @@ export default function WalkDetailScreen({ route, navigation }) {
                 backgroundColor: currentTheme.background,
               },
             ]}
-            onPress={() =>
-              navigation.navigate(SCREEN_WALK_PHOTOS, { walk: serializeWalkForNavigation(walk) })
-            }
+            onPress={() => {
+              if (editingMark) {
+                return;
+              }
+              navigation.navigate(SCREEN_WALK_PHOTOS, { walk: serializeWalkForNavigation(walk) });
+            }}
             activeOpacity={0.7}
           >
             <Text style={[styles.photosLinkText, { color: currentTheme.primary, fontSize: fontSizes.m }]}>
@@ -372,15 +618,18 @@ export default function WalkDetailScreen({ route, navigation }) {
             style={styles.map}
             initialRegion={initialRegion}
             onMapReady={handleMapReady}
+            mapPadding={
+              editingMark
+                ? { top: 0, right: 0, bottom: MARK_EDIT_MAP_BOTTOM_INSET, left: 0 }
+                : undefined
+            }
           >
             {walkRoute.length > 0 && (
               <Polyline coordinates={walkRoute} strokeColor={currentTheme.primary} strokeWidth={5} />
             )}
-            {customMarks.map((mark, index) => (
-              <Marker key={`custom-${index}`} coordinate={mark}>
-                <Text style={{ fontSize: 30 }}>{mark.icon || '💦'}</Text>
-              </Marker>
-            ))}
+            {customMarks.map((mark, index) =>
+              renderEditMarker('custom', mark, index, mark.icon || '💦')
+            )}
             {photos.map((photo, index) => {
               const coordinate = getWalkPhotoCoordinate(photo);
               if (!coordinate) {
@@ -392,27 +641,68 @@ export default function WalkDetailScreen({ route, navigation }) {
                 </Marker>
               );
             })}
-            {poops.map((poop, index) => (
-              <Marker key={`poop-${index}`} coordinate={poop}>
-                <Text style={{ fontSize: 30 }}>💩</Text>
-              </Marker>
-            ))}
+            {poops.map((poop, index) => renderEditMarker('poop', poop, index, '💩'))}
           </MapView>
+          {editingMark ? (
+            <View
+              style={[styles.centerPinWrap, { bottom: MARK_EDIT_MAP_BOTTOM_INSET }]}
+              pointerEvents="none"
+            >
+              <View style={[styles.selectedMarkHalo, { borderColor: currentTheme.primary }]}>
+                <Text style={{ fontSize: 36 }}>{editingOverlayIcon}</Text>
+              </View>
+            </View>
+          ) : null}
         </View>
       </ViewShot>
 
-      {walkId ? (
-        <TouchableOpacity
-          style={[styles.memoFab, { backgroundColor: currentTheme.primary }]}
-          onPress={openNewMemo}
-          activeOpacity={0.85}
-          accessibilityLabel={i18n.t('walk.memoAddFab')}
-        >
-          <Ionicons name="add" size={22} color={currentTheme.card} style={styles.memoFabIcon} />
-          <Text style={[styles.memoFabLabel, { color: currentTheme.card, fontSize: fontSizes.m }]}>
-            {i18n.t('walk.memoFabLabel')}
-          </Text>
-        </TouchableOpacity>
+      {walkId && !editingMark ? (
+        <View style={[styles.detailActionsColumn, { bottom: Math.max(24, insets.bottom + 12) }]}>
+          <TouchableOpacity
+            style={[
+              styles.detailAddButton,
+              { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary },
+            ]}
+            onPress={() => beginAddMark('custom')}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('walk.markAddCustom', { icon: customButtonIcon })}
+          >
+            <Text style={styles.detailAddEmoji}>{customButtonIcon}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.detailAddButton,
+              { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary },
+            ]}
+            onPress={() => beginAddMark('poop')}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('walk.markAddPoop')}
+          >
+            <Text style={styles.detailAddEmoji}>{i18n.t('walk.poopLabel')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.memoFab, { backgroundColor: currentTheme.primary }]}
+            onPress={openNewMemo}
+            activeOpacity={0.85}
+            accessibilityLabel={i18n.t('walk.memoAddFab')}
+          >
+            <Ionicons name="add" size={22} color={currentTheme.card} style={styles.memoFabIcon} />
+            <Text style={[styles.memoFabLabel, { color: currentTheme.card, fontSize: fontSizes.m }]}>
+              {i18n.t('walk.memoFabLabel')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {editingMark ? (
+        <WalkMarkEditBar
+          title={editingMarkTitle}
+          onSave={handleSaveMarkEdit}
+          onCancel={cancelMarkEdit}
+          saving={markSaving}
+        />
       ) : null}
 
       <WalkMemoModal
@@ -447,6 +737,21 @@ const createStyles = (fs) => ({
   },
   mapWrapper: { flex: 1, position: 'relative' },
   map: { flex: 1 },
+  centerPinWrap: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedMarkHalo: {
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 22,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderWidth: 2,
+  },
   statsContainer: {
     paddingTop: 12,
     paddingBottom: 16,
@@ -532,10 +837,27 @@ const createStyles = (fs) => ({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   photosLinkText: { fontWeight: '600' },
-  memoFab: {
+  detailActionsColumn: {
     position: 'absolute',
     right: 20,
-    bottom: 24,
+    gap: 12,
+    alignItems: 'flex-end',
+  },
+  detailAddButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  detailAddEmoji: { fontSize: 28 },
+  memoFab: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,

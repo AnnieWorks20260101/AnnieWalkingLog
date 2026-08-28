@@ -74,15 +74,12 @@ export async function purgeUserFamilyData(uid, activeFamilyId) {
   const memberSnap = await getDocs(
     query(collection(db, 'family_members'), where('userId', '==', uid))
   );
-  await Promise.all(
-    memberSnap.docs.map(async (memberDoc) => {
-      const familyId = memberDoc.data().familyId;
-      if (familyId) {
-        familyIds.add(familyId);
-      }
-      await deleteDoc(memberDoc.ref);
-    })
-  );
+  memberSnap.docs.forEach((memberDoc) => {
+    const familyId = memberDoc.data().familyId;
+    if (familyId) {
+      familyIds.add(familyId);
+    }
+  });
 
   const createdFamiliesSnap = await getDocs(
     query(collection(db, 'families'), where('createdBy', '==', uid))
@@ -91,12 +88,16 @@ export async function purgeUserFamilyData(uid, activeFamilyId) {
     familyIds.add(familyDoc.id);
   });
 
+  // メンバーである間に、最後の1人なら家族データ（walks / pets / family）を消す。
+  // membership を先に消すと、家族単位のルール下では一覧削除ができなくなる。
   for (const familyId of familyIds) {
     const shouldDelete = await shouldDeleteFamilyAfterUserLeaves(familyId, uid);
     if (shouldDelete) {
       await deleteFamilyData(familyId);
     }
   }
+
+  await Promise.all(memberSnap.docs.map((memberDoc) => deleteDoc(memberDoc.ref)));
 
   const userRef = doc(db, 'users', uid);
   const userSnap = await getDoc(userRef);

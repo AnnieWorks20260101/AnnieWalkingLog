@@ -2,7 +2,7 @@
   "expo": {
     "name": "AnnieWalkingLog",
     "slug": "AnnieWalkingLog",
-    "version": "1.01.05",
+    "version": "1.01.06",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
