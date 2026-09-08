@@ -1,9 +1,9 @@
 // Expo は .env を自動読み込みします
-const appJson = require('./app.json');
+// app.json の値は ConfigContext 経由で config として渡されます
 const { GOOGLE_WEB_CLIENT_ID: DEFAULT_GOOGLE_WEB_CLIENT_ID } = require('./src/constants/googleAuth');
 
-/** @type {import('expo/config').ExpoConfig} */
-module.exports = () => {
+/** @type {(ctx: import('expo/config').ConfigContext) => import('expo/config').ExpoConfig} */
+module.exports = ({ config }) => {
   const openWeatherApiKey = process.env.OPENWEATHER_API_KEY?.trim() || undefined;
   const googleMapsApiKeyAndroid = process.env.GOOGLE_MAPS_API_KEY_Android?.trim() || undefined;
   const googleMapsApiKeyIos = process.env.GOOGLE_MAPS_API_KEY_iOS?.trim() || undefined;
@@ -48,51 +48,49 @@ module.exports = () => {
   }
 
   return {
-    expo: {
-      ...appJson.expo,
-      android: {
-        ...appJson.expo.android,
-        config: {
-          ...appJson.expo.android?.config,
-          googleMaps: {
-            apiKey: googleMapsApiKeyAndroid,
-          },
+    ...config,
+    android: {
+      ...config.android,
+      config: {
+        ...config.android?.config,
+        googleMaps: {
+          apiKey: googleMapsApiKeyAndroid,
         },
       },
-      ios: {
-        ...appJson.expo.ios,
-        config: {
-          ...appJson.expo.ios?.config,
-          googleMapsApiKey: googleMapsApiKeyIos,
-        },
+    },
+    ios: {
+      ...config.ios,
+      config: {
+        ...config.ios?.config,
+        googleMapsApiKey: googleMapsApiKeyIos,
       },
-      extra: {
-        ...appJson.expo.extra,
-        openWeatherApiKey,
-        googleMapsApiKeyAndroid,
-        googleMapsApiKeyIos,
-        googleWebClientId,
-        revenueCatApiKeyIos,
-        revenueCatApiKeyAndroid,
-        eas: {
-          ...appJson.expo.extra?.eas,
-          build: {
-            ...appJson.expo.extra?.eas?.build,
-            experimental: {
-              ios: {
-                appExtensions: [
-                  {
-                    targetName: 'WalkLiveActivity',
-                    bundleIdentifier:
-                      'com.annieworks.AnnieWalkingLog.walkliveactivity',
-                    entitlements: {
-                      'com.apple.security.application-groups': [
-                        'group.com.annieworks.AnnieWalkingLog.walk',
-                      ],
-                    },
+    },
+    extra: {
+      ...config.extra,
+      openWeatherApiKey,
+      googleMapsApiKeyAndroid,
+      googleMapsApiKeyIos,
+      googleWebClientId,
+      revenueCatApiKeyIos,
+      revenueCatApiKeyAndroid,
+      eas: {
+        ...config.extra?.eas,
+        build: {
+          ...config.extra?.eas?.build,
+          experimental: {
+            ios: {
+              appExtensions: [
+                {
+                  targetName: 'WalkLiveActivity',
+                  bundleIdentifier:
+                    'com.annieworks.AnnieWalkingLog.walkliveactivity',
+                  entitlements: {
+                    'com.apple.security.application-groups': [
+                      'group.com.annieworks.AnnieWalkingLog.walk',
+                    ],
                   },
-                ],
-              },
+                },
+              ],
             },
           },
         },
