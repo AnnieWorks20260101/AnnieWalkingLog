@@ -106,6 +106,7 @@
     "startWalk": "🐾 Start",
     "selectPet": "Pets on this walk (multi-select)",
     "petInactiveForWalk": "This pet cannot join walks on your current plan. Use pets higher in the list order.",
+    "friendInactiveForPlan": "This friend can't be selected on your current plan. Use friends higher in registration order.",
     "petSelectLimit": "Your plan allows up to %{max} pets per walk.",
     "noPetForWalk": "Add a pet in Settings 🐾",
     "defaultPetName": "Pet",
@@ -295,6 +296,7 @@
       "forest": "🌲 Forest"
     },
     "familySectionTitle": "Family & account",
+    "familyGuestRestricted": "The Family & account menu isn't available for guest accounts.",
     "familyIdLabel": "Family code",
     "joinFamilyPlaceholder": "Enter family code (e.g. ABCD-1234)",
     "joinFamilyNotFound": "Family code not found",
@@ -458,7 +460,8 @@
   },
   "friendList": {
     "title": "Friends",
-    "noFriends": "No friends yet.\nTap the button at bottom right to add one 🐾"
+    "noFriends": "No friends yet.\nTap the button at bottom right to add one 🐾",
+    "planInactiveFriend": "Not available on your current plan"
   },
   "friendRegistration": {
     "title": "Add Friend",
@@ -591,6 +594,10 @@
         "title": "Pet limit reached",
         "message": "You cannot add more pets on your current plan. Premium: unlimited. Free: up to 2 pets."
       },
+      "friend": {
+        "title": "Friend limit reached",
+        "message": "You cannot add more friends on your current plan. Premium: unlimited. Free: up to 5 friends."
+      },
       "photo": {
         "title": "Walk photos",
         "message": "Photos are not available for guests. Free: up to 3 lower-quality photos. Premium: up to 10 high-quality photos."
@@ -612,7 +619,7 @@
       "colFree": "Free",
       "colPremium": "Premium",
       "familyNote": "Premium applies to the whole family. One subscriber unlocks it for everyone on the same family code.",
-      "downgradeNote": "Free and Guest also limit how many pets you can use by list order (Free: top 2, Guest: top 1), not just new registrations. Pets beyond that stay in the database but are grayed out and cannot be selected for walks or history filters.",
+      "downgradeNote": "Free and Guest also limit how many pets you can use by list order (Free: top 2, Guest: top 1), not just new registrations. Pets beyond that stay in the database but are grayed out and cannot be selected for walks or history filters. The same applies to friends by registration order (Free: top 5, Guest: top 2) — the rest stay grayed out and can't be selected when adding a friend pin.",
       "rows": {
         "history": {
           "label": "Walk history",
@@ -624,6 +631,12 @@
           "label": "Pets",
           "guest": "1 reg · 1 use",
           "registered": "2 reg · 2 use",
+          "premium": "Unlimited"
+        },
+        "friends": {
+          "label": "Friends",
+          "guest": "2 reg · 2 use",
+          "registered": "5 reg · 5 use",
           "premium": "Unlimited"
         },
         "photos": {

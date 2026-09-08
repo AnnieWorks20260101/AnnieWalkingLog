@@ -8,18 +8,34 @@ import { getPetPhotoUrl } from '../../services/petPhotoUpload';
 import i18n from '../../i18n';
 
 /** お散歩中・結果画面共通の「お友達を選ぶ」タップ即選択モーダル */
-export default function FriendPickerModal({ visible, friends = [], onSelect, onClose }) {
+export default function FriendPickerModal({
+  visible,
+  friends = [],
+  onSelect,
+  onClose,
+  /** @param {string} friendId */
+  isFriendUsable = () => true,
+  onDisabledFriendPress,
+}) {
   const { currentTheme, fontSizes } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = useThemedStyles(createStyles);
 
   const renderItem = ({ item }) => {
     const photoUrl = getPetPhotoUrl(item);
+    const usable = isFriendUsable(item.id);
+    const handlePress = () => {
+      if (!usable) {
+        onDisabledFriendPress?.(item);
+        return;
+      }
+      onSelect?.(item);
+    };
     return (
       <TouchableOpacity
-        style={styles.friendRow}
-        onPress={() => onSelect?.(item)}
-        activeOpacity={0.7}
+        style={[styles.friendRow, !usable && styles.friendRowDisabled]}
+        onPress={handlePress}
+        activeOpacity={usable ? 0.7 : 1}
       >
         {photoUrl ? (
           <Image source={{ uri: photoUrl }} style={[styles.avatar, { borderColor: currentTheme.border }]} />
@@ -104,6 +120,7 @@ const createStyles = (fs) => ({
     alignItems: 'center',
     paddingVertical: 10,
   },
+  friendRowDisabled: { opacity: 0.4 },
   avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, marginRight: 12 },
   noImage: { justifyContent: 'center', alignItems: 'center' },
   friendName: { fontSize: fs.m, fontWeight: '600' },

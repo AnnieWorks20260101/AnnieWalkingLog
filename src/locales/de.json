@@ -106,6 +106,7 @@
     "startWalk": "🐾 Start",
     "selectPet": "Haustiere bei diesem Spaziergang (Mehrfachauswahl)",
     "petInactiveForWalk": "Dieses Haustier kann bei Ihrem aktuellen Tarif nicht mitspazieren. Nutzen Sie Haustiere weiter oben in der Listenreihenfolge.",
+    "friendInactiveForPlan": "Dieser Freund kann bei Ihrem aktuellen Tarif nicht ausgewählt werden. Nutzen Sie zuerst registrierte Freunde.",
     "petSelectLimit": "Ihr Tarif erlaubt bis zu %{max} Haustiere pro Spaziergang.",
     "noPetForWalk": "Haustier in Einstellungen hinzufügen 🐾",
     "defaultPetName": "Haustier",
@@ -295,6 +296,7 @@
       "forest": "🌲 Wald"
     },
     "familySectionTitle": "Familie & Konto",
+    "familyGuestRestricted": "Das Menü „Familie & Konto“ ist für Gastkonten nicht verfügbar.",
     "familyIdLabel": "Familiencode",
     "joinFamilyPlaceholder": "Familiencode eingeben (z. B. ABCD-1234)",
     "joinFamilyNotFound": "Familiencode nicht gefunden",
@@ -456,7 +458,8 @@
   },
   "friendList": {
     "title": "Freunde",
-    "noFriends": "Noch keine Freunde.\nTippen Sie unten rechts, um einen hinzuzufügen 🐾"
+    "noFriends": "Noch keine Freunde.\nTippen Sie unten rechts, um einen hinzuzufügen 🐾",
+    "planInactiveFriend": "Im aktuellen Tarif nicht verfügbar"
   },
   "friendRegistration": {
     "title": "Freund hinzufügen",
@@ -589,6 +592,10 @@
         "title": "Haustier-Limit erreicht",
         "message": "Sie können im aktuellen Tarif keine weiteren Haustiere hinzufügen. Premium: unbegrenzt. Kostenlos: bis zu 2 Haustiere."
       },
+      "friend": {
+        "title": "Freundeslimit erreicht",
+        "message": "Sie können im aktuellen Tarif keine weiteren Freunde hinzufügen. Premium: unbegrenzt. Kostenlos: bis zu 5 Freunde."
+      },
       "photo": {
         "title": "Spaziergang-Fotos",
         "message": "Fotos sind für Gäste nicht verfügbar. Kostenlos: bis zu 3 Fotos in niedriger Qualität. Premium: bis zu 10 Fotos in hoher Qualität."
@@ -610,7 +617,7 @@
       "colFree": "Kostenlos",
       "colPremium": "Premium",
       "familyNote": "Premium gilt für die ganze Familie. Ein Abonnent schaltet es für alle mit demselben Familiencode frei.",
-      "downgradeNote": "Kostenlos und Gast begrenzen auch, wie viele Haustiere Sie nach Listenreihenfolge nutzen können (Kostenlos: Top 2, Gast: Top 1), nicht nur neue Registrierungen. Haustiere darüber bleiben in der Datenbank, sind aber ausgegraut und können nicht für Spaziergänge oder Verlaufsfilter gewählt werden.",
+      "downgradeNote": "Kostenlos und Gast begrenzen auch, wie viele Haustiere Sie nach Listenreihenfolge nutzen können (Kostenlos: Top 2, Gast: Top 1), nicht nur neue Registrierungen. Haustiere darüber bleiben in der Datenbank, sind aber ausgegraut und können nicht für Spaziergänge oder Verlaufsfilter gewählt werden. Das Gleiche gilt für Freunde nach Registrierungsreihenfolge (Kostenlos: Top 5, Gast: Top 2) — die übrigen bleiben ausgegraut und können beim Hinzufügen eines Freund-Pins nicht ausgewählt werden.",
       "rows": {
         "history": {
           "label": "Spaziergang-Verlauf",
@@ -622,6 +629,12 @@
           "label": "Haustiere",
           "guest": "1 reg · 1 Nutz.",
           "registered": "2 reg · 2 Nutz.",
+          "premium": "Unbegrenzt"
+        },
+        "friends": {
+          "label": "Freunde",
+          "guest": "2 reg · 2 Nutz.",
+          "registered": "5 reg · 5 Nutz.",
           "premium": "Unbegrenzt"
         },
         "photos": {

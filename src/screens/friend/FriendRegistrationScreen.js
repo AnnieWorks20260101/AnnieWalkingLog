@@ -20,8 +20,22 @@ import ScreenHeader from '../../components/ScreenHeader';
 import i18n from '../../i18n';
 
 import { db } from '../../services/firebase';
-import { addDoc, collection, deleteDoc, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePlanTier } from '../../hooks/usePlanTier';
+import { canAddFriend } from '../../constants/planEntitlements';
+import { showPlanLimitAlert } from '../../utils/planLimitAlert';
 
 import { uploadFriendPhotoFromUri } from '../../services/friendPhotoUpload';
 
@@ -29,6 +43,7 @@ export default function FriendRegistrationScreen({ navigation, route }) {
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { userId, familyId } = useAuth();
+  const { tier, entitlements } = usePlanTier();
   const friendId = route.params?.friendId;
   const isEditMode = !!friendId;
 
@@ -157,6 +172,15 @@ export default function FriendRegistrationScreen({ navigation, route }) {
           { text: i18n.t('common.ok'), onPress: () => navigation.goBack() },
         ]);
       } else {
+        const existingFriends = await getDocs(
+          query(collection(db, 'pet_friends'), where('familyId', '==', familyId))
+        );
+        if (!canAddFriend(existingFriends.size, entitlements)) {
+          setUploading(false);
+          showPlanLimitAlert({ navigation, limitKey: 'friend', tier });
+          return;
+        }
+
         await addDoc(collection(db, 'pet_friends'), {
           ...friendData,
           familyId,

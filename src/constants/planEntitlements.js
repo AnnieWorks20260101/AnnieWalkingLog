@@ -13,18 +13,21 @@ export const PLAN_ENTITLEMENTS = {
     maxWalks: 10,
     historyDays: null,
     maxPets: 1,
+    maxFriends: 2,
     photos: null,
   },
   registered: {
     maxWalks: null,
     historyDays: 365,
     maxPets: 2,
+    maxFriends: 5,
     photos: 'free',
   },
   premium: {
     maxWalks: null,
     historyDays: null,
     maxPets: null,
+    maxFriends: null,
     photos: 'premium',
   },
 };
@@ -77,6 +80,17 @@ export function canAddPet(currentPetCount, entitlements) {
     return true;
   }
   return currentPetCount < entitlements.maxPets;
+}
+
+/**
+ * @param {number} currentFriendCount
+ * @param {ReturnType<typeof getPlanEntitlements>} entitlements
+ */
+export function canAddFriend(currentFriendCount, entitlements) {
+  if (entitlements.maxFriends == null) {
+    return true;
+  }
+  return currentFriendCount < entitlements.maxFriends;
 }
 
 /**

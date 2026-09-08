@@ -106,6 +106,7 @@
     "startWalk": "🐾 Start",
     "selectPet": "Huisdieren op deze wandeling (meervoudige selectie)",
     "petInactiveForWalk": "Dit huisdier kan niet mee op wandelingen met je huidige abonnement. Gebruik huisdieren hoger in de lijstvolgorde.",
+    "friendInactiveForPlan": "Deze vriend kan niet worden geselecteerd met je huidige abonnement. Gebruik vrienden die eerder zijn geregistreerd.",
     "petSelectLimit": "Je abonnement staat maximaal %{max} huisdieren per wandeling toe.",
     "noPetForWalk": "Voeg een huisdier toe in Instellingen 🐾",
     "defaultPetName": "Huisdier",
@@ -295,6 +296,7 @@
       "forest": "🌲 Bos"
     },
     "familySectionTitle": "Gezin & account",
+    "familyGuestRestricted": "Het menu Gezin & account is niet beschikbaar voor gastaccounts.",
     "familyIdLabel": "Gezinscode",
     "joinFamilyPlaceholder": "Voer gezinscode in (bijv. ABCD-1234)",
     "joinFamilyNotFound": "Gezinscode niet gevonden",
@@ -456,7 +458,8 @@
   },
   "friendList": {
     "title": "Vrienden",
-    "noFriends": "Nog geen vrienden.\nTik op de knop rechtsonder om er een toe te voegen 🐾"
+    "noFriends": "Nog geen vrienden.\nTik op de knop rechtsonder om er een toe te voegen 🐾",
+    "planInactiveFriend": "Niet beschikbaar op je huidige abonnement"
   },
   "friendRegistration": {
     "title": "Vriend toevoegen",
@@ -589,6 +592,10 @@
         "title": "Huisdierlimiet bereikt",
         "message": "Je kunt geen extra huisdieren toevoegen op je huidige abonnement. Premium: onbeperkt. Gratis: tot 2 huisdieren."
       },
+      "friend": {
+        "title": "Vriendenlimiet bereikt",
+        "message": "Je kunt geen extra vrienden toevoegen op je huidige abonnement. Premium: onbeperkt. Gratis: tot 5 vrienden."
+      },
       "photo": {
         "title": "Wandelfoto's",
         "message": "Foto's zijn niet beschikbaar voor gasten. Gratis: tot 3 foto's lage kwaliteit. Premium: tot 10 foto's hoge kwaliteit."
@@ -610,7 +617,7 @@
       "colFree": "Gratis",
       "colPremium": "Premium",
       "familyNote": "Premium geldt voor het hele gezin. Eén abonnee ontgrendelt het voor iedereen met dezelfde gezinscode.",
-      "downgradeNote": "Gratis en Gast beperken ook hoeveel huisdieren je kunt gebruiken op lijstvolgorde (Gratis: top 2, Gast: top 1), niet alleen nieuwe registraties. Huisdieren daarbuiten blijven in de database maar zijn grijs en niet selecteerbaar voor wandelingen of historiefilters.",
+      "downgradeNote": "Gratis en Gast beperken ook hoeveel huisdieren je kunt gebruiken op lijstvolgorde (Gratis: top 2, Gast: top 1), niet alleen nieuwe registraties. Huisdieren daarbuiten blijven in de database maar zijn grijs en niet selecteerbaar voor wandelingen of historiefilters. Hetzelfde geldt voor vrienden op registratievolgorde (Gratis: top 5, Gast: top 2) — de rest blijft grijs en kan niet worden geselecteerd bij het toevoegen van een vriendenpin.",
       "rows": {
         "history": {
           "label": "Wandelhistorie",
@@ -622,6 +629,12 @@
           "label": "Huisdieren",
           "guest": "1 reg · 1 gebruik",
           "registered": "2 reg · 2 gebruik",
+          "premium": "Onbeperkt"
+        },
+        "friends": {
+          "label": "Vrienden",
+          "guest": "2 reg · 2 gebruik",
+          "registered": "5 reg · 5 gebruik",
           "premium": "Onbeperkt"
         },
         "photos": {

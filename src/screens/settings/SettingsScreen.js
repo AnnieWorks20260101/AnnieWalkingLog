@@ -139,6 +139,7 @@ export default function SettingsScreen({ navigation }) {
       setInviteCode(code);
     } catch (error) {
       console.error('ensureFamilyInviteCode failed:', error);
+      Alert.alert(i18n.t('common.error'), i18n.t('settings.familyCodeMissing'));
     } finally {
       setInviteCodeLoading(false);
     }
@@ -645,35 +646,51 @@ export default function SettingsScreen({ navigation }) {
           {i18n.t('settings.familySectionTitle')}
         </Text>
         <View style={sectionCardStyle}>
-          <SettingRow onPress={() => setIsFamilyMembersModalVisible(true)}>
-            <View style={styles.settingLeft}>
-              <Ionicons name="people" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
-              <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
-                {i18n.t('settings.familyMembersList')}
+          {isGuest ? (
+            <View style={styles.familyGuestNotice}>
+              <Ionicons name="lock-closed-outline" size={20} color={currentTheme.textSecondary} />
+              <Text
+                style={[
+                  styles.familyGuestNoticeText,
+                  { color: currentTheme.textSecondary, fontSize: fontSizes.m },
+                ]}
+              >
+                {i18n.t('settings.familyGuestRestricted')}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
-          </SettingRow>
-          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
-          <SettingRow onPress={openFamilyModal}>
-            <View style={styles.settingLeft}>
-              <Ionicons name="key-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
-              <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
-                {i18n.t('settings.familyCodeManage')}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
-          </SettingRow>
-          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
-          <SettingRow onPress={openInviteModal}>
-            <View style={styles.settingLeft}>
-              <Ionicons name="people-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
-              <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
-                {i18n.t('settings.familyInvite')}
-              </Text>
-            </View>
-            <Ionicons name="share-outline" size={20} color={currentTheme.primary} />
-          </SettingRow>
+          ) : (
+            <>
+              <SettingRow onPress={() => setIsFamilyMembersModalVisible(true)}>
+                <View style={styles.settingLeft}>
+                  <Ionicons name="people" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+                  <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                    {i18n.t('settings.familyMembersList')}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
+              </SettingRow>
+              <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
+              <SettingRow onPress={openFamilyModal}>
+                <View style={styles.settingLeft}>
+                  <Ionicons name="key-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+                  <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                    {i18n.t('settings.familyCodeManage')}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
+              </SettingRow>
+              <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
+              <SettingRow onPress={openInviteModal}>
+                <View style={styles.settingLeft}>
+                  <Ionicons name="people-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+                  <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                    {i18n.t('settings.familyInvite')}
+                  </Text>
+                </View>
+                <Ionicons name="share-outline" size={20} color={currentTheme.primary} />
+              </SettingRow>
+            </>
+          )}
         </View>
 
         <Text style={[styles.sectionTitle, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
@@ -1448,6 +1465,8 @@ const styles = StyleSheet.create({
   modalTitle: { fontWeight: 'bold', marginBottom: 12 },
   modalDesc: { lineHeight: 22, marginBottom: 16 },
   modalLabel: { fontWeight: '600', marginBottom: 6 },
+  familyGuestNotice: { padding: 16, alignItems: 'center', gap: 8 },
+  familyGuestNoticeText: { textAlign: 'center', lineHeight: 20 },
   modalFamilyId: { padding: 12, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.05)', fontWeight: 'bold', textAlign: 'center' },
   modalFamilyIdLoading: { paddingVertical: 12 },
   modalInput: { borderWidth: 1, borderRadius: 10, padding: 12 },

@@ -8,21 +8,30 @@ import { getPetPhotoUrl } from '../../services/petPhotoUpload';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
 import { SCREEN_FRIEND_REGISTRATION } from '../../navigation/screenNames';
+import { usePlanTier } from '../../hooks/usePlanTier';
+import { isFriendUsableByPlanOrder } from '../../utils/planFriendUsage';
 import i18n from '../../i18n';
 
 export default function FriendListScreen({ navigation }) {
   const { currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { familyId } = useAuth();
+  const { entitlements } = usePlanTier();
   const { friends, loading } = useFamilyFriends(familyId);
 
   const renderItem = ({ item }) => {
     const photoUrl = getPetPhotoUrl(item);
+    const isUsable = isFriendUsableByPlanOrder(item.id, friends, entitlements);
     return (
       <TouchableOpacity
         style={[
           styles.friendCard,
-          { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.accentBorder },
+          {
+            backgroundColor: currentTheme.cardTinted,
+            borderColor: currentTheme.accentBorder,
+            borderLeftColor: isUsable ? currentTheme.primary : currentTheme.border,
+          },
+          !isUsable && styles.friendCardInactive,
         ]}
         onPress={() => navigation.navigate(SCREEN_FRIEND_REGISTRATION, { friendId: item.id })}
         activeOpacity={0.7}
@@ -42,9 +51,16 @@ export default function FriendListScreen({ navigation }) {
             </View>
           )}
         </View>
-        <Text style={[styles.friendName, { color: currentTheme.text }]} numberOfLines={1}>
-          {item.name}
-        </Text>
+        <View style={styles.friendInfo}>
+          <Text style={[styles.friendName, { color: currentTheme.text }]} numberOfLines={1}>
+            {item.name}
+          </Text>
+          {!isUsable ? (
+            <Text style={[styles.planInactiveLabel, { color: currentTheme.textSecondary }]}>
+              {i18n.t('friendList.planInactiveFriend')}
+            </Text>
+          ) : null}
+        </View>
         <Ionicons name="chevron-forward" size={22} color={currentTheme.textSecondary} />
       </TouchableOpacity>
     );
@@ -102,11 +118,15 @@ const createStyles = (fs) => ({
     marginBottom: 10,
     padding: 12,
     borderWidth: 1,
+    borderLeftWidth: 4,
   },
+  friendCardInactive: { opacity: 0.52 },
   avatarContainer: { marginRight: 12 },
   avatar: { width: 56, height: 56, borderRadius: 28, borderWidth: 1 },
   noImage: { justifyContent: 'center', alignItems: 'center' },
-  friendName: { flex: 1, fontSize: fs.l, fontWeight: 'bold' },
+  friendInfo: { flex: 1, minWidth: 0 },
+  friendName: { fontSize: fs.l, fontWeight: 'bold' },
+  planInactiveLabel: { fontSize: fs.s, fontWeight: '600', marginTop: 2 },
   fab: {
     position: 'absolute',
     right: 25,

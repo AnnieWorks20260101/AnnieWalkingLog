@@ -101,6 +101,7 @@ import {
   getUsablePetIds,
   isPetUsableByPlanOrder,
 } from '../../utils/planPetUsage';
+import { isFriendUsableByPlanOrder } from '../../utils/planFriendUsage';
 import {
   fetchWalkSessionSnapshot,
   isNativeWalkTrackingActive,
@@ -236,6 +237,10 @@ export default function WalkScreen({ navigation }) {
 
   const handleDisabledPetPress = () => {
     Alert.alert(i18n.t('common.notice'), i18n.t('walk.petInactiveForWalk'));
+  };
+
+  const handleDisabledFriendPress = () => {
+    Alert.alert(i18n.t('common.notice'), i18n.t('walk.friendInactiveForPlan'));
   };
 
   const refreshMapToCurrentLocation = async () => {
@@ -1042,6 +1047,8 @@ export default function WalkScreen({ navigation }) {
         visible={isFriendPickerVisible}
         friends={friends}
         onSelect={recordFriendMark}
+        isFriendUsable={(friendId) => isFriendUsableByPlanOrder(friendId, friends, entitlements)}
+        onDisabledFriendPress={handleDisabledFriendPress}
         onClose={() => setIsFriendPickerVisible(false)}
       />
 

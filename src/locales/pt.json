@@ -106,6 +106,7 @@
     "startWalk": "🐾 Iniciar",
     "selectPet": "Animais neste passeio (seleção múltipla)",
     "petInactiveForWalk": "Este animal não pode participar em passeios no seu plano atual. Use animais mais acima na ordem da lista.",
+    "friendInactiveForPlan": "Este amigo não pode ser selecionado no seu plano atual. Use amigos registados primeiro.",
     "petSelectLimit": "O seu plano permite até %{max} animais por passeio.",
     "noPetForWalk": "Adicione um animal em Definições 🐾",
     "defaultPetName": "Animal",
@@ -295,6 +296,7 @@
       "forest": "🌲 Floresta"
     },
     "familySectionTitle": "Família e conta",
+    "familyGuestRestricted": "O menu Família e conta não está disponível para contas de convidado.",
     "familyIdLabel": "Código familiar",
     "joinFamilyPlaceholder": "Introduza o código familiar (ex. ABCD-1234)",
     "joinFamilyNotFound": "Código familiar não encontrado",
@@ -456,7 +458,8 @@
   },
   "friendList": {
     "title": "Amigos",
-    "noFriends": "Ainda não há amigos.\nToque no botão em baixo à direita para adicionar um 🐾"
+    "noFriends": "Ainda não há amigos.\nToque no botão em baixo à direita para adicionar um 🐾",
+    "planInactiveFriend": "Não disponível no plano atual"
   },
   "friendRegistration": {
     "title": "Adicionar amigo",
@@ -589,6 +592,10 @@
         "title": "Limite de animais atingido",
         "message": "Não pode adicionar mais animais no plano atual. Premium: ilimitados. Gratuito: até 2 animais."
       },
+      "friend": {
+        "title": "Limite de amigos atingido",
+        "message": "Não pode adicionar mais amigos no plano atual. Premium: ilimitados. Gratuito: até 5 amigos."
+      },
       "photo": {
         "title": "Fotos do passeio",
         "message": "As fotos não estão disponíveis para convidados. Gratuito: até 3 fotos de baixa qualidade. Premium: até 10 fotos de alta qualidade."
@@ -610,7 +617,7 @@
       "colFree": "Gratuito",
       "colPremium": "Premium",
       "familyNote": "Premium aplica-se a toda a família. Um subscritor desbloqueia para todos com o mesmo código familiar.",
-      "downgradeNote": "Gratuito e Convidado também limitam quantos animais pode usar por ordem da lista (Gratuito: 2 primeiros, Convidado: 1.º), não apenas novos registos. Animais além disso permanecem na base de dados mas aparecem a cinzento e não podem ser selecionados para passeios ou filtros de histórico.",
+      "downgradeNote": "Gratuito e Convidado também limitam quantos animais pode usar por ordem da lista (Gratuito: 2 primeiros, Convidado: 1.º), não apenas novos registos. Animais além disso permanecem na base de dados mas aparecem a cinzento e não podem ser selecionados para passeios ou filtros de histórico. O mesmo aplica-se aos amigos por ordem de registo (Gratuito: 5 primeiros, Convidado: 2 primeiros) — os restantes ficam a cinzento e não podem ser selecionados ao adicionar um pin de amigo.",
       "rows": {
         "history": {
           "label": "Histórico de passeios",
@@ -622,6 +629,12 @@
           "label": "Animais",
           "guest": "1 reg · 1 uso",
           "registered": "2 reg · 2 uso",
+          "premium": "Ilimitados"
+        },
+        "friends": {
+          "label": "Amigos",
+          "guest": "2 reg · 2 uso",
+          "registered": "5 reg · 5 uso",
           "premium": "Ilimitados"
         },
         "photos": {

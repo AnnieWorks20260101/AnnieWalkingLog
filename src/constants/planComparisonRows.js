@@ -2,6 +2,7 @@
 export const PLAN_COMPARISON_ROW_IDS = [
   'history',
   'pets',
+  'friends',
   'photos',
   'graphCompare',
   'familyPremium',

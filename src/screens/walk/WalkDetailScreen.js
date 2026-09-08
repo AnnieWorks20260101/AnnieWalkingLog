@@ -57,6 +57,8 @@ import {
   STORE_REVIEW_PROMPT_DELAY_MS,
 } from '../../utils/storeReviewPrompt';
 import { hasSeenWalkMarkEditTip, setWalkMarkEditTipSeen } from '../../utils/walkMarkEditTipStorage';
+import { usePlanTier } from '../../hooks/usePlanTier';
+import { isFriendUsableByPlanOrder } from '../../utils/planFriendUsage';
 
 const DEFAULT_REGION = {
   latitude: 35.681236,
@@ -74,6 +76,7 @@ export default function WalkDetailScreen({ route, navigation }) {
   const { familyId, userId } = useAuth();
   const { pets } = useFamilyPets(familyId, userId);
   const { friends } = useFamilyFriends(familyId);
+  const { entitlements } = usePlanTier();
   const { customButtonId, customButtonIcon, sharePrivacyRadiusMeters } = useWalkPreferences();
   const insets = useSafeAreaInsets();
   const styles = useThemedStyles(createStyles);
@@ -453,6 +456,10 @@ export default function WalkDetailScreen({ route, navigation }) {
       return;
     }
     setIsFriendPickerVisible(true);
+  };
+
+  const handleDisabledFriendPress = () => {
+    Alert.alert(i18n.t('common.notice'), i18n.t('walk.friendInactiveForPlan'));
   };
 
   const handleBackPress = useCallback(() => {
@@ -916,6 +923,8 @@ export default function WalkDetailScreen({ route, navigation }) {
         visible={isFriendPickerVisible}
         friends={friends}
         onSelect={beginAddFriendMark}
+        isFriendUsable={(friendId) => isFriendUsableByPlanOrder(friendId, friends, entitlements)}
+        onDisabledFriendPress={handleDisabledFriendPress}
         onClose={() => setIsFriendPickerVisible(false)}
       />
 
