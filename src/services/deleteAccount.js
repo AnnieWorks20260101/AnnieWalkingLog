@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { deleteFamilyStorageAssets } from './storageFamilyCleanup';
+import { deleteInviteCodeLookup } from './familyInviteService';
 import {
   isAccountDeletionInProgress,
   setAccountDeletionInProgress,
@@ -31,6 +32,13 @@ async function deleteFamilyData(familyId) {
     query(collection(db, 'pets'), where('familyId', '==', familyId))
   );
   await Promise.all(petsSnap.docs.map((petDoc) => deleteDoc(petDoc.ref)));
+
+  const friendsSnap = await getDocs(
+    query(collection(db, 'pet_friends'), where('familyId', '==', familyId))
+  );
+  await Promise.all(friendsSnap.docs.map((friendDoc) => deleteDoc(friendDoc.ref)));
+
+  await deleteInviteCodeLookup(familyId);
 
   const familyRef = doc(db, 'families', familyId);
   const familySnap = await getDoc(familyRef);

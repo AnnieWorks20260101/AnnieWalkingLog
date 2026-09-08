@@ -8,6 +8,9 @@ export const SCREEN_WALK_MAIN = 'WalkMain';
 export const SCREEN_PET_LIST = 'PetList';
 export const SCREEN_PET_REGISTRATION = 'PetRegistration';
 
+export const SCREEN_FRIEND_LIST = 'FriendList';
+export const SCREEN_FRIEND_REGISTRATION = 'FriendRegistration';
+
 export const SCREEN_SETTINGS_MAIN = 'SettingsMain';
 export const SCREEN_PERMISSIONS_CHECK = 'PermissionsCheck';
 export const SCREEN_GUEST_UPGRADE = 'GuestUpgrade';

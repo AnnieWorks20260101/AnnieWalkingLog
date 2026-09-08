@@ -24,6 +24,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, db } from '../services/firebase';
 import { deleteGuestAccount } from '../services/deleteAccount';
+import { resolveInviteInputToFamilyId } from '../services/familyInviteService';
 import { registerForPushNotificationsAsync } from '../services/pushNotifications';
 import {
   getGoogleSignInTokens,
@@ -388,21 +389,21 @@ export function AuthProvider({ children }) {
 
   const joinFamily = useCallback(
     async (targetFamilyId, name) => {
-      const trimmed = targetFamilyId?.trim();
-      if (!trimmed || !userId) {
+      const inputValue = targetFamilyId?.trim();
+      if (!inputValue || !userId) {
         return { success: false, reason: 'invalid' };
       }
 
-      const familySnap = await getDoc(doc(db, 'families', trimmed));
-      if (!familySnap.exists()) {
+      const resolvedFamilyId = await resolveInviteInputToFamilyId(inputValue);
+      if (!resolvedFamilyId) {
         return { success: false, reason: 'notFound' };
       }
 
-      const memberRef = doc(db, 'family_members', `${trimmed}_${userId}`);
+      const memberRef = doc(db, 'family_members', `${resolvedFamilyId}_${userId}`);
       const memberSnap = await getDoc(memberRef);
       if (!memberSnap.exists()) {
         await setDoc(memberRef, {
-          familyId: trimmed,
+          familyId: resolvedFamilyId,
           userId,
           role: 'member',
           joinedAt: serverTimestamp(),
@@ -410,7 +411,7 @@ export function AuthProvider({ children }) {
       }
 
       const userPatch = {
-        activeFamilyId: trimmed,
+        activeFamilyId: resolvedFamilyId,
         isGuest: false,
         updatedAt: serverTimestamp(),
       };
@@ -419,7 +420,7 @@ export function AuthProvider({ children }) {
       }
 
       await setDoc(doc(db, 'users', userId), userPatch, { merge: true });
-      setFamilyId(trimmed);
+      setFamilyId(resolvedFamilyId);
       if (name?.trim()) {
         setDisplayName(name.trim());
       }

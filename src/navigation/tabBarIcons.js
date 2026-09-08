@@ -1,4 +1,4 @@
-import { TAB_WALK_LOG, TAB_WALK_GRAPH, TAB_WALK, TAB_PETS, TAB_SETTINGS } from './tabNames';
+import { TAB_WALK_LOG, TAB_WALK_GRAPH, TAB_WALK, TAB_PETS, TAB_FRIENDS, TAB_SETTINGS } from './tabNames';
 
 /** タブごとのアイコン名（未選択は outline、選択中は塗り） */
 export function getTabBarIconName(routeName, focused) {
@@ -11,6 +11,8 @@ export function getTabBarIconName(routeName, focused) {
       return focused ? 'walk' : 'walk-outline';
     case TAB_PETS:
       return focused ? 'paw' : 'paw-outline';
+    case TAB_FRIENDS:
+      return focused ? 'people' : 'people-outline';
     case TAB_SETTINGS:
       return focused ? 'settings' : 'settings-outline';
     default:

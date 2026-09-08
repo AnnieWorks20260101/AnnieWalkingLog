@@ -99,6 +99,7 @@ export function applyWalkSharePrivacy(walk, radiusMeters) {
     route,
     poops: filterMarksForShare(walk?.poops ?? [], start, end, radiusMeters),
     customMarks: filterMarksForShare(walk?.customMarks ?? [], start, end, radiusMeters),
+    friendMarks: filterMarksForShare(walk?.friendMarks ?? [], start, end, radiusMeters),
     photos: filterPhotosForShare(walk?.photos ?? [], start, end, radiusMeters),
     routeFullyHidden: radiusMeters > 0 && fullRoute.length >= 2 && route.length < 2,
     privacyApplied: radiusMeters > 0,

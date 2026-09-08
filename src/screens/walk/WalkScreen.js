@@ -4,6 +4,7 @@ import {
   Text,
   View,
   TouchableOpacity,
+  Image,
   Alert,
   Linking,
   Platform,
@@ -12,7 +13,9 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useFamilyPets } from '../../hooks/useFamilyPets';
+import { useFamilyFriends } from '../../hooks/useFamilyFriends';
 import PetSelector from '../../components/PetSelector';
+import FriendPickerModal from '../../components/walk/FriendPickerModal';
 import BackgroundLocationDisclosureModal from '../../components/BackgroundLocationDisclosureModal';
 import BackgroundActivityGuideModal from '../../components/BackgroundActivityGuideModal';
 import * as Location from 'expo-location';
@@ -51,6 +54,7 @@ import {
 } from '../../utils/storeReviewPrompt';
 import { setWalkTrackingActive } from '../../navigation/walkSessionFlag';
 import { getCurrentWalkMapCoordinate } from '../../utils/walkMapMarks';
+import { createFriendMark } from '../../services/walkMapMarks';
 import {
   isBackgroundLocationGranted,
   isWalkBackgroundLocationReady,
@@ -145,6 +149,7 @@ export default function WalkScreen({ navigation }) {
   const styles = useThemedStyles(createStyles);
   const { userId, familyId, displayName } = useAuth();
   const { pets } = useFamilyPets(familyId, userId);
+  const { friends } = useFamilyFriends(familyId);
   const maxSelectable = entitlements.maxPets ?? Number.POSITIVE_INFINITY;
   const usablePetIds = useMemo(
     () => getUsablePetIds(pets, entitlements),
@@ -154,6 +159,8 @@ export default function WalkScreen({ navigation }) {
   const [route, setRoute] = useState([]);
   const [poops, setPoops] = useState([]);
   const [customMarks, setCustomMarks] = useState([]);
+  const [friendMarks, setFriendMarks] = useState([]);
+  const [isFriendPickerVisible, setIsFriendPickerVisible] = useState(false);
   const [pendingPhotos, setPendingPhotos] = useState([]);
   const [isSavingWalk, setIsSavingWalk] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
@@ -459,6 +466,7 @@ export default function WalkScreen({ navigation }) {
       setRoute([]);
       setPoops([]);
       setCustomMarks([]);
+      setFriendMarks([]);
       setPendingPhotos([]);
       setStartTime(new Date());
       await AsyncStorage.removeItem(TEMP_ROUTE_KEY);
@@ -556,6 +564,7 @@ export default function WalkScreen({ navigation }) {
           setRoute([]);
           setPoops([]);
           setCustomMarks([]);
+          setFriendMarks([]);
           setPendingPhotos([]);
         },
       },
@@ -597,6 +606,7 @@ export default function WalkScreen({ navigation }) {
     setRoute([]);
     setPoops([]);
     setCustomMarks([]);
+    setFriendMarks([]);
     setPendingPhotos([]);
     setIsTracking(false);
     setWalkTrackingActive(false);
@@ -662,6 +672,7 @@ export default function WalkScreen({ navigation }) {
         route: finalRoute,
         poops: poops,
         customMarks: customMarks,
+        friendMarks: friendMarks,
         photos: [],
         memos: [],
         ...(startWeatherRef.current ? { startWeather: startWeatherRef.current } : {}),
@@ -831,6 +842,27 @@ export default function WalkScreen({ navigation }) {
     ]);
   };
 
+  const openFriendPicker = () => {
+    if (friends.length === 0) {
+      Alert.alert(i18n.t('walk.friendPickerEmptyTitle'), i18n.t('walk.friendPickerEmptyMsg'));
+      return;
+    }
+    setIsFriendPickerVisible(true);
+  };
+
+  const recordFriendMark = async (friend) => {
+    setIsFriendPickerVisible(false);
+    const coordinate = await getCurrentWalkMapCoordinate();
+    setFriendMarks((prev) => [
+      ...prev,
+      createFriendMark(coordinate, {
+        friendPetId: friend.id,
+        name: friend.name,
+        photoUrl: friend.photoUrl,
+      }),
+    ]);
+  };
+
   const canStartWalk = !isTracking && selectedPetIds.length > 0;
 
   const liveDistanceKm = useMemo(() => calculateTotalDistance(route), [route]);
@@ -852,7 +884,7 @@ export default function WalkScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-      <ScreenHeader title={isTracking ? i18n.t('walk.walking') : i18n.t('walk.title')} />
+      <ScreenHeader title={isTracking ? i18n.t('walk.walking') : i18n.t('walk.title')} showSettings />
 
       <BackgroundLocationDisclosureModal
         visible={isDisclosureVisible}
@@ -921,6 +953,17 @@ export default function WalkScreen({ navigation }) {
               <Text style={{ fontSize: 30 }}>{mark.icon}</Text>
             </Marker>
           ))}
+          {friendMarks.map((mark, index) => (
+            <Marker key={`friend-${index}`} coordinate={mark}>
+              {mark.photoUrl ? (
+                <Image source={{ uri: mark.photoUrl }} style={styles.friendMarkerImage} />
+              ) : (
+                <View style={[styles.friendMarkerFallback, { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary }]}>
+                  <Ionicons name="paw" size={20} color={currentTheme.primary} />
+                </View>
+              )}
+            </Marker>
+          ))}
           {pendingPhotos.map((photo, index) => (
             <Marker key={`photo-${index}`} coordinate={photo}>
               <Text style={{ fontSize: 30 }}>📷</Text>
@@ -980,9 +1023,27 @@ export default function WalkScreen({ navigation }) {
             >
               <Text style={styles.trackingActionEmoji}>{i18n.t('walk.poopLabel')}</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.trackingActionButton,
+                { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary },
+              ]}
+              onPress={openFriendPicker}
+              activeOpacity={0.85}
+              accessibilityLabel={i18n.t('walk.friendMarkLabel')}
+            >
+              <Ionicons name="people" size={32} color={currentTheme.primary} />
+            </TouchableOpacity>
           </View>
         )}
       </View>
+
+      <FriendPickerModal
+        visible={isFriendPickerVisible}
+        friends={friends}
+        onSelect={recordFriendMark}
+        onClose={() => setIsFriendPickerVisible(false)}
+      />
 
       {isTracking ? (
         <View
@@ -1114,6 +1175,15 @@ const createStyles = (fs) => ({
     shadowRadius: 3,
   },
   trackingActionEmoji: { fontSize: 32 },
+  friendMarkerImage: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: '#fff' },
+  friendMarkerFallback: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   savingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255,255,255,0.75)',

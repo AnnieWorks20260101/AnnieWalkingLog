@@ -18,7 +18,7 @@ import ThemedStatusBar from './src/components/ThemedStatusBar';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import RevenueCatSync from './src/components/RevenueCatSync';
 import i18n from './src/i18n';
-import { TAB_WALK_LOG, TAB_WALK_GRAPH, TAB_WALK, TAB_PETS, TAB_SETTINGS } from './src/navigation/tabNames';
+import { TAB_WALK_LOG, TAB_WALK_GRAPH, TAB_WALK, TAB_PETS, TAB_FRIENDS, TAB_SETTINGS } from './src/navigation/tabNames';
 import {
   SCREEN_HISTORY,
   SCREEN_WALK_DETAIL,
@@ -26,6 +26,8 @@ import {
   SCREEN_WALK_MAIN,
   SCREEN_PET_LIST,
   SCREEN_PET_REGISTRATION,
+  SCREEN_FRIEND_LIST,
+  SCREEN_FRIEND_REGISTRATION,
   SCREEN_SETTINGS_MAIN,
   SCREEN_PERMISSIONS_CHECK,
   SCREEN_GUEST_UPGRADE,
@@ -56,6 +58,8 @@ import PremiumScreen from './src/screens/settings/PremiumScreen';
 import FaqScreen from './src/screens/settings/FaqScreen';
 import PetListScreen from './src/screens/pet/PetListScreen';
 import PetRegistrationScreen from './src/screens/pet/PetRegistrationScreen';
+import FriendListScreen from './src/screens/friend/FriendListScreen';
+import FriendRegistrationScreen from './src/screens/friend/FriendRegistrationScreen';
 import GuestUpgradeScreen from './src/screens/settings/GuestUpgradeScreen';
 import { NavigationRefContext } from './src/navigation/NavigationRefContext';
 import AppBackHandler from './src/navigation/AppBackHandler';
@@ -87,6 +91,15 @@ function PetStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name={SCREEN_PET_LIST} component={PetListScreen} />
       <Stack.Screen name={SCREEN_PET_REGISTRATION} component={PetRegistrationScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function FriendStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name={SCREEN_FRIEND_LIST} component={FriendListScreen} />
+      <Stack.Screen name={SCREEN_FRIEND_REGISTRATION} component={FriendRegistrationScreen} />
     </Stack.Navigator>
   );
 }
@@ -149,6 +162,11 @@ function MainApp({ initialTab = TAB_WALK }) {
           name={TAB_PETS}
           component={PetStack}
           options={{ tabBarLabel: i18n.t('tabs.pets') }}
+        />
+        <Tab.Screen
+          name={TAB_FRIENDS}
+          component={FriendStack}
+          options={{ tabBarLabel: i18n.t('tabs.friends') }}
         />
         <Tab.Screen
           name={TAB_SETTINGS}

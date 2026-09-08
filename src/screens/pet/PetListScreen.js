@@ -283,7 +283,7 @@ export default function PetListScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-      <ScreenHeader title={i18n.t('petList.title')} />
+      <ScreenHeader title={i18n.t('petList.title')} showSettings />
 
       {pets.length === 0 ? (
         <View style={styles.emptyContainer}>

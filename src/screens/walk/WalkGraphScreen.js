@@ -70,7 +70,7 @@ export default function WalkGraphScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-      <ScreenHeader title={i18n.t('tabs.walkGraph')} />
+      <ScreenHeader title={i18n.t('tabs.walkGraph')} showSettings />
 
       <PetFilterRow
         pets={pets}

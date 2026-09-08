@@ -207,7 +207,7 @@ export default function HistoryScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-      <ScreenHeader title={i18n.t('walk.historyTitle')} />
+      <ScreenHeader title={i18n.t('walk.historyTitle')} showSettings />
       <FlatList
         style={styles.list}
         data={filteredWalks}

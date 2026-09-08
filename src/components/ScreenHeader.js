@@ -6,6 +6,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { NavigationRefContext } from '../navigation/NavigationRefContext';
 import { handleAppBackPress } from '../navigation/appBackNavigation';
+import { TAB_SETTINGS } from '../navigation/tabNames';
+import { SCREEN_SETTINGS_MAIN } from '../navigation/screenNames';
+import i18n from '../i18n';
 
 export default function ScreenHeader({
   title,
@@ -13,6 +16,7 @@ export default function ScreenHeader({
   onBackPress,
   compact = false,
   rightAction = null,
+  showSettings = false,
   children,
 }) {
   const { currentTheme, fontSizes } = useTheme();
@@ -31,6 +35,12 @@ export default function ScreenHeader({
     }
     if (navigation.canGoBack()) {
       navigation.goBack();
+    }
+  };
+
+  const handleSettingsPress = () => {
+    if (navigationRef?.isReady?.()) {
+      navigationRef.navigate(TAB_SETTINGS, { screen: SCREEN_SETTINGS_MAIN });
     }
   };
 
@@ -73,6 +83,17 @@ export default function ScreenHeader({
           {title}
         </Text>
         {rightAction ? <View style={styles.rightAction}>{rightAction}</View> : null}
+        {showSettings ? (
+          <TouchableOpacity
+            onPress={handleSettingsPress}
+            style={styles.rightAction}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('tabs.settings')}
+          >
+            <Ionicons name="settings-outline" size={compact ? 22 : 24} color={accentColor} />
+          </TouchableOpacity>
+        ) : null}
       </View>
       {children ? <View style={[styles.extra, compact && styles.extraCompact]}>{children}</View> : null}
     </View>

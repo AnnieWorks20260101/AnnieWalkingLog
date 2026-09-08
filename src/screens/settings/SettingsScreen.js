@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -50,6 +50,7 @@ import { openTermsOfService } from '../../utils/openTermsOfService';
 import { buildFamilyExportPayload } from '../../services/exportFamilyData';
 import { shareExportJsonFile } from '../../utils/shareExportJson';
 import FamilyMembersModal from '../../components/settings/FamilyMembersModal';
+import { ensureFamilyInviteCode } from '../../services/familyInviteService';
 import {
   seedTestWalksForFamily,
   estimateTestWalkSeedCount,
@@ -114,6 +115,8 @@ export default function SettingsScreen({ navigation }) {
   );
 
   const [editFamilyId, setEditFamilyId] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCodeLoading, setInviteCodeLoading] = useState(false);
   const [testDevRunning, setTestDevRunning] = useState(false);
   const [testDevProgress, setTestDevProgress] = useState({ done: 0, total: 0 });
   const [guestLogoutRunning, setGuestLogoutRunning] = useState(false);
@@ -122,9 +125,34 @@ export default function SettingsScreen({ navigation }) {
 
   const appVersion = Constants.expoConfig?.version || '1.0.0';
 
+  useEffect(() => {
+    setInviteCode('');
+  }, [familyId]);
+
+  const ensureInviteCode = useCallback(async () => {
+    if (!familyId || inviteCode || inviteCodeLoading) {
+      return;
+    }
+    setInviteCodeLoading(true);
+    try {
+      const code = await ensureFamilyInviteCode(familyId);
+      setInviteCode(code);
+    } catch (error) {
+      console.error('ensureFamilyInviteCode failed:', error);
+    } finally {
+      setInviteCodeLoading(false);
+    }
+  }, [familyId, inviteCode, inviteCodeLoading]);
+
   const openFamilyModal = () => {
-    setEditFamilyId(familyId || '');
+    setEditFamilyId('');
     setIsFamilyModalVisible(true);
+    ensureInviteCode();
+  };
+
+  const openInviteModal = () => {
+    setIsInviteModalVisible(true);
+    ensureInviteCode();
   };
 
   const handleSaveFamilyId = async () => {
@@ -156,7 +184,11 @@ export default function SettingsScreen({ navigation }) {
       return;
     }
     try {
-      await Share.share({ message: i18n.t('settings.inviteMessage', { familyId }) });
+      const code = inviteCode || (await ensureFamilyInviteCode(familyId));
+      if (!inviteCode) {
+        setInviteCode(code);
+      }
+      await Share.share({ message: i18n.t('settings.inviteMessage', { inviteCode: code }) });
     } catch (error) {
       console.error(error);
       Alert.alert(i18n.t('common.error'), i18n.t('settings.inviteError'));
@@ -398,7 +430,7 @@ export default function SettingsScreen({ navigation }) {
 
   return (
     <View style={[styles.wrapper, { backgroundColor: currentTheme.background }]}>
-      <ScreenHeader title={i18n.t('settings.title')} />
+      <ScreenHeader title={i18n.t('settings.title')} showBack />
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
         {isGuest ? (
           <TouchableOpacity
@@ -633,7 +665,7 @@ export default function SettingsScreen({ navigation }) {
             <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
           </SettingRow>
           <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
-          <SettingRow onPress={() => setIsInviteModalVisible(true)}>
+          <SettingRow onPress={openInviteModal}>
             <View style={styles.settingLeft}>
               <Ionicons name="people-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
               <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
@@ -938,9 +970,13 @@ export default function SettingsScreen({ navigation }) {
             <Text style={[styles.modalLabel, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
               {i18n.t('settings.familyIdLabel')}
             </Text>
-            <Text style={[styles.modalFamilyId, { color: currentTheme.text, fontSize: fontSizes.s }]} selectable>
-              {familyId || '-'}
-            </Text>
+            {inviteCodeLoading ? (
+              <ActivityIndicator size="small" color={currentTheme.primary} style={styles.modalFamilyIdLoading} />
+            ) : (
+              <Text style={[styles.modalFamilyId, { color: currentTheme.text, fontSize: fontSizes.s }]} selectable>
+                {inviteCode || '-'}
+              </Text>
+            )}
             <Text style={[styles.modalLabel, { color: currentTheme.textSecondary, fontSize: fontSizes.s, marginTop: 16 }]}>
               {i18n.t('settings.familyCodeChangeLabel')}
             </Text>
@@ -989,9 +1025,13 @@ export default function SettingsScreen({ navigation }) {
             <Text style={[styles.modalLabel, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
               {i18n.t('settings.familyIdLabel')}
             </Text>
-            <Text style={[styles.modalFamilyId, { color: currentTheme.text, fontSize: fontSizes.s }]} selectable>
-              {familyId || '-'}
-            </Text>
+            {inviteCodeLoading ? (
+              <ActivityIndicator size="small" color={currentTheme.primary} style={styles.modalFamilyIdLoading} />
+            ) : (
+              <Text style={[styles.modalFamilyId, { color: currentTheme.text, fontSize: fontSizes.l }]} selectable>
+                {inviteCode || '-'}
+              </Text>
+            )}
             <TouchableOpacity
               style={[styles.inviteShareButton, { backgroundColor: currentTheme.primary }]}
               onPress={handleInviteShare}
@@ -1408,7 +1448,8 @@ const styles = StyleSheet.create({
   modalTitle: { fontWeight: 'bold', marginBottom: 12 },
   modalDesc: { lineHeight: 22, marginBottom: 16 },
   modalLabel: { fontWeight: '600', marginBottom: 6 },
-  modalFamilyId: { padding: 12, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.05)' },
+  modalFamilyId: { padding: 12, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.05)', fontWeight: 'bold', textAlign: 'center' },
+  modalFamilyIdLoading: { paddingVertical: 12 },
   modalInput: { borderWidth: 1, borderRadius: 10, padding: 12 },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 24, gap: 12 },
   modalCancel: { padding: 12 },

@@ -5,6 +5,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Image,
   ScrollView,
   Alert,
   BackHandler,
@@ -17,11 +18,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useWalkPreferences } from '../../contexts/WalkPreferencesContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useFamilyPets } from '../../hooks/useFamilyPets';
+import { useFamilyFriends } from '../../hooks/useFamilyFriends';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import WalkMemoModal from '../../components/walk/WalkMemoModal';
 import WalkDetailTipModal from '../../components/walk/WalkDetailTipModal';
 import WalkSharePreviewModal from '../../components/walk/WalkSharePreviewModal';
+import FriendPickerModal from '../../components/walk/FriendPickerModal';
 import WalkMarkEditBar, { WALK_MARK_EDIT_BAR_HEIGHT } from '../../components/walk/WalkMarkEditBar';
 import WalkPetChips from '../../components/walk/WalkPetChips';
 import i18n from '../../i18n';
@@ -41,7 +44,14 @@ import { getWalkPhotoCoordinate, walkHasPhotos, getWalkPhotos } from '../../util
 import { SCREEN_WALK_PHOTOS } from '../../navigation/screenNames';
 import { closeWalkDetailToHistory } from '../../navigation/walkNavigation';
 import { createWalkMemo, persistWalkMemos } from '../../services/walkMemos';
-import { moveWalkMark, persistWalkMapMarks, createPoopMark, createCustomMark, removeWalkMark } from '../../services/walkMapMarks';
+import {
+  moveWalkMark,
+  persistWalkMapMarks,
+  createPoopMark,
+  createCustomMark,
+  createFriendMark,
+  removeWalkMark,
+} from '../../services/walkMapMarks';
 import {
   maybeRequestStoreReview,
   STORE_REVIEW_PROMPT_DELAY_MS,
@@ -63,6 +73,7 @@ export default function WalkDetailScreen({ route, navigation }) {
   const { unitSystem, timeFormat, language } = useDisplayPreferences();
   const { familyId, userId } = useAuth();
   const { pets } = useFamilyPets(familyId, userId);
+  const { friends } = useFamilyFriends(familyId);
   const { customButtonId, customButtonIcon, sharePrivacyRadiusMeters } = useWalkPreferences();
   const insets = useSafeAreaInsets();
   const styles = useThemedStyles(createStyles);
@@ -81,6 +92,10 @@ export default function WalkDetailScreen({ route, navigation }) {
   const [customMarks, setCustomMarks] = useState(() =>
     Array.isArray(walk.customMarks) ? walk.customMarks : []
   );
+  const [friendMarks, setFriendMarks] = useState(() =>
+    Array.isArray(walk.friendMarks) ? walk.friendMarks : []
+  );
+  const [isFriendPickerVisible, setIsFriendPickerVisible] = useState(false);
   const [editingMark, setEditingMark] = useState(null);
   const [editingIsNew, setEditingIsNew] = useState(false);
   const [markSaving, setMarkSaving] = useState(false);
@@ -96,6 +111,7 @@ export default function WalkDetailScreen({ route, navigation }) {
   useEffect(() => {
     setPoops(Array.isArray(walk.poops) ? walk.poops : []);
     setCustomMarks(Array.isArray(walk.customMarks) ? walk.customMarks : []);
+    setFriendMarks(Array.isArray(walk.friendMarks) ? walk.friendMarks : []);
     setEditingMark(null);
     setEditingIsNew(false);
   }, [walk.id]);
@@ -107,8 +123,8 @@ export default function WalkDetailScreen({ route, navigation }) {
   );
 
   const mapCoordinates = useMemo(
-    () => [...walkRoute, ...poops, ...customMarks, ...photoCoordinates],
-    [walkRoute, poops, customMarks, photoCoordinates]
+    () => [...walkRoute, ...poops, ...customMarks, ...friendMarks, ...photoCoordinates],
+    [walkRoute, poops, customMarks, friendMarks, photoCoordinates]
   );
 
   const initialRegion = useMemo(
@@ -202,7 +218,8 @@ export default function WalkDetailScreen({ route, navigation }) {
       if (editingMark) {
         return;
       }
-      const source = type === 'poop' ? poops[index] : customMarks[index];
+      const source =
+        type === 'poop' ? poops[index] : type === 'custom' ? customMarks[index] : friendMarks[index];
       if (!source) {
         return;
       }
@@ -217,7 +234,7 @@ export default function WalkDetailScreen({ route, navigation }) {
         });
       });
     },
-    [walkId, markSaving, editingMark, poops, customMarks]
+    [walkId, markSaving, editingMark, poops, customMarks, friendMarks]
   );
 
   const cancelMarkEdit = useCallback(() => {
@@ -227,8 +244,10 @@ export default function WalkDetailScreen({ route, navigation }) {
     if (editingMark && editingIsNew) {
       if (editingMark.type === 'poop') {
         setPoops((prev) => removeWalkMark(prev, editingMark.index));
-      } else {
+      } else if (editingMark.type === 'custom') {
         setCustomMarks((prev) => removeWalkMark(prev, editingMark.index));
+      } else if (editingMark.type === 'friend') {
+        setFriendMarks((prev) => removeWalkMark(prev, editingMark.index));
       }
     }
     setEditingMark(null);
@@ -281,9 +300,18 @@ export default function WalkDetailScreen({ route, navigation }) {
         editingMark.type === 'custom'
           ? moveWalkMark(customMarks, editingMark.index, coordinate)
           : customMarks;
+      const nextFriendMarks =
+        editingMark.type === 'friend'
+          ? moveWalkMark(friendMarks, editingMark.index, coordinate)
+          : friendMarks;
       setPoops(nextPoops);
       setCustomMarks(nextCustomMarks);
-      await persistWalkMapMarks(walkId, { poops: nextPoops, customMarks: nextCustomMarks });
+      setFriendMarks(nextFriendMarks);
+      await persistWalkMapMarks(walkId, {
+        poops: nextPoops,
+        customMarks: nextCustomMarks,
+        friendMarks: nextFriendMarks,
+      });
       clearMarkEdit();
     } catch (error) {
       console.error('walk mark save error:', error);
@@ -297,9 +325,54 @@ export default function WalkDetailScreen({ route, navigation }) {
     markSaving,
     poops,
     customMarks,
+    friendMarks,
     clearMarkEdit,
     resolveAddCoordinate,
   ]);
+
+  const performDeleteMark = useCallback(async () => {
+    if (!walkId || !editingMark || markSaving) {
+      return;
+    }
+
+    setMarkSaving(true);
+    try {
+      const nextPoops =
+        editingMark.type === 'poop' ? removeWalkMark(poops, editingMark.index) : poops;
+      const nextCustomMarks =
+        editingMark.type === 'custom' ? removeWalkMark(customMarks, editingMark.index) : customMarks;
+      const nextFriendMarks =
+        editingMark.type === 'friend' ? removeWalkMark(friendMarks, editingMark.index) : friendMarks;
+      setPoops(nextPoops);
+      setCustomMarks(nextCustomMarks);
+      setFriendMarks(nextFriendMarks);
+      await persistWalkMapMarks(walkId, {
+        poops: nextPoops,
+        customMarks: nextCustomMarks,
+        friendMarks: nextFriendMarks,
+      });
+      clearMarkEdit();
+    } catch (error) {
+      console.error('walk mark delete error:', error);
+      Alert.alert(i18n.t('common.error'), i18n.t('walk.markEditSaveError'));
+    } finally {
+      setMarkSaving(false);
+    }
+  }, [walkId, editingMark, markSaving, poops, customMarks, friendMarks, clearMarkEdit]);
+
+  const handleDeleteMark = useCallback(() => {
+    if (!editingMark || markSaving) {
+      return;
+    }
+    Alert.alert(
+      i18n.t('walk.markDeleteConfirmTitle'),
+      i18n.t('walk.markDeleteConfirmMsg'),
+      [
+        { text: i18n.t('walk.cancel'), style: 'cancel' },
+        { text: i18n.t('walk.delete'), style: 'destructive', onPress: performDeleteMark },
+      ]
+    );
+  }, [editingMark, markSaving, performDeleteMark]);
 
   const beginAddMark = useCallback(
     async (type) => {
@@ -344,6 +417,44 @@ export default function WalkDetailScreen({ route, navigation }) {
     ]
   );
 
+  const beginAddFriendMark = useCallback(
+    async (friend) => {
+      setIsFriendPickerVisible(false);
+      if (!walkId || markSaving || editingMark || addingMarkRef.current) {
+        return;
+      }
+      addingMarkRef.current = true;
+      try {
+        const coordinate = await resolveAddCoordinate();
+        const next = [
+          ...friendMarks,
+          createFriendMark(coordinate, {
+            friendPetId: friend.id,
+            name: friend.name,
+            photoUrl: friend.photoUrl,
+          }),
+        ];
+        setFriendMarks(next);
+        setEditingMark({ type: 'friend', index: next.length - 1 });
+        setEditingIsNew(true);
+      } catch (error) {
+        console.error('beginAddFriendMark failed:', error);
+        Alert.alert(i18n.t('common.error'), i18n.t('walk.markEditSaveError'));
+      } finally {
+        addingMarkRef.current = false;
+      }
+    },
+    [walkId, markSaving, editingMark, resolveAddCoordinate, friendMarks]
+  );
+
+  const openFriendPickerForAdd = () => {
+    if (friends.length === 0) {
+      Alert.alert(i18n.t('walk.friendPickerEmptyTitle'), i18n.t('walk.friendPickerEmptyMsg'));
+      return;
+    }
+    setIsFriendPickerVisible(true);
+  };
+
   const handleBackPress = useCallback(() => {
     if (editingMark) {
       cancelMarkEdit();
@@ -370,9 +481,13 @@ export default function WalkDetailScreen({ route, navigation }) {
     if (editingMark.type === 'poop') {
       return i18n.t(editingIsNew ? 'walk.markAddTitlePoop' : 'walk.markEditTitlePoop');
     }
+    if (editingMark.type === 'friend') {
+      const name = friendMarks[editingMark.index]?.name || '';
+      return i18n.t(editingIsNew ? 'walk.markAddTitleFriend' : 'walk.markEditTitleFriend', { name });
+    }
     const icon = customMarks[editingMark.index]?.icon || customButtonIcon || '💦';
     return i18n.t(editingIsNew ? 'walk.markAddTitleCustom' : 'walk.markEditTitleCustom', { icon });
-  }, [editingMark, editingIsNew, customMarks, customButtonIcon]);
+  }, [editingMark, editingIsNew, customMarks, friendMarks, customButtonIcon]);
 
   const editingOverlayIcon = useMemo(() => {
     if (!editingMark) {
@@ -381,8 +496,18 @@ export default function WalkDetailScreen({ route, navigation }) {
     if (editingMark.type === 'poop') {
       return '💩';
     }
+    if (editingMark.type === 'friend') {
+      return '';
+    }
     return customMarks[editingMark.index]?.icon || customButtonIcon || '💦';
   }, [editingMark, customMarks, customButtonIcon]);
+
+  const editingOverlayFriendPhoto = useMemo(() => {
+    if (!editingMark || editingMark.type !== 'friend') {
+      return null;
+    }
+    return friendMarks[editingMark.index]?.photoUrl || null;
+  }, [editingMark, friendMarks]);
 
   const renderEditMarker = (type, mark, index, label) => {
     if (isEditingMark(type, index)) {
@@ -400,6 +525,32 @@ export default function WalkDetailScreen({ route, navigation }) {
         }}
       >
         <Text style={{ fontSize: 30 }}>{label}</Text>
+      </Marker>
+    );
+  };
+
+  const renderFriendEditMarker = (mark, index) => {
+    if (isEditingMark('friend', index)) {
+      return null;
+    }
+    return (
+      <Marker
+        key={`friend-${index}`}
+        coordinate={mark}
+        anchor={{ x: 0.5, y: 0.5 }}
+        tracksViewChanges
+        onPress={(event) => {
+          event?.stopPropagation?.();
+          beginMarkEdit('friend', index);
+        }}
+      >
+        {mark.photoUrl ? (
+          <Image source={{ uri: mark.photoUrl }} style={styles.friendMarkerImage} />
+        ) : (
+          <View style={[styles.friendMarkerFallback, { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary }]}>
+            <Ionicons name="paw" size={20} color={currentTheme.primary} />
+          </View>
+        )}
       </Marker>
     );
   };
@@ -643,6 +794,7 @@ export default function WalkDetailScreen({ route, navigation }) {
             {customMarks.map((mark, index) =>
               renderEditMarker('custom', mark, index, mark.icon || '💦')
             )}
+            {friendMarks.map((mark, index) => renderFriendEditMarker(mark, index))}
             {photos.map((photo, index) => {
               const coordinate = getWalkPhotoCoordinate(photo);
               if (!coordinate) {
@@ -662,7 +814,13 @@ export default function WalkDetailScreen({ route, navigation }) {
               pointerEvents="none"
             >
               <View style={[styles.selectedMarkHalo, { borderColor: currentTheme.primary }]}>
-                <Text style={{ fontSize: 36 }}>{editingOverlayIcon}</Text>
+                {editingOverlayFriendPhoto ? (
+                  <Image source={{ uri: editingOverlayFriendPhoto }} style={styles.friendOverlayImage} />
+                ) : editingMark?.type === 'friend' ? (
+                  <Ionicons name="paw" size={28} color={currentTheme.primary} />
+                ) : (
+                  <Text style={{ fontSize: 36 }}>{editingOverlayIcon}</Text>
+                )}
               </View>
             </View>
           ) : null}
@@ -685,6 +843,7 @@ export default function WalkDetailScreen({ route, navigation }) {
         memos={memos}
         poops={poops}
         customMarks={customMarks}
+        friendMarks={friendMarks}
         privacyRadiusMeters={sharePrivacyRadiusMeters}
         unitSystem={unitSystem}
         timeFormat={timeFormat}
@@ -718,6 +877,18 @@ export default function WalkDetailScreen({ route, navigation }) {
             <Text style={styles.detailAddEmoji}>{i18n.t('walk.poopLabel')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
+            style={[
+              styles.detailAddButton,
+              { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary },
+            ]}
+            onPress={openFriendPickerForAdd}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('walk.markAddFriend')}
+          >
+            <Ionicons name="people" size={28} color={currentTheme.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.memoFab, { backgroundColor: currentTheme.primary }]}
             onPress={openNewMemo}
             activeOpacity={0.85}
@@ -736,9 +907,17 @@ export default function WalkDetailScreen({ route, navigation }) {
           title={editingMarkTitle}
           onSave={handleSaveMarkEdit}
           onCancel={cancelMarkEdit}
+          onDelete={editingIsNew ? undefined : handleDeleteMark}
           saving={markSaving}
         />
       ) : null}
+
+      <FriendPickerModal
+        visible={isFriendPickerVisible}
+        friends={friends}
+        onSelect={beginAddFriendMark}
+        onClose={() => setIsFriendPickerVisible(false)}
+      />
 
       <WalkMemoModal
         visible={isMemoModalVisible}
@@ -896,6 +1075,16 @@ const createStyles = (fs) => ({
     shadowRadius: 4,
   },
   detailAddEmoji: { fontSize: 28 },
+  friendMarkerImage: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: '#fff' },
+  friendMarkerFallback: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  friendOverlayImage: { width: 40, height: 40, borderRadius: 20 },
   memoFab: {
     flexDirection: 'row',
     alignItems: 'center',

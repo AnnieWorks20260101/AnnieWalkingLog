@@ -26,6 +26,20 @@ export function sanitizeCustomMark(mark) {
 }
 
 /**
+ * @param {{ latitude?: unknown, longitude?: unknown, friendPetId?: unknown, name?: unknown, photoUrl?: unknown }} mark
+ * @returns {{ latitude: number, longitude: number, friendPetId: string, name: string, photoUrl: string }}
+ */
+export function sanitizeFriendMark(mark) {
+  return {
+    latitude: Number(mark.latitude),
+    longitude: Number(mark.longitude),
+    friendPetId: typeof mark.friendPetId === 'string' ? mark.friendPetId : '',
+    name: typeof mark.name === 'string' ? mark.name : '',
+    photoUrl: typeof mark.photoUrl === 'string' ? mark.photoUrl : '',
+  };
+}
+
+/**
  * @param {Array<Record<string, unknown>>} marks
  * @param {number} index
  * @param {{ latitude: number, longitude: number }} coordinate
@@ -65,6 +79,19 @@ export function createCustomMark(coordinate, options = {}) {
 }
 
 /**
+ * @param {{ latitude: number, longitude: number }} coordinate
+ * @param {{ friendPetId?: string, name?: string, photoUrl?: string }} options
+ */
+export function createFriendMark(coordinate, options = {}) {
+  return sanitizeFriendMark({
+    ...coordinate,
+    friendPetId: options.friendPetId,
+    name: options.name,
+    photoUrl: options.photoUrl,
+  });
+}
+
+/**
  * @param {Array<Record<string, unknown>>} marks
  * @param {number} index
  */
@@ -77,11 +104,12 @@ export function removeWalkMark(marks, index) {
 
 /**
  * @param {string} walkId
- * @param {{ poops?: unknown[], customMarks?: unknown[] }} marks
+ * @param {{ poops?: unknown[], customMarks?: unknown[], friendMarks?: unknown[] }} marks
  */
-export async function persistWalkMapMarks(walkId, { poops, customMarks }) {
+export async function persistWalkMapMarks(walkId, { poops, customMarks, friendMarks }) {
   await updateDoc(doc(db, 'walks', walkId), {
     poops: Array.isArray(poops) ? poops.map(sanitizePoopMark) : [],
     customMarks: Array.isArray(customMarks) ? customMarks.map(sanitizeCustomMark) : [],
+    friendMarks: Array.isArray(friendMarks) ? friendMarks.map(sanitizeFriendMark) : [],
   });
 }

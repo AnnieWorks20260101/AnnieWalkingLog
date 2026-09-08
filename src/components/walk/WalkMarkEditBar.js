@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import i18n from '../../i18n';
@@ -8,7 +9,7 @@ import i18n from '../../i18n';
 /** WalkDetailScreen の mapPadding / 中央ピン位置と揃える */
 export const WALK_MARK_EDIT_BAR_HEIGHT = 152;
 
-export default function WalkMarkEditBar({ title, hint, onSave, onCancel, saving = false }) {
+export default function WalkMarkEditBar({ title, hint, onSave, onCancel, onDelete, saving = false }) {
   const { currentTheme, fontSizes } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = useThemedStyles(createStyles);
@@ -29,25 +30,38 @@ export default function WalkMarkEditBar({ title, hint, onSave, onCancel, saving 
       <Text style={[styles.hint, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
         {hintText}
       </Text>
-      <View style={styles.actions}>
-        <TouchableOpacity onPress={onCancel} style={styles.cancelBtn} disabled={saving}>
-          <Text style={{ color: currentTheme.textSecondary, fontSize: fontSizes.m }}>
-            {i18n.t('walk.cancel')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: currentTheme.primary }]}
-          onPress={onSave}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color={currentTheme.card} />
-          ) : (
-            <Text style={{ color: currentTheme.card, fontWeight: 'bold', fontSize: fontSizes.m }}>
-              {i18n.t('walk.memoSave')}
+      <View style={[styles.actions, onDelete && styles.actionsWithDelete]}>
+        {onDelete ? (
+          <TouchableOpacity
+            onPress={onDelete}
+            style={styles.deleteBtn}
+            disabled={saving}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('walk.delete')}
+          >
+            <Ionicons name="trash-outline" size={20} color={currentTheme.danger} />
+          </TouchableOpacity>
+        ) : null}
+        <View style={styles.rightActions}>
+          <TouchableOpacity onPress={onCancel} style={styles.cancelBtn} disabled={saving}>
+            <Text style={{ color: currentTheme.textSecondary, fontSize: fontSizes.m }}>
+              {i18n.t('walk.cancel')}
             </Text>
-          )}
-        </TouchableOpacity>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.saveBtn, { backgroundColor: currentTheme.primary }]}
+            onPress={onSave}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color={currentTheme.card} />
+            ) : (
+              <Text style={{ color: currentTheme.card, fontWeight: 'bold', fontSize: fontSizes.m }}>
+                {i18n.t('walk.memoSave')}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -72,6 +86,9 @@ const createStyles = (fs) => ({
   title: { fontWeight: '700', marginBottom: 4 },
   hint: { lineHeight: Math.round(fs.s * 1.45), marginBottom: 10 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 10 },
+  actionsWithDelete: { justifyContent: 'space-between' },
+  rightActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  deleteBtn: { paddingVertical: 8, paddingHorizontal: 6 },
   cancelBtn: { paddingVertical: 8, paddingHorizontal: 6 },
   saveBtn: {
     paddingVertical: 9,

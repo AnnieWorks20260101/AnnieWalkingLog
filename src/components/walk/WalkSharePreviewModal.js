@@ -4,6 +4,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Image,
   ActivityIndicator,
   ScrollView,
   Dimensions,
@@ -51,6 +52,7 @@ export default function WalkSharePreviewModal({
   memos = [],
   poops = [],
   customMarks = [],
+  friendMarks = [],
   privacyRadiusMeters,
   unitSystem,
   timeFormat,
@@ -68,9 +70,10 @@ export default function WalkSharePreviewModal({
       ...walk,
       poops,
       customMarks,
+      friendMarks,
       memos,
     }),
-    [walk, poops, customMarks, memos]
+    [walk, poops, customMarks, friendMarks, memos]
   );
 
   const privacyData = useMemo(
@@ -87,7 +90,13 @@ export default function WalkSharePreviewModal({
   );
 
   const mapCoordinates = useMemo(
-    () => [...privacyData.route, ...privacyData.poops, ...privacyData.customMarks, ...photoCoordinates],
+    () => [
+      ...privacyData.route,
+      ...privacyData.poops,
+      ...privacyData.customMarks,
+      ...privacyData.friendMarks,
+      ...photoCoordinates,
+    ],
     [privacyData, photoCoordinates]
   );
 
@@ -231,6 +240,26 @@ export default function WalkSharePreviewModal({
                       anchor={{ x: 0.5, y: 0.5 }}
                     >
                       <Text style={styles.markEmoji}>{mark.icon || '💦'}</Text>
+                    </Marker>
+                  ))}
+                  {privacyData.friendMarks.map((mark, index) => (
+                    <Marker
+                      key={`friend-${mark.friendPetId ?? index}`}
+                      coordinate={mark}
+                      anchor={{ x: 0.5, y: 0.5 }}
+                    >
+                      {mark.photoUrl ? (
+                        <Image source={{ uri: mark.photoUrl }} style={styles.friendMarkerImage} />
+                      ) : (
+                        <View
+                          style={[
+                            styles.friendMarkerFallback,
+                            { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary },
+                          ]}
+                        >
+                          <Ionicons name="paw" size={16} color={currentTheme.primary} />
+                        </View>
+                      )}
                     </Marker>
                   ))}
                   {privacyData.photos.map((photo, index) => {
@@ -424,6 +453,15 @@ const createStyles = () =>
     },
     markEmoji: {
       fontSize: 24,
+    },
+    friendMarkerImage: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: '#fff' },
+    friendMarkerFallback: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      borderWidth: 2,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     statsRow: {
       flexDirection: 'row',

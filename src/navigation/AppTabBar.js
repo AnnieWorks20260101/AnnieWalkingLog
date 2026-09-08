@@ -5,6 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 import { getTabBarIconName } from './tabBarIcons';
 import { TAB_SETTINGS, TAB_WALK_LOG } from './tabNames';
+
+/** 設定は下部タブから外し、各画面右上の歯車アイコンから開く */
+const HIDDEN_TAB_ROUTES = [TAB_SETTINGS];
 import { SCREEN_HISTORY, SCREEN_SETTINGS_MAIN } from './screenNames';
 import { popWalkLogToHistory } from './walkNavigation';
 
@@ -27,6 +30,9 @@ export default function AppTabBar({ state, descriptors, navigation }) {
       ]}
     >
       {state.routes.map((route, index) => {
+        if (HIDDEN_TAB_ROUTES.includes(route.name)) {
+          return null;
+        }
         const { options } = descriptors[route.key];
         const label =
           options.tabBarLabel !== undefined

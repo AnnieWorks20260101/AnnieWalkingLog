@@ -34,5 +34,14 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
       allow delete: if isFamilyMember(familyId);
     }
+
+    // お友達プロフィール写真
+    match /families/{familyId}/friends/{fileName} {
+      allow read: if isFamilyMember(familyId);
+      allow create, update: if isFamilyMember(familyId)
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isFamilyMember(familyId);
+    }
   }
 }

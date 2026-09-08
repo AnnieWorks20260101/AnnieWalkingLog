@@ -145,5 +145,29 @@ service cloud.firestore {
 
       allow delete: if isFamilyMember(resource.data.familyId);
     }
+
+    // inviteCodes/{code} — 8桁招待コード → familyId の参照。発行・削除は家族メンバーのみ、参加希望者はログイン済みなら参照可
+    match /inviteCodes/{code} {
+      allow read: if isSignedIn();
+
+      allow create: if isFamilyMember(request.resource.data.familyId);
+
+      allow delete: if isFamilyMember(resource.data.familyId);
+
+      allow update: if false;
+    }
+
+    // pet_friends/{friendId} — 家族なら閲覧・登録・編集・削除（自分の家族が管理する「お友達」台帳。他家族のデータには連携しない）
+    match /pet_friends/{friendId} {
+      allow read: if isFamilyMember(resource.data.familyId);
+
+      allow create: if isFamilyMember(request.resource.data.familyId)
+        && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if isFamilyMember(resource.data.familyId)
+        && familyIdUnchanged();
+
+      allow delete: if isFamilyMember(resource.data.familyId);
+    }
   }
 }
