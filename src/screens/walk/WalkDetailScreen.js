@@ -561,7 +561,7 @@ export default function WalkDetailScreen({ route, navigation }) {
     }
     return (
       <Marker
-        key={`${type}-${index}`}
+        key={`${type}-${index}-${markPetFilterId}`}
         coordinate={mark}
         anchor={{ x: 0.5, y: 0.5 }}
         tracksViewChanges
@@ -581,7 +581,7 @@ export default function WalkDetailScreen({ route, navigation }) {
     }
     return (
       <Marker
-        key={`friend-${index}`}
+        key={`friend-${index}-${markPetFilterId}`}
         coordinate={mark}
         anchor={{ x: 0.5, y: 0.5 }}
         tracksViewChanges
@@ -844,32 +844,30 @@ export default function WalkDetailScreen({ route, navigation }) {
             {walkRoute.length > 0 && (
               <Polyline coordinates={walkRoute} strokeColor={currentTheme.primary} strokeWidth={5} />
             )}
-            {customMarks.map((mark, index) =>
-              markMatchesPetFilter(mark, markPetFilterId)
-                ? renderEditMarker('custom', mark, index, mark.icon || '💦')
-                : null
-            )}
-            {friendMarks.map((mark, index) =>
-              friendMarkMatchesPetFilter(markPetFilterId)
-                ? renderFriendEditMarker(mark, index)
-                : null
-            )}
+            {customMarks
+              .map((mark, index) => ({ mark, index }))
+              .filter(({ mark }) => markMatchesPetFilter(mark, markPetFilterId))
+              .map(({ mark, index }) =>
+                renderEditMarker('custom', mark, index, mark.icon || '💦')
+              )}
+            {friendMarkMatchesPetFilter(markPetFilterId)
+              ? friendMarks.map((mark, index) => renderFriendEditMarker(mark, index))
+              : null}
             {photos.map((photo, index) => {
               const coordinate = getWalkPhotoCoordinate(photo);
               if (!coordinate) {
                 return null;
               }
               return (
-                <Marker key={`photo-${photo.id ?? index}`} coordinate={coordinate}>
+                <Marker key={`photo-${photo.id ?? index}-${markPetFilterId}`} coordinate={coordinate}>
                   <Text style={{ fontSize: 30 }}>📷</Text>
                 </Marker>
               );
             })}
-            {poops.map((poop, index) =>
-              markMatchesPetFilter(poop, markPetFilterId)
-                ? renderEditMarker('poop', poop, index, '💩')
-                : null
-            )}
+            {poops
+              .map((poop, index) => ({ poop, index }))
+              .filter(({ poop }) => markMatchesPetFilter(poop, markPetFilterId))
+              .map(({ poop, index }) => renderEditMarker('poop', poop, index, '💩'))}
           </MapView>
           {editingMark ? (
             <View

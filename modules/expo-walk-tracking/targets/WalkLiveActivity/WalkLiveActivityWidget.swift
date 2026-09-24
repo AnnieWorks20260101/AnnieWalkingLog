@@ -47,16 +47,13 @@ private struct WalkLiveActivityLockScreenView: View {
   let context: ActivityViewContext<WalkActivityAttributes>
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
+    VStack(alignment: .leading, spacing: 8) {
       Text(context.state.title)
         .font(.headline)
         .foregroundStyle(context.primaryTextColor)
       if !context.state.activePetLabel.isEmpty {
         WalkLiveActivityActivePetLabel(context: context)
       }
-      Text(context.state.body)
-        .font(.subheadline)
-        .foregroundStyle(context.secondaryTextColor)
       HStack(spacing: 16) {
         Text("\(context.attributes.poopLabel) \(context.state.poopCount)")
         Text("\(context.attributes.customIcon) \(context.state.customCount)")
