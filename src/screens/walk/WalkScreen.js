@@ -15,12 +15,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFamilyPets } from '../../hooks/useFamilyPets';
 import { useFamilyFriends } from '../../hooks/useFamilyFriends';
 import PetSelector from '../../components/PetSelector';
+import WalkPetChips from '../../components/walk/WalkPetChips';
 import FriendPickerModal from '../../components/walk/FriendPickerModal';
 import BackgroundLocationDisclosureModal from '../../components/BackgroundLocationDisclosureModal';
 import BackgroundActivityGuideModal from '../../components/BackgroundActivityGuideModal';
 import * as Location from 'expo-location';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWalkPreferences } from '../../contexts/WalkPreferencesContext';
+import { getWalkNotificationTextColorHex } from '../../constants/walkNotificationTextColorOptions';
 import { useDisplayPreferences } from '../../contexts/DisplayPreferencesContext';
 import { useAuth } from '../../contexts/AuthContext';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -54,7 +56,7 @@ import {
 } from '../../utils/storeReviewPrompt';
 import { setWalkTrackingActive } from '../../navigation/walkSessionFlag';
 import { getCurrentWalkMapCoordinate } from '../../utils/walkMapMarks';
-import { createFriendMark } from '../../services/walkMapMarks';
+import { createFriendMark, createPoopMark, createCustomMark } from '../../services/walkMapMarks';
 import {
   isBackgroundLocationGranted,
   isWalkBackgroundLocationReady,
@@ -105,10 +107,12 @@ import { isFriendUsableByPlanOrder } from '../../utils/planFriendUsage';
 import {
   fetchWalkSessionSnapshot,
   isNativeWalkTrackingActive,
+  readActiveMarkPetId,
   recordCustomMarkNative,
   recordPoopMarkNative,
   startWalkLocationTracking,
   stopWalkLocationTracking,
+  syncActiveMarkPetId,
   syncLastKnownCoordinate,
   usesNativeWalkTracking,
 } from '../../services/walkLocationTracking';
@@ -143,7 +147,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 export default function WalkScreen({ navigation }) {
   const { currentTheme } = useTheme();
   const { unitSystem } = useDisplayPreferences();
-  const { customButtonId, customButtonIcon, customButtonLabel, uploadPhotosOnCellular, savePhotoToLibrary } =
+  const { customButtonId, customButtonIcon, customButtonLabel, uploadPhotosOnCellular, savePhotoToLibrary, notificationTextColorId } =
     useWalkPreferences();
   const { tier, entitlements } = usePlanTier();
   const walkPhotosEnabled = canUseWalkPhotos(entitlements);
@@ -157,6 +161,7 @@ export default function WalkScreen({ navigation }) {
     [pets, entitlements]
   );
   const [selectedPetIds, setSelectedPetIds] = useState([]);
+  const [markPetId, setMarkPetId] = useState('');
   const [route, setRoute] = useState([]);
   const [poops, setPoops] = useState([]);
   const [customMarks, setCustomMarks] = useState([]);
@@ -216,6 +221,37 @@ export default function WalkScreen({ navigation }) {
       return usablePetIds.length ? [usablePetIds[0]] : [];
     });
   }, [pets, usablePetIds]);
+
+  useEffect(() => {
+    if (selectedPetIds.length === 0) {
+      setMarkPetId('');
+      return;
+    }
+    setMarkPetId((prev) => (selectedPetIds.includes(prev) ? prev : selectedPetIds[0]));
+  }, [selectedPetIds]);
+
+  useEffect(() => {
+    if (!isTracking || !usesNativeWalkTracking) {
+      return;
+    }
+    syncActiveMarkPetId(markPetId);
+  }, [isTracking, markPetId]);
+
+  const selectedWalkPets = useMemo(
+    () =>
+      selectedPetIds
+        .map((id) => pets.find((pet) => pet.id === id))
+        .filter(Boolean)
+        .map((pet) => ({ id: pet.id, name: pet.name, photoUrl: pet.photoUrl })),
+    [selectedPetIds, pets]
+  );
+
+  const handleSelectMarkPet = (petId) => {
+    setMarkPetId(petId);
+    if (usesNativeWalkTracking && isTracking) {
+      syncActiveMarkPetId(petId);
+    }
+  };
 
   const togglePetSelection = (petId) => {
     setSelectedPetIds((prev) => {
@@ -317,6 +353,11 @@ export default function WalkScreen({ navigation }) {
     setRoute(snapshot.route ?? []);
     setPoops(snapshot.poops ?? []);
     setCustomMarks(snapshot.customMarks ?? []);
+
+    const nativeActivePetId = readActiveMarkPetId();
+    if (nativeActivePetId && selectedPetIds.includes(nativeActivePetId)) {
+      setMarkPetId((prev) => (prev === nativeActivePetId ? prev : nativeActivePetId));
+    }
   };
 
   useEffect(() => {
@@ -331,6 +372,11 @@ export default function WalkScreen({ navigation }) {
           setRoute(currentRoute);
           setPoops(snapshot.poops ?? []);
           setCustomMarks(snapshot.customMarks ?? []);
+
+          const nativeActivePetId = readActiveMarkPetId();
+          if (nativeActivePetId && selectedPetIds.includes(nativeActivePetId)) {
+            setMarkPetId((prev) => (prev === nativeActivePetId ? prev : nativeActivePetId));
+          }
 
           if (currentRoute.length > 0 && mapRef.current) {
             mapRef.current.animateToRegion(
@@ -486,6 +532,10 @@ export default function WalkScreen({ navigation }) {
           customLabel: customButtonLabel,
           customButtonId,
           customIcon: customButtonIcon,
+          textColorHex: getWalkNotificationTextColorHex(notificationTextColorId),
+          activePetId: markPetId || selectedPetIds[0] || '',
+          walkPets: selectedWalkPets.map((pet) => ({ id: pet.id, name: pet.name || '' })),
+          activePetLabelPrefix: i18n.t('walk.activePetNowPrefix'),
           distanceIntervalMeters: 5,
         });
       } else {
@@ -813,6 +863,7 @@ export default function WalkScreen({ navigation }) {
   const recordPoop = async () => {
     if (usesNativeWalkTracking) {
       try {
+        syncActiveMarkPetId(markPetId || selectedPetIds[0] || '');
         await recordPoopMarkNative();
         await syncNativeWalkSession();
       } catch (error) {
@@ -822,12 +873,16 @@ export default function WalkScreen({ navigation }) {
     }
 
     const coordinate = await getCurrentWalkMapCoordinate();
-    setPoops((prev) => [...prev, coordinate]);
+    setPoops((prev) => [
+      ...prev,
+      createPoopMark(coordinate, { petId: markPetId || selectedPetIds[0] || '' }),
+    ]);
   };
 
   const recordCustomMark = async () => {
     if (usesNativeWalkTracking) {
       try {
+        syncActiveMarkPetId(markPetId || selectedPetIds[0] || '');
         await recordCustomMarkNative();
         await syncNativeWalkSession();
       } catch (error) {
@@ -839,11 +894,11 @@ export default function WalkScreen({ navigation }) {
     const coordinate = await getCurrentWalkMapCoordinate();
     setCustomMarks((prev) => [
       ...prev,
-      {
-        ...coordinate,
+      createCustomMark(coordinate, {
         icon: customButtonIcon,
         buttonId: customButtonId,
-      },
+        petId: markPetId || selectedPetIds[0] || '',
+      }),
     ]);
   };
 
@@ -920,6 +975,20 @@ export default function WalkScreen({ navigation }) {
           />
         </View>
       )}
+
+      {isTracking && selectedWalkPets.length > 0 ? (
+        <View style={[styles.petSection, { borderBottomColor: currentTheme.accentBorder }]}>
+          <Text style={[styles.petSectionLabel, { color: currentTheme.textSecondary }]}>
+            {i18n.t('walk.markPetLabel')}
+          </Text>
+          <WalkPetChips
+            pets={selectedWalkPets}
+            layout="row"
+            selectedPetId={markPetId || selectedWalkPets[0]?.id}
+            onSelectPet={handleSelectMarkPet}
+          />
+        </View>
+      ) : null}
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity

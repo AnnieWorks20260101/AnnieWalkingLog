@@ -10,8 +10,14 @@ struct WalkLiveActivityWidget: Widget {
     } dynamicIsland: { context in
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
-          Text(context.state.title)
-            .font(.headline)
+          VStack(alignment: .leading, spacing: 2) {
+            Text(context.state.title)
+              .font(.headline)
+              .foregroundStyle(context.primaryTextColor)
+            if !context.state.activePetLabel.isEmpty {
+              WalkLiveActivityActivePetLabel(context: context)
+            }
+          }
         }
         DynamicIslandExpandedRegion(.trailing) {
           HStack(spacing: 8) {
@@ -19,6 +25,7 @@ struct WalkLiveActivityWidget: Widget {
             Text("\(context.attributes.customIcon) \(context.state.customCount)")
           }
           .font(.caption)
+          .foregroundStyle(context.secondaryTextColor)
         }
         DynamicIslandExpandedRegion(.bottom) {
           WalkLiveActivityActionRow(context: context)
@@ -27,6 +34,7 @@ struct WalkLiveActivityWidget: Widget {
         Text("🐾")
       } compactTrailing: {
         Text("\(context.state.poopCount)")
+          .foregroundStyle(context.primaryTextColor)
       } minimal: {
         Text("🐾")
       }
@@ -42,16 +50,19 @@ private struct WalkLiveActivityLockScreenView: View {
     VStack(alignment: .leading, spacing: 10) {
       Text(context.state.title)
         .font(.headline)
-        .foregroundStyle(WalkLiveActivityColors.primaryText)
+        .foregroundStyle(context.primaryTextColor)
+      if !context.state.activePetLabel.isEmpty {
+        WalkLiveActivityActivePetLabel(context: context)
+      }
       Text(context.state.body)
         .font(.subheadline)
-        .foregroundStyle(WalkLiveActivityColors.secondaryText)
+        .foregroundStyle(context.secondaryTextColor)
       HStack(spacing: 16) {
         Text("\(context.attributes.poopLabel) \(context.state.poopCount)")
         Text("\(context.attributes.customIcon) \(context.state.customCount)")
       }
       .font(.caption)
-      .foregroundStyle(WalkLiveActivityColors.secondaryText)
+      .foregroundStyle(context.secondaryTextColor)
       WalkLiveActivityActionRow(context: context)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
@@ -61,11 +72,36 @@ private struct WalkLiveActivityLockScreenView: View {
 }
 
 @available(iOS 16.2, *)
-private enum WalkLiveActivityColors {
-  // Lock screen Live Activities render on a dark material; avoid systemBackground tint.
-  static let primaryText = Color.white
-  static let secondaryText = Color.white.opacity(0.82)
-  static let actionButtonBackground = Color.white.opacity(0.22)
+private extension ActivityViewContext where Attributes == WalkActivityAttributes {
+  var primaryTextColor: Color {
+    Color(hex: attributes.textColorHex) ?? .white
+  }
+
+  var secondaryTextColor: Color {
+    primaryTextColor.opacity(0.82)
+  }
+}
+
+@available(iOS 16.2, *)
+private struct WalkLiveActivityActivePetLabel: View {
+  let context: ActivityViewContext<WalkActivityAttributes>
+
+  var body: some View {
+    if #available(iOS 17.0, *), WalkSessionStorage.canCycleActivePet() {
+      Button(intent: CycleActivePetIntent()) {
+        Text(context.state.activePetLabel)
+          .font(.subheadline)
+          .foregroundStyle(context.secondaryTextColor)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+    } else {
+      Text(context.state.activePetLabel)
+        .font(.subheadline)
+        .foregroundStyle(context.secondaryTextColor)
+    }
+  }
 }
 
 @available(iOS 16.2, *)
@@ -78,12 +114,12 @@ private struct WalkLiveActivityActionRow: View {
         Button(intent: RecordPoopIntent()) {
           WalkLiveActivityActionButtonLabel(symbol: context.attributes.poopLabel)
         }
-        .buttonStyle(WalkLiveActivityActionButtonStyle())
+        .buttonStyle(WalkLiveActivityActionButtonStyle(tint: context.primaryTextColor))
 
         Button(intent: RecordCustomIntent()) {
           WalkLiveActivityActionButtonLabel(symbol: context.attributes.customIcon)
         }
-        .buttonStyle(WalkLiveActivityActionButtonStyle())
+        .buttonStyle(WalkLiveActivityActionButtonStyle(tint: context.primaryTextColor))
       }
       .padding(.top, 6)
     }
@@ -111,14 +147,32 @@ private enum WalkLiveActivityMetrics {
 
 @available(iOS 16.2, *)
 private struct WalkLiveActivityActionButtonStyle: ButtonStyle {
+  let tint: Color
+
   func makeBody(configuration: Configuration) -> some View {
     configuration.label
       .background(
         RoundedRectangle(cornerRadius: WalkLiveActivityMetrics.actionButtonCornerRadius)
-          .fill(WalkLiveActivityColors.actionButtonBackground)
+          .fill(tint.opacity(0.22))
       )
       .opacity(configuration.isPressed ? 0.72 : 1)
       .scaleEffect(configuration.isPressed ? 0.97 : 1)
       .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+  }
+}
+
+private extension Color {
+  init?(hex: String) {
+    var cleaned = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+    if cleaned.hasPrefix("#") {
+      cleaned.removeFirst()
+    }
+    guard cleaned.count == 6, let value = UInt64(cleaned, radix: 16) else {
+      return nil
+    }
+    let red = Double((value >> 16) & 0xFF) / 255
+    let green = Double((value >> 8) & 0xFF) / 255
+    let blue = Double(value & 0xFF) / 255
+    self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
   }
 }

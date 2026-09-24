@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.Color
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -29,6 +30,7 @@ class WalkTrackingForegroundService : Service() {
   private var body = "🐾"
   private var poopLabel = "💩"
   private var customIcon = "💦"
+  private var textColorHex = WalkTrackingContracts.DEFAULT_TEXT_COLOR_HEX
 
   override fun onBind(intent: Intent?): IBinder? = null
 
@@ -50,6 +52,9 @@ class WalkTrackingForegroundService : Service() {
         body = intent.getStringExtra(WalkTrackingContracts.EXTRA_BODY) ?: body
         poopLabel = intent.getStringExtra(WalkTrackingContracts.EXTRA_POOP_LABEL) ?: poopLabel
         customIcon = intent.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_ICON) ?: customIcon
+        textColorHex =
+          intent.getStringExtra(WalkTrackingContracts.EXTRA_TEXT_COLOR_HEX)
+            ?: WalkTrackingContracts.DEFAULT_TEXT_COLOR_HEX
         distanceIntervalMeters =
           intent.getFloatExtra(
             WalkTrackingContracts.EXTRA_DISTANCE_INTERVAL_METERS,
@@ -58,8 +63,21 @@ class WalkTrackingForegroundService : Service() {
 
         val customButtonId =
           intent.getStringExtra(WalkTrackingContracts.EXTRA_CUSTOM_BUTTON_ID) ?: "pee"
+        val activePetId =
+          intent.getStringExtra(WalkTrackingContracts.EXTRA_ACTIVE_PET_ID) ?: ""
+        val walkPetsJson =
+          intent.getStringExtra(WalkTrackingContracts.EXTRA_WALK_PETS_JSON) ?: "[]"
+        val activePetLabelPrefix =
+          intent.getStringExtra(WalkTrackingContracts.EXTRA_ACTIVE_PET_LABEL_PREFIX) ?: ""
 
-        WalkSessionStorage.beginSession(this, customButtonId, customIcon)
+        WalkSessionStorage.beginSession(
+          this,
+          customButtonId,
+          customIcon,
+          activePetId,
+          walkPetsJson,
+          activePetLabelPrefix,
+        )
         resumeTracking()
       }
       else -> {
@@ -143,8 +161,8 @@ class WalkTrackingForegroundService : Service() {
   }
 
   private fun notificationBodyText(): String {
-    val poopCount = WalkSessionStorage.readPoopsCount(applicationContext)
-    val customCount = WalkSessionStorage.readCustomMarksCount(applicationContext)
+    val poopCount = WalkSessionStorage.readPoopsCountForActivePet(applicationContext)
+    val customCount = WalkSessionStorage.readCustomMarksCountForActivePet(applicationContext)
     return "$body  $poopLabel $poopCount  •  $customIcon $customCount"
   }
 
@@ -177,17 +195,55 @@ class WalkTrackingForegroundService : Service() {
     )
   }
 
+  private fun buildCyclePetPendingIntent(): PendingIntent {
+    return PendingIntent.getBroadcast(
+      this,
+      3,
+      Intent(this, WalkActionReceiver::class.java).apply {
+        action = WalkTrackingContracts.ACTION_CYCLE_PET
+      },
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+  }
+
+  private fun resolveTextColor(): Int {
+    return try {
+      Color.parseColor(textColorHex)
+    } catch (_: IllegalArgumentException) {
+      Color.parseColor(WalkTrackingContracts.DEFAULT_TEXT_COLOR_HEX)
+    }
+  }
+
   private fun buildCustomRemoteViews(
     poopPendingIntent: PendingIntent,
     customPendingIntent: PendingIntent,
   ): RemoteViews {
     val remoteViews = RemoteViews(packageName, R.layout.notification_walk_custom)
+    val textColor = resolveTextColor()
     remoteViews.setTextViewText(R.id.notification_title, title)
     remoteViews.setTextViewText(R.id.notification_counts, notificationBodyText())
+    remoteViews.setTextColor(R.id.notification_title, textColor)
+    remoteViews.setTextColor(R.id.notification_counts, textColor)
     remoteViews.setTextViewText(R.id.btn_poop, poopLabel)
     remoteViews.setTextViewText(R.id.btn_custom, customIcon)
     remoteViews.setOnClickPendingIntent(R.id.btn_poop, poopPendingIntent)
     remoteViews.setOnClickPendingIntent(R.id.btn_custom, customPendingIntent)
+
+    val activePetLabel = WalkSessionStorage.activePetDisplayLabel(applicationContext)
+    if (activePetLabel.isNotBlank()) {
+      remoteViews.setViewVisibility(R.id.notification_active_pet, android.view.View.VISIBLE)
+      remoteViews.setTextViewText(R.id.notification_active_pet, activePetLabel)
+      remoteViews.setTextColor(R.id.notification_active_pet, textColor)
+      if (WalkSessionStorage.canCycleActivePet(applicationContext)) {
+        remoteViews.setOnClickPendingIntent(
+          R.id.notification_active_pet,
+          buildCyclePetPendingIntent(),
+        )
+      }
+    } else {
+      remoteViews.setViewVisibility(R.id.notification_active_pet, android.view.View.GONE)
+    }
+
     return remoteViews
   }
 
@@ -254,6 +310,10 @@ class WalkTrackingForegroundService : Service() {
         putExtra(WalkTrackingContracts.EXTRA_CUSTOM_LABEL, config.customLabel)
         putExtra(WalkTrackingContracts.EXTRA_CUSTOM_BUTTON_ID, config.customButtonId)
         putExtra(WalkTrackingContracts.EXTRA_CUSTOM_ICON, config.customIcon)
+        putExtra(WalkTrackingContracts.EXTRA_TEXT_COLOR_HEX, config.textColorHex)
+        putExtra(WalkTrackingContracts.EXTRA_ACTIVE_PET_ID, config.activePetId)
+        putExtra(WalkTrackingContracts.EXTRA_WALK_PETS_JSON, config.walkPetsJson)
+        putExtra(WalkTrackingContracts.EXTRA_ACTIVE_PET_LABEL_PREFIX, config.activePetLabelPrefix)
         putExtra(WalkTrackingContracts.EXTRA_DISTANCE_INTERVAL_METERS, config.distanceIntervalMeters)
       }
 
@@ -284,5 +344,9 @@ data class WalkTrackingStartConfig(
   val customLabel: String,
   val customButtonId: String,
   val customIcon: String,
+  val textColorHex: String,
+  val activePetId: String,
+  val walkPetsJson: String,
+  val activePetLabelPrefix: String,
   val distanceIntervalMeters: Float,
 )

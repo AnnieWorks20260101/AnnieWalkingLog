@@ -4,8 +4,9 @@ import Foundation
 enum WalkLiveActivityUpdater {
   @available(iOS 16.2, *)
   static func refreshCounts() async {
-    let poops = WalkSessionStorage.readPoopsCount()
-    let customs = WalkSessionStorage.readCustomMarksCount()
+    let poops = WalkSessionStorage.readPoopsCountForActivePet()
+    let customs = WalkSessionStorage.readCustomMarksCountForActivePet()
+    let activePetLabel = WalkSessionStorage.activePetDisplayLabel()
     let activities = Activity<WalkActivityAttributes>.activities
 
     for activity in activities {
@@ -14,7 +15,8 @@ enum WalkLiveActivityUpdater {
         title: current.title,
         body: current.body,
         poopCount: poops,
-        customCount: customs
+        customCount: customs,
+        activePetLabel: activePetLabel
       )
       await activity.update(ActivityContent(state: updated, staleDate: nil))
     }

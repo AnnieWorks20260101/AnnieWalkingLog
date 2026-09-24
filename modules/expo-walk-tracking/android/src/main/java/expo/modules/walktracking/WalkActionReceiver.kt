@@ -23,6 +23,12 @@ class WalkActionReceiver : BroadcastReceiver() {
       WalkTrackingContracts.ACTION_RECORD_CUSTOM -> {
         recordMark(context, isPoop = false, pendingResult)
       }
+      WalkTrackingContracts.ACTION_CYCLE_PET -> {
+        if (WalkSessionStorage.cycleActivePet(context.applicationContext)) {
+          WalkTrackingForegroundService.refreshNotification(context.applicationContext)
+        }
+        pendingResult.finish()
+      }
       else -> pendingResult.finish()
     }
   }

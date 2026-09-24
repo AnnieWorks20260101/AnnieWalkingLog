@@ -27,6 +27,11 @@ import {
   WALK_SHARE_PRIVACY_RADIUS_OPTIONS,
   getWalkSharePrivacyRadiusLabel,
 } from '../../constants/walkSharePrivacyOptions';
+import {
+  WALK_NOTIFICATION_TEXT_COLOR_OPTIONS,
+  getWalkNotificationTextColorHex,
+  getWalkNotificationTextColorLabel,
+} from '../../constants/walkNotificationTextColorOptions';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePremium } from '../../hooks/usePremium';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -96,6 +101,8 @@ export default function SettingsScreen({ navigation }) {
     setSavePhotoToLibrary,
     sharePrivacyRadiusMeters,
     setSharePrivacyRadiusMeters,
+    notificationTextColorId,
+    setNotificationTextColorId,
   } = useWalkPreferences();
 
   const [isFamilyModalVisible, setIsFamilyModalVisible] = useState(false);
@@ -108,11 +115,13 @@ export default function SettingsScreen({ navigation }) {
   const [isFontSizeModalVisible, setIsFontSizeModalVisible] = useState(false);
   const [isCustomButtonModalVisible, setIsCustomButtonModalVisible] = useState(false);
   const [isSharePrivacyModalVisible, setIsSharePrivacyModalVisible] = useState(false);
+  const [isNotificationTextColorModalVisible, setIsNotificationTextColorModalVisible] = useState(false);
   const sharePrivacyLabel = getWalkSharePrivacyRadiusLabel(
     sharePrivacyRadiusMeters,
     unitSystem,
     i18n
   );
+  const notificationTextColorLabel = getWalkNotificationTextColorLabel(notificationTextColorId, i18n);
 
   const [editFamilyId, setEditFamilyId] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -556,6 +565,32 @@ export default function SettingsScreen({ navigation }) {
                 <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
                   {sharePrivacyLabel}
                 </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
+          </SettingRow>
+          <View style={[styles.divider, { backgroundColor: currentTheme.border }]} />
+          <SettingRow onPress={() => setIsNotificationTextColorModalVisible(true)}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="color-palette-outline" size={22} color={currentTheme.textSecondary} style={styles.settingIcon} />
+              <View style={styles.settingTextBlock}>
+                <Text style={[styles.settingText, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+                  {i18n.t('settings.notificationTextColorLabel')}
+                </Text>
+                <View style={styles.notificationColorPreviewRow}>
+                  <View
+                    style={[
+                      styles.notificationColorSwatch,
+                      {
+                        backgroundColor: getWalkNotificationTextColorHex(notificationTextColorId),
+                        borderColor: currentTheme.border,
+                      },
+                    ]}
+                  />
+                  <Text style={[styles.settingSubtext, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                    {notificationTextColorLabel}
+                  </Text>
+                </View>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={currentTheme.textSecondary} />
@@ -1204,6 +1239,62 @@ export default function SettingsScreen({ navigation }) {
         </View>
       </Modal>
 
+      <Modal visible={isNotificationTextColorModalVisible} animationType="slide" transparent>
+        <View style={[styles.modalOverlay, styles.themeModalOverlay]}>
+          <View style={[styles.themeModalContent, { backgroundColor: currentTheme.card }]}>
+            <View style={styles.themeModalHeader}>
+              <Text style={[styles.modalTitle, { color: currentTheme.text, fontSize: fontSizes.l, marginBottom: 0 }]}>
+                {i18n.t('settings.notificationTextColorModalTitle')}
+              </Text>
+              <TouchableOpacity onPress={() => setIsNotificationTextColorModalVisible(false)} hitSlop={12}>
+                <Ionicons name="close-circle" size={28} color={currentTheme.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.modalDesc, { color: currentTheme.textSecondary, fontSize: fontSizes.s, marginBottom: 12 }]}>
+              {i18n.t('settings.notificationTextColorDesc')}
+            </Text>
+            {WALK_NOTIFICATION_TEXT_COLOR_OPTIONS.map((option) => {
+              const selected = notificationTextColorId === option.id;
+              return (
+                <TouchableOpacity
+                  key={option.id}
+                  style={[styles.themeOptionRow, { borderBottomColor: currentTheme.border }]}
+                  onPress={() => {
+                    setNotificationTextColorId(option.id);
+                    setIsNotificationTextColorModalVisible(false);
+                  }}
+                >
+                  <View style={styles.notificationColorOptionLeft}>
+                    <View
+                      style={[
+                        styles.notificationColorSwatch,
+                        {
+                          backgroundColor: option.hex,
+                          borderColor: currentTheme.border,
+                        },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.themeOptionLabel,
+                        {
+                          color: currentTheme.text,
+                          fontSize: fontSizes.m,
+                          fontWeight: selected ? 'bold' : 'normal',
+                        },
+                      ]}
+                    >
+                      {getWalkNotificationTextColorLabel(option.id, i18n)}
+                    </Text>
+                  </View>
+                  {selected ? <Ionicons name="checkmark" size={24} color={currentTheme.primary} /> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={isLanguageModalVisible} animationType="slide" transparent>
         <View style={[styles.modalOverlay, styles.themeModalOverlay]}>
           <View style={[styles.themeModalContent, { backgroundColor: currentTheme.card }]}>
@@ -1425,6 +1516,24 @@ const styles = StyleSheet.create({
   settingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   settingIcon: { marginRight: 12 },
   settingTextBlock: { flex: 1 },
+  notificationColorPreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 8,
+  },
+  notificationColorOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  notificationColorSwatch: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1,
+  },
   settingText: { fontWeight: '500' },
   settingSubtext: { marginTop: 4 },
   dangerText: { color: '#FF3B30', fontWeight: 'bold' },

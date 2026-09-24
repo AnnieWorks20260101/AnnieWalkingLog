@@ -27,6 +27,12 @@ import WalkSharePreviewModal from '../../components/walk/WalkSharePreviewModal';
 import FriendPickerModal from '../../components/walk/FriendPickerModal';
 import WalkMarkEditBar, { WALK_MARK_EDIT_BAR_HEIGHT } from '../../components/walk/WalkMarkEditBar';
 import WalkPetChips from '../../components/walk/WalkPetChips';
+import {
+  WALK_MARK_PET_FILTER_ALL,
+  friendMarkMatchesPetFilter,
+  markMatchesPetFilter,
+  resolveMarkPetIdForAdd,
+} from '../../utils/walkMarkPetFilter';
 import i18n from '../../i18n';
 import {
   formatAverageSpeed,
@@ -110,6 +116,7 @@ export default function WalkDetailScreen({ route, navigation }) {
   const [memoSaving, setMemoSaving] = useState(false);
   const [isSharePreviewVisible, setIsSharePreviewVisible] = useState(false);
   const [isMarkEditTipVisible, setIsMarkEditTipVisible] = useState(false);
+  const [markPetFilterId, setMarkPetFilterId] = useState(WALK_MARK_PET_FILTER_ALL);
 
   useEffect(() => {
     setPoops(Array.isArray(walk.poops) ? walk.poops : []);
@@ -152,9 +159,25 @@ export default function WalkDetailScreen({ route, navigation }) {
 
   const walkPets = useMemo(() => resolveWalkPetsForDisplay(walk, pets), [walk, pets]);
 
+  const walkPetIdsKey = useMemo(() => walkPets.map((pet) => pet.id).join(','), [walkPets]);
+
+  useEffect(() => {
+    if (walkPets.length === 1) {
+      setMarkPetFilterId(walkPets[0].id);
+      return;
+    }
+    setMarkPetFilterId((prev) => {
+      if (prev !== WALK_MARK_PET_FILTER_ALL && walkPets.some((pet) => pet.id === prev)) {
+        return prev;
+      }
+      return WALK_MARK_PET_FILTER_ALL;
+    });
+  }, [walkId, walkPetIdsKey, walkPets]);
+
   const distanceStr = `${formatDistanceValue(walk.distance, unitSystem)}${getDistanceUnitLabel(unitSystem, i18n)}`;
   const durationStr = formatDurationMinutes(walk.duration, i18n);
-  const poopCountStr = i18n.t('walk.poopCountShort', { count: poops.length });
+  const filteredPoopCount = poops.filter((poop) => markMatchesPetFilter(poop, markPetFilterId)).length;
+  const poopCountStr = i18n.t('walk.poopCountShort', { count: filteredPoopCount });
   const speedStr = formatAverageSpeed(walk.distance, walk.duration, unitSystem);
   const speedUnit = getSpeedUnitLabel(unitSystem, i18n);
   const speedDisplay =
@@ -382,11 +405,23 @@ export default function WalkDetailScreen({ route, navigation }) {
       if (!walkId || markSaving || editingMark || addingMarkRef.current) {
         return;
       }
+      if (
+        walkPets.length > 1 &&
+        (!markPetFilterId || markPetFilterId === WALK_MARK_PET_FILTER_ALL)
+      ) {
+        Alert.alert(i18n.t('common.notice'), i18n.t('walk.markPetSelectRequired'));
+        return;
+      }
       addingMarkRef.current = true;
       try {
         const coordinate = await resolveAddCoordinate();
         if (type === 'poop') {
-          const next = [...poops, createPoopMark(coordinate)];
+          const next = [
+            ...poops,
+            createPoopMark(coordinate, {
+              petId: resolveMarkPetIdForAdd({ filterPetId: markPetFilterId, walkPets }),
+            }),
+          ];
           setPoops(next);
           setEditingMark({ type: 'poop', index: next.length - 1 });
         } else {
@@ -395,6 +430,7 @@ export default function WalkDetailScreen({ route, navigation }) {
             createCustomMark(coordinate, {
               icon: customButtonIcon,
               buttonId: customButtonId,
+              petId: resolveMarkPetIdForAdd({ filterPetId: markPetFilterId, walkPets }),
             }),
           ];
           setCustomMarks(next);
@@ -417,6 +453,8 @@ export default function WalkDetailScreen({ route, navigation }) {
       customMarks,
       customButtonIcon,
       customButtonId,
+      markPetFilterId,
+      walkPets,
     ]
   );
 
@@ -428,6 +466,7 @@ export default function WalkDetailScreen({ route, navigation }) {
       }
       addingMarkRef.current = true;
       try {
+        setMarkPetFilterId(WALK_MARK_PET_FILTER_ALL);
         const coordinate = await resolveAddCoordinate();
         const next = [
           ...friendMarks,
@@ -689,7 +728,14 @@ export default function WalkDetailScreen({ route, navigation }) {
                 {endTimeLabel}
               </Text>
             ) : null}
-            <WalkPetChips pets={walkPets} layout="row" style={styles.headerPetsScroll} />
+            <WalkPetChips
+              pets={walkPets}
+              layout="row"
+              style={styles.headerPetsScroll}
+              selectedPetId={markPetFilterId}
+              onSelectPet={setMarkPetFilterId}
+              showAllOption={walkPets.length > 1}
+            />
           </View>
 
           {!editingMark ? (
@@ -799,9 +845,15 @@ export default function WalkDetailScreen({ route, navigation }) {
               <Polyline coordinates={walkRoute} strokeColor={currentTheme.primary} strokeWidth={5} />
             )}
             {customMarks.map((mark, index) =>
-              renderEditMarker('custom', mark, index, mark.icon || '💦')
+              markMatchesPetFilter(mark, markPetFilterId)
+                ? renderEditMarker('custom', mark, index, mark.icon || '💦')
+                : null
             )}
-            {friendMarks.map((mark, index) => renderFriendEditMarker(mark, index))}
+            {friendMarks.map((mark, index) =>
+              friendMarkMatchesPetFilter(markPetFilterId)
+                ? renderFriendEditMarker(mark, index)
+                : null
+            )}
             {photos.map((photo, index) => {
               const coordinate = getWalkPhotoCoordinate(photo);
               if (!coordinate) {
@@ -813,7 +865,11 @@ export default function WalkDetailScreen({ route, navigation }) {
                 </Marker>
               );
             })}
-            {poops.map((poop, index) => renderEditMarker('poop', poop, index, '💩'))}
+            {poops.map((poop, index) =>
+              markMatchesPetFilter(poop, markPetFilterId)
+                ? renderEditMarker('poop', poop, index, '💩')
+                : null
+            )}
           </MapView>
           {editingMark ? (
             <View

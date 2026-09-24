@@ -38,6 +38,14 @@ export function setLastKnownCoordinate(latitude: number, longitude: number) {
   return ExpoWalkTracking.setLastKnownCoordinate(latitude, longitude);
 }
 
+export function setActiveMarkPetId(petId: string) {
+  return ExpoWalkTracking.setActiveMarkPetId(petId);
+}
+
+export function getActiveMarkPetId() {
+  return ExpoWalkTracking.getActiveMarkPetId();
+}
+
 export function isWalkTrackingActive() {
   return ExpoWalkTracking.isWalkTrackingActive();
 }

@@ -1,20 +1,25 @@
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
+function sanitizePetId(value) {
+  return typeof value === 'string' ? value : '';
+}
+
 /**
- * @param {{ latitude?: unknown, longitude?: unknown }} mark
- * @returns {{ latitude: number, longitude: number }}
+ * @param {{ latitude?: unknown, longitude?: unknown, petId?: unknown }} mark
+ * @returns {{ latitude: number, longitude: number, petId: string }}
  */
 export function sanitizePoopMark(mark) {
   return {
     latitude: Number(mark.latitude),
     longitude: Number(mark.longitude),
+    petId: sanitizePetId(mark.petId),
   };
 }
 
 /**
- * @param {{ latitude?: unknown, longitude?: unknown, icon?: unknown, buttonId?: unknown }} mark
- * @returns {{ latitude: number, longitude: number, icon: string, buttonId: string }}
+ * @param {{ latitude?: unknown, longitude?: unknown, icon?: unknown, buttonId?: unknown, petId?: unknown }} mark
+ * @returns {{ latitude: number, longitude: number, icon: string, buttonId: string, petId: string }}
  */
 export function sanitizeCustomMark(mark) {
   return {
@@ -22,6 +27,7 @@ export function sanitizeCustomMark(mark) {
     longitude: Number(mark.longitude),
     icon: typeof mark.icon === 'string' && mark.icon ? mark.icon : '💦',
     buttonId: typeof mark.buttonId === 'string' && mark.buttonId ? mark.buttonId : 'pee',
+    petId: sanitizePetId(mark.petId),
   };
 }
 
@@ -61,20 +67,25 @@ export function moveWalkMark(marks, index, coordinate) {
 
 /**
  * @param {{ latitude: number, longitude: number }} coordinate
+ * @param {{ petId?: string }} options
  */
-export function createPoopMark(coordinate) {
-  return sanitizePoopMark(coordinate);
+export function createPoopMark(coordinate, options = {}) {
+  return sanitizePoopMark({
+    ...coordinate,
+    petId: options.petId,
+  });
 }
 
 /**
  * @param {{ latitude: number, longitude: number }} coordinate
- * @param {{ icon?: string, buttonId?: string }} options
+ * @param {{ icon?: string, buttonId?: string, petId?: string }} options
  */
 export function createCustomMark(coordinate, options = {}) {
   return sanitizeCustomMark({
     ...coordinate,
     icon: options.icon,
     buttonId: options.buttonId,
+    petId: options.petId,
   });
 }
 

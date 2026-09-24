@@ -13,16 +13,28 @@ data class WalkCoordinate(
   val longitude: Double,
 )
 
+data class WalkPoopMark(
+  val latitude: Double,
+  val longitude: Double,
+  val petId: String = "",
+)
+
 data class WalkCustomMark(
   val latitude: Double,
   val longitude: Double,
   val icon: String,
   val buttonId: String,
+  val petId: String = "",
+)
+
+data class WalkSessionPet(
+  val id: String,
+  val name: String,
 )
 
 data class WalkSessionSnapshot(
   val route: List<WalkCoordinate>,
-  val poops: List<WalkCoordinate>,
+  val poops: List<WalkPoopMark>,
   val customMarks: List<WalkCustomMark>,
   val isTracking: Boolean,
   val startTimeMs: Long?,
@@ -36,11 +48,27 @@ object WalkSessionStorage {
   private const val KEY_IS_TRACKING = "isTracking"
   private const val KEY_CUSTOM_BUTTON_ID = "customButtonId"
   private const val KEY_CUSTOM_ICON = "customIcon"
+  private const val KEY_ACTIVE_PET_ID = "activePetId"
+  private const val KEY_ACTIVE_PET_LABEL_PREFIX = "activePetLabelPrefix"
+  private const val KEY_WALK_PETS_JSON = "walkPetsJson"
   private const val KEY_START_TIME_MS = "startTimeMs"
 
   @Synchronized
-  fun beginSession(context: Context, customButtonId: String, customIcon: String) {
+  fun beginSession(
+    context: Context,
+    customButtonId: String,
+    customIcon: String,
+    activePetId: String,
+    walkPetsJson: String,
+    activePetLabelPrefix: String,
+  ) {
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    val pets = parseWalkPets(walkPetsJson)
+    val resolvedActivePetId = when {
+      activePetId.isNotBlank() && pets.any { it.id == activePetId } -> activePetId
+      pets.isNotEmpty() -> pets.first().id
+      else -> activePetId
+    }
     prefs.edit()
       .putString(KEY_ROUTE, "[]")
       .putString(KEY_POOPS, "[]")
@@ -48,8 +76,71 @@ object WalkSessionStorage {
       .putBoolean(KEY_IS_TRACKING, true)
       .putString(KEY_CUSTOM_BUTTON_ID, customButtonId)
       .putString(KEY_CUSTOM_ICON, customIcon)
+      .putString(KEY_ACTIVE_PET_ID, resolvedActivePetId)
+      .putString(KEY_WALK_PETS_JSON, walkPetsJson)
+      .putString(KEY_ACTIVE_PET_LABEL_PREFIX, activePetLabelPrefix)
       .putLong(KEY_START_TIME_MS, System.currentTimeMillis())
       .apply()
+  }
+
+  @Synchronized
+  fun setActivePetId(context: Context, petId: String) {
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    val pets = readWalkPets(context)
+    val resolved = when {
+      petId.isNotBlank() && pets.any { it.id == petId } -> petId
+      pets.isNotEmpty() -> pets.first().id
+      else -> petId
+    }
+    prefs.edit().putString(KEY_ACTIVE_PET_ID, resolved).apply()
+  }
+
+  @Synchronized
+  fun activePetId(context: Context): String {
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    return prefs.getString(KEY_ACTIVE_PET_ID, "") ?: ""
+  }
+
+  @Synchronized
+  fun readWalkPets(context: Context): List<WalkSessionPet> {
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    return parseWalkPets(prefs.getString(KEY_WALK_PETS_JSON, "[]") ?: "[]")
+  }
+
+  @Synchronized
+  fun canCycleActivePet(context: Context): Boolean {
+    return readWalkPets(context).size > 1
+  }
+
+  @Synchronized
+  fun cycleActivePet(context: Context): Boolean {
+    val pets = readWalkPets(context)
+    if (pets.size <= 1) {
+      return false
+    }
+    val currentId = activePetId(context)
+    val currentIndex = pets.indexOfFirst { it.id == currentId }.let { if (it < 0) 0 else it }
+    val next = pets[(currentIndex + 1) % pets.size]
+    setActivePetId(context, next.id)
+    return true
+  }
+
+  @Synchronized
+  fun activePetDisplayLabel(context: Context): String {
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    val prefix = prefs.getString(KEY_ACTIVE_PET_LABEL_PREFIX, "") ?: ""
+    val pets = readWalkPets(context)
+    if (pets.isEmpty()) {
+      return ""
+    }
+    val currentId = activePetId(context)
+    val pet = pets.firstOrNull { it.id == currentId } ?: pets.first()
+    val name = pet.name.ifBlank { pet.id }
+    return if (canCycleActivePet(context)) {
+      "$prefix$name ⇄"
+    } else {
+      "$prefix$name"
+    }
   }
 
   @Synchronized
@@ -86,7 +177,7 @@ object WalkSessionStorage {
   @Synchronized
   fun appendPoop(context: Context, latitude: Double, longitude: Double) {
     val poops = readPoops(context).toMutableList()
-    poops.add(WalkCoordinate(latitude, longitude))
+    poops.add(WalkPoopMark(latitude, longitude, activePetId(context)))
     writePoops(context, poops)
   }
 
@@ -96,7 +187,7 @@ object WalkSessionStorage {
     val buttonId = prefs.getString(KEY_CUSTOM_BUTTON_ID, "pee") ?: "pee"
     val icon = prefs.getString(KEY_CUSTOM_ICON, "💦") ?: "💦"
     val marks = readCustomMarks(context).toMutableList()
-    marks.add(WalkCustomMark(latitude, longitude, icon, buttonId))
+    marks.add(WalkCustomMark(latitude, longitude, icon, buttonId, activePetId(context)))
     writeCustomMarks(context, marks)
   }
 
@@ -129,6 +220,24 @@ object WalkSessionStorage {
   fun readCustomMarksCount(context: Context): Int = readCustomMarks(context).size
 
   @Synchronized
+  fun readPoopsCountForActivePet(context: Context): Int {
+    val petId = activePetId(context)
+    if (petId.isBlank() || !canCycleActivePet(context)) {
+      return readPoopsCount(context)
+    }
+    return readPoops(context).count { it.petId == petId }
+  }
+
+  @Synchronized
+  fun readCustomMarksCountForActivePet(context: Context): Int {
+    val petId = activePetId(context)
+    if (petId.isBlank() || !canCycleActivePet(context)) {
+      return readCustomMarksCount(context)
+    }
+    return readCustomMarks(context).count { it.petId == petId }
+  }
+
+  @Synchronized
   fun readCustomIcon(context: Context): String {
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     return prefs.getString(KEY_CUSTOM_ICON, "💦") ?: "💦"
@@ -144,14 +253,35 @@ object WalkSessionStorage {
     prefs.edit().putString(KEY_ROUTE, coordinateArrayToJson(route)).apply()
   }
 
-  private fun readPoops(context: Context): List<WalkCoordinate> {
+  private fun readPoops(context: Context): List<WalkPoopMark> {
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    return parseCoordinateArray(prefs.getString(KEY_POOPS, "[]") ?: "[]")
+    val array = JSONArray(prefs.getString(KEY_POOPS, "[]") ?: "[]")
+    val marks = mutableListOf<WalkPoopMark>()
+    for (index in 0 until array.length()) {
+      val item = array.getJSONObject(index)
+      marks.add(
+        WalkPoopMark(
+          latitude = item.getDouble("latitude"),
+          longitude = item.getDouble("longitude"),
+          petId = item.optString("petId", ""),
+        )
+      )
+    }
+    return marks
   }
 
-  private fun writePoops(context: Context, poops: List<WalkCoordinate>) {
+  private fun writePoops(context: Context, poops: List<WalkPoopMark>) {
+    val array = JSONArray()
+    poops.forEach { mark ->
+      array.put(
+        JSONObject()
+          .put("latitude", mark.latitude)
+          .put("longitude", mark.longitude)
+          .put("petId", mark.petId)
+      )
+    }
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    prefs.edit().putString(KEY_POOPS, coordinateArrayToJson(poops)).apply()
+    prefs.edit().putString(KEY_POOPS, array.toString()).apply()
   }
 
   private fun readCustomMarks(context: Context): List<WalkCustomMark> {
@@ -167,6 +297,7 @@ object WalkSessionStorage {
           longitude = item.getDouble("longitude"),
           icon = item.optString("icon", "💦"),
           buttonId = item.optString("buttonId", "pee"),
+          petId = item.optString("petId", ""),
         )
       )
     }
@@ -182,6 +313,7 @@ object WalkSessionStorage {
           .put("longitude", mark.longitude)
           .put("icon", mark.icon)
           .put("buttonId", mark.buttonId)
+          .put("petId", mark.petId)
       )
     }
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -201,6 +333,29 @@ object WalkSessionStorage {
       )
     }
     return coordinates
+  }
+
+  private fun parseWalkPets(raw: String): List<WalkSessionPet> {
+    return try {
+      val array = JSONArray(raw)
+      val pets = mutableListOf<WalkSessionPet>()
+      for (index in 0 until array.length()) {
+        val item = array.getJSONObject(index)
+        val id = item.optString("id", "")
+        if (id.isBlank()) {
+          continue
+        }
+        pets.add(
+          WalkSessionPet(
+            id = id,
+            name = item.optString("name", id),
+          )
+        )
+      }
+      pets
+    } catch (_: Exception) {
+      emptyList()
+    }
   }
 
   private fun coordinateArrayToJson(coordinates: List<WalkCoordinate>): String {

@@ -13,11 +13,17 @@ import {
   isValidWalkSharePrivacyRadius,
   normalizeWalkSharePrivacyRadius,
 } from '../constants/walkSharePrivacyOptions';
+import {
+  DEFAULT_WALK_NOTIFICATION_TEXT_COLOR_ID,
+  isValidWalkNotificationTextColorId,
+  normalizeWalkNotificationTextColorId,
+} from '../constants/walkNotificationTextColorOptions';
 
 const WALK_CUSTOM_BUTTON_STORAGE_KEY = '@walk_custom_button_id';
 const WALK_UPLOAD_ON_CELLULAR_KEY = '@walk_upload_on_cellular';
 const WALK_SAVE_PHOTO_TO_LIBRARY_KEY = '@walk_save_photo_to_library';
 const WALK_SHARE_PRIVACY_RADIUS_KEY = '@walk_share_privacy_radius_meters';
+const WALK_NOTIFICATION_TEXT_COLOR_KEY = '@walk_notification_text_color_id';
 
 const WalkPreferencesContext = createContext(null);
 
@@ -29,17 +35,22 @@ export function WalkPreferencesProvider({ children }) {
   const [sharePrivacyRadiusMeters, setSharePrivacyRadiusMetersState] = useState(
     DEFAULT_WALK_SHARE_PRIVACY_RADIUS_METERS
   );
+  const [notificationTextColorId, setNotificationTextColorIdState] = useState(
+    DEFAULT_WALK_NOTIFICATION_TEXT_COLOR_ID
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [savedButton, savedCellular, savedToLibrary, savedSharePrivacy] = await Promise.all([
-          AsyncStorage.getItem(WALK_CUSTOM_BUTTON_STORAGE_KEY),
-          AsyncStorage.getItem(WALK_UPLOAD_ON_CELLULAR_KEY),
-          AsyncStorage.getItem(WALK_SAVE_PHOTO_TO_LIBRARY_KEY),
-          AsyncStorage.getItem(WALK_SHARE_PRIVACY_RADIUS_KEY),
-        ]);
+        const [savedButton, savedCellular, savedToLibrary, savedSharePrivacy, savedTextColor] =
+          await Promise.all([
+            AsyncStorage.getItem(WALK_CUSTOM_BUTTON_STORAGE_KEY),
+            AsyncStorage.getItem(WALK_UPLOAD_ON_CELLULAR_KEY),
+            AsyncStorage.getItem(WALK_SAVE_PHOTO_TO_LIBRARY_KEY),
+            AsyncStorage.getItem(WALK_SHARE_PRIVACY_RADIUS_KEY),
+            AsyncStorage.getItem(WALK_NOTIFICATION_TEXT_COLOR_KEY),
+          ]);
         if (savedButton) {
           const normalized = normalizeWalkCustomButtonId(savedButton);
           setCustomButtonIdState(normalized);
@@ -58,6 +69,13 @@ export function WalkPreferencesProvider({ children }) {
           setSharePrivacyRadiusMetersState(normalized);
           if (normalized !== Number(savedSharePrivacy)) {
             await AsyncStorage.setItem(WALK_SHARE_PRIVACY_RADIUS_KEY, String(normalized));
+          }
+        }
+        if (savedTextColor != null) {
+          const normalized = normalizeWalkNotificationTextColorId(savedTextColor);
+          setNotificationTextColorIdState(normalized);
+          if (normalized !== savedTextColor) {
+            await AsyncStorage.setItem(WALK_NOTIFICATION_TEXT_COLOR_KEY, normalized);
           }
         }
       } catch (error) {
@@ -111,6 +129,18 @@ export function WalkPreferencesProvider({ children }) {
     }
   }, []);
 
+  const setNotificationTextColorId = useCallback(async (colorId) => {
+    if (!isValidWalkNotificationTextColorId(colorId)) {
+      return;
+    }
+    setNotificationTextColorIdState(colorId);
+    try {
+      await AsyncStorage.setItem(WALK_NOTIFICATION_TEXT_COLOR_KEY, colorId);
+    } catch (error) {
+      console.error('Failed to save notification text color', error);
+    }
+  }, []);
+
   const customButtonOption = useMemo(
     () => getWalkCustomButtonOption(customButtonId),
     [customButtonId]
@@ -136,6 +166,8 @@ export function WalkPreferencesProvider({ children }) {
         setSavePhotoToLibrary,
         sharePrivacyRadiusMeters,
         setSharePrivacyRadiusMeters,
+        notificationTextColorId,
+        setNotificationTextColorId,
         loading,
       }}
     >

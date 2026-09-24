@@ -9,6 +9,10 @@ struct WalkTrackingStartOptions: Record {
   @Field var customLabel: String = "Custom"
   @Field var customButtonId: String = "pee"
   @Field var customIcon: String = "💦"
+  @Field var textColorHex: String = "#FFFFFF"
+  @Field var activePetId: String = ""
+  @Field var walkPetsJson: String = "[]"
+  @Field var activePetLabelPrefix: String = ""
   @Field var distanceIntervalMeters: Double = 5
 }
 
@@ -25,19 +29,24 @@ public class ExpoWalkTrackingModule: Module {
 
       WalkSessionStorage.beginSession(
         customButtonId: options.customButtonId,
-        customIcon: options.customIcon
+        customIcon: options.customIcon,
+        activePetId: options.activePetId,
+        walkPetsJson: options.walkPetsJson,
+        activePetLabelPrefix: options.activePetLabelPrefix
       )
 
       let attributes = WalkActivityAttributes(
         poopLabel: options.poopLabel,
         customLabel: options.customLabel,
-        customIcon: options.customIcon
+        customIcon: options.customIcon,
+        textColorHex: options.textColorHex
       )
       let state = WalkActivityAttributes.ContentState(
         title: options.title,
         body: options.body,
         poopCount: 0,
-        customCount: 0
+        customCount: 0,
+        activePetLabel: WalkSessionStorage.activePetDisplayLabel()
       )
 
       if ActivityAuthorizationInfo().areActivitiesEnabled {
@@ -63,7 +72,8 @@ public class ExpoWalkTrackingModule: Module {
               title: "",
               body: "",
               poopCount: 0,
-              customCount: 0
+              customCount: 0,
+              activePetLabel: ""
             ),
             staleDate: nil
           ),
@@ -101,6 +111,19 @@ public class ExpoWalkTrackingModule: Module {
       return ["latitude": coordinate.latitude, "longitude": coordinate.longitude]
     }
 
+    Function("setActiveMarkPetId") { (petId: String) in
+      WalkSessionStorage.setActivePetId(petId)
+      if #available(iOS 16.2, *) {
+        Task {
+          await WalkLiveActivityUpdater.refreshCounts()
+        }
+      }
+    }
+
+    Function("getActiveMarkPetId") { () -> String in
+      WalkSessionStorage.activePetId()
+    }
+
     Function("setLastKnownCoordinate") { (latitude: Double, longitude: Double) in
       WalkSessionStorage.setLastCoordinate(latitude: latitude, longitude: longitude)
     }
@@ -113,13 +136,20 @@ public class ExpoWalkTrackingModule: Module {
   private static func snapshotToDictionary(_ snapshot: WalkSessionSnapshotPayload) -> [String: Any] {
     var payload: [String: Any] = [
       "route": snapshot.route.map { ["latitude": $0.latitude, "longitude": $0.longitude] },
-      "poops": snapshot.poops.map { ["latitude": $0.latitude, "longitude": $0.longitude] },
+      "poops": snapshot.poops.map {
+        [
+          "latitude": $0.latitude,
+          "longitude": $0.longitude,
+          "petId": $0.petId,
+        ]
+      },
       "customMarks": snapshot.customMarks.map {
         [
           "latitude": $0.latitude,
           "longitude": $0.longitude,
           "icon": $0.icon,
           "buttonId": $0.buttonId,
+          "petId": $0.petId,
         ]
       },
       "isTracking": snapshot.isTracking,

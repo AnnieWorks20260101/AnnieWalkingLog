@@ -29,6 +29,18 @@ class WalkTrackingStartOptions : Record {
   var customIcon: String = "💦"
 
   @Field
+  var textColorHex: String = WalkTrackingContracts.DEFAULT_TEXT_COLOR_HEX
+
+  @Field
+  var activePetId: String = ""
+
+  @Field
+  var walkPetsJson: String = "[]"
+
+  @Field
+  var activePetLabelPrefix: String = ""
+
+  @Field
   var distanceIntervalMeters: Double = WalkTrackingContracts.DEFAULT_DISTANCE_INTERVAL_METERS.toDouble()
 }
 
@@ -58,6 +70,10 @@ class ExpoWalkTrackingModule : Module() {
             customLabel = options.customLabel,
             customButtonId = options.customButtonId,
             customIcon = options.customIcon,
+            textColorHex = options.textColorHex,
+            activePetId = options.activePetId,
+            walkPetsJson = options.walkPetsJson,
+            activePetLabelPrefix = options.activePetLabelPrefix,
             distanceIntervalMeters = options.distanceIntervalMeters.toFloat(),
           )
         )
@@ -105,6 +121,17 @@ class ExpoWalkTrackingModule : Module() {
         return@AsyncFunction
       }
       appendMarkFromCurrentLocation(context, isPoop = false, promise)
+    }
+
+    Function("setActiveMarkPetId") { petId: String ->
+      val context = appContext.reactContext?.applicationContext ?: return@Function
+      WalkSessionStorage.setActivePetId(context, petId)
+      WalkTrackingForegroundService.refreshNotification(context)
+    }
+
+    Function("getActiveMarkPetId") {
+      val context = appContext.reactContext?.applicationContext ?: return@Function ""
+      WalkSessionStorage.activePetId(context)
     }
 
     Function("setLastKnownCoordinate") { _: Double, _: Double ->
@@ -187,7 +214,11 @@ class ExpoWalkTrackingModule : Module() {
         mapOf("latitude" to it.latitude, "longitude" to it.longitude)
       },
       "poops" to snapshot.poops.map {
-        mapOf("latitude" to it.latitude, "longitude" to it.longitude)
+        mapOf(
+          "latitude" to it.latitude,
+          "longitude" to it.longitude,
+          "petId" to it.petId,
+        )
       },
       "customMarks" to snapshot.customMarks.map {
         mapOf(
@@ -195,6 +226,7 @@ class ExpoWalkTrackingModule : Module() {
           "longitude" to it.longitude,
           "icon" to it.icon,
           "buttonId" to it.buttonId,
+          "petId" to it.petId,
         )
       },
       "isTracking" to snapshot.isTracking,
