@@ -227,7 +227,7 @@
     "sharePrivacyImperial_400": "1 mile",
     "sharePrivacyImperial_500": "1¼ mile",
     "notificationTextColorLabel": "Couleur du texte de la notification de promenade",
-    "notificationTextColorDesc": "Couleur du texte pour la notification Android permanente et la Live Activity iPhone. Modifiez-la si le texte est difficile à lire. S'applique à la prochaine promenade.",
+    "notificationTextColorDesc": "Couleur du texte affiché sur l’écran de verrouillage ou la notification pendant une promenade. Modifiez-la si le texte est difficile à lire. S’applique à la prochaine promenade.",
     "notificationTextColorModalTitle": "Couleur du texte de notification",
     "notificationTextColor_white": "Blanc",
     "notificationTextColor_black": "Noir",

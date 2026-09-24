@@ -227,7 +227,7 @@
     "sharePrivacyImperial_400": "1 miglio",
     "sharePrivacyImperial_500": "1¼ miglia",
     "notificationTextColorLabel": "Colore del testo della notifica passeggiata",
-    "notificationTextColorDesc": "Colore del testo per la notifica Android persistente e la Live Activity iPhone. Modificalo se il testo è poco leggibile. Si applica dalla prossima passeggiata.",
+    "notificationTextColorDesc": "Colore del testo su schermata di blocco o notifica durante la passeggiata. Modificalo se è poco leggibile. Si applica dalla prossima passeggiata.",
     "notificationTextColorModalTitle": "Colore testo notifica",
     "notificationTextColor_white": "Bianco",
     "notificationTextColor_black": "Nero",

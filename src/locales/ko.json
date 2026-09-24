@@ -227,7 +227,7 @@
     "sharePrivacyImperial_400": "1마일",
     "sharePrivacyImperial_500": "1¼마일",
     "notificationTextColorLabel": "산책 알림 글자색",
-    "notificationTextColorDesc": "Android 상시 알림과 iPhone Live Activity의 글자색입니다. 배경에 따라 읽기 어려울 때 변경하세요. 다음 산책부터 적용됩니다.",
+    "notificationTextColorDesc": "산책 중 잠금 화면이나 알림에 표시되는 글자색입니다. 읽기 어려울 때 변경하세요. 다음 산책부터 적용됩니다.",
     "notificationTextColorModalTitle": "알림 글자색",
     "notificationTextColor_white": "흰색",
     "notificationTextColor_black": "검정",

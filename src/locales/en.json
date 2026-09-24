@@ -227,7 +227,7 @@
     "sharePrivacyImperial_400": "1 mile",
     "sharePrivacyImperial_500": "1¼ miles",
     "notificationTextColorLabel": "Walk notification text color",
-    "notificationTextColorDesc": "Text color for the Android ongoing notification and iPhone Live Activity. Change it if the text is hard to read on your wallpaper or theme. Applies from the next walk.",
+    "notificationTextColorDesc": "Text color shown on the lock screen or notification during a walk. Change it if the text is hard to read. Applies from the next walk.",
     "notificationTextColorModalTitle": "Notification text color",
     "notificationTextColor_white": "White",
     "notificationTextColor_black": "Black",

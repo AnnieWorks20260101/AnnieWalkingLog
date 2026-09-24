@@ -227,7 +227,7 @@
     "sharePrivacyImperial_400": "1 Meile",
     "sharePrivacyImperial_500": "1¼ Meilen",
     "notificationTextColorLabel": "Textfarbe der Spaziergang-Benachrichtigung",
-    "notificationTextColorDesc": "Textfarbe für die Android-Dauernachricht und die iPhone Live Activity. Ändern Sie sie, wenn der Text auf Ihrem Hintergrund schwer lesbar ist. Gilt ab dem nächsten Spaziergang.",
+    "notificationTextColorDesc": "Textfarbe für Sperrbildschirm oder Benachrichtigung während eines Spaziergangs. Ändern Sie sie, wenn der Text schwer lesbar ist. Gilt ab dem nächsten Spaziergang.",
     "notificationTextColorModalTitle": "Textfarbe der Benachrichtigung",
     "notificationTextColor_white": "Weiß",
     "notificationTextColor_black": "Schwarz",

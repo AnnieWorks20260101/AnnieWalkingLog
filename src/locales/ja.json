@@ -227,7 +227,7 @@
     "sharePrivacyImperial_400": "1マイル",
     "sharePrivacyImperial_500": "1¼マイル",
     "notificationTextColorLabel": "お散歩中の通知の文字色",
-    "notificationTextColorDesc": "Androidの常駐通知・iPhoneのLive Activityの文字色です。壁紙やテーマで見えにくいときに変更してください。次のお散歩開始から反映されます。",
+    "notificationTextColorDesc": "お散歩中のロック画面や通知に表示される文字色です。見えにくいときに変更してください。次のお散歩開始から反映されます。",
     "notificationTextColorModalTitle": "通知の文字色",
     "notificationTextColor_white": "白",
     "notificationTextColor_black": "黒",

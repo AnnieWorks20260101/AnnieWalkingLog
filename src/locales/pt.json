@@ -227,7 +227,7 @@
     "sharePrivacyImperial_400": "1 milha",
     "sharePrivacyImperial_500": "1¼ milhas",
     "notificationTextColorLabel": "Cor do texto da notificação de passeio",
-    "notificationTextColorDesc": "Cor do texto da notificação permanente no Android e da Live Activity no iPhone. Altere se o texto for difícil de ler. Aplica-se no próximo passeio.",
+    "notificationTextColorDesc": "Cor do texto no ecrã de bloqueio ou na notificação durante o passeio. Altere se for difícil de ler. Aplica-se no próximo passeio.",
     "notificationTextColorModalTitle": "Cor do texto da notificação",
     "notificationTextColor_white": "Branco",
     "notificationTextColor_black": "Preto",

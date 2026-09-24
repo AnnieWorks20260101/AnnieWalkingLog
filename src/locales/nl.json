@@ -227,7 +227,7 @@
     "sharePrivacyImperial_400": "1 mijl",
     "sharePrivacyImperial_500": "1¼ mijl",
     "notificationTextColorLabel": "Tekstkleur wandelmelding",
-    "notificationTextColorDesc": "Tekstkleur voor de Android-melding en de iPhone Live Activity. Wijzig dit als de tekst moeilijk leesbaar is. Geldt vanaf de volgende wandeling.",
+    "notificationTextColorDesc": "Tekstkleur op het vergrendelscherm of in de melding tijdens een wandeling. Wijzig dit als de tekst moeilijk leesbaar is. Geldt vanaf de volgende wandeling.",
     "notificationTextColorModalTitle": "Tekstkleur melding",
     "notificationTextColor_white": "Wit",
     "notificationTextColor_black": "Zwart",
