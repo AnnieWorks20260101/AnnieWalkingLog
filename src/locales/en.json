@@ -145,6 +145,7 @@
     "saveSuccess": "Saved!",
     "saveSuccessMsg": "Great walk today! 🐾",
     "saveSuccessPhotosFailed": "Your walk was saved, but photo upload failed. Check your Wi‑Fi connection and Storage rules.",
+    "saveSuccessPhotosPartial": "Your walk was saved. %{failed} photo(s) could not be uploaded.",
     "pushWalkEndedTitle": "Walk log",
     "pushWalkEndedBody": "%{senderName} finished a walk with %{petName}.",
     "pushWalkEndedSenderFallback": "A family member",
@@ -197,6 +198,7 @@
     "premiumSubscribeAnnual": "Subscribe for %{price}/year",
     "premiumSubscribeDefault": "Subscribe for %{price}",
     "premiumRestore": "Restore purchases",
+    "premiumPurchasesClosed": "New purchases are not being accepted. If you already subscribed, use Restore purchases.",
     "premiumPurchaseSuccess": "You're now subscribed to Premium. Everyone in your family can use Premium features.",
     "premiumRestoreSuccess": "Your purchases have been restored.",
     "premiumRestoreNone": "No purchases were found to restore.",
@@ -473,6 +475,9 @@
   "friendList": {
     "title": "Friends",
     "noFriends": "No friends yet.\nTap the button at bottom right to add one 🐾",
+    "filterAll": "All",
+    "filterUnassigned": "Unassigned",
+    "emptyFiltered": "No friends in this group.",
     "planInactiveFriend": "Not available on your current plan"
   },
   "friendRegistration": {
@@ -485,6 +490,8 @@
     "photoUploadError": "Failed to upload the photo. Please check your Firebase Storage rules (separate from Firestore).",
     "nameLabel": "Name",
     "namePlaceholder": "e.g. Max",
+    "groupLabel": "Group (optional)",
+    "groupPlaceholder": "e.g. Neighborhood, Park, the Smiths",
     "breedLabel": "Breed",
     "breedPlaceholder": "e.g. Toy Poodle, Mix",
     "genderLabel": "Sex",
@@ -670,7 +677,7 @@
           "premium": "1 sub · all"
         },
         "price": {
-          "label": "Price (planned)",
+          "label": "Price",
           "guest": "Free",
           "registered": "Free",
           "premium": "¥180/mo\n¥1,800/yr"
@@ -719,5 +726,19 @@
     "cancel": "Cancel",
     "hour": "h",
     "minute": "min"
+  },
+  "notices": {
+    "announcementFallbackTitle": "Notice",
+    "shutdownBlocked": "This app is currently unavailable."
+  },
+  "v105Intro": {
+    "title": "What's new (v1.05)",
+    "lead": "Thanks for using Annie Walking Log!",
+    "bullet1": "You can now add groups to friends and filter the list by All or by group.",
+    "bullet2": "Friend breed is now shown on the right side of the friends list.",
+    "bullet3": "If some walk photos fail to upload, successfully uploaded photos are still saved to the walk.",
+    "bullet4": "Fixed an issue where poop/custom markers could flicker or fail to appear during a walk.",
+    "bullet5": "Fixed older poop marks without a dog ID disappearing on single-dog walk results.",
+    "continue": "Continue"
   }
 }

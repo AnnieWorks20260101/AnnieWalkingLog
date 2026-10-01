@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// Annie Works shared announcements hub.
+// Deploy to the hub Firebase project (not anniewalkinglog):
+//   npx firebase-tools deploy --only firestore:rules --config firebase.announcements-hub.json --project <hub-project-id>
+//
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Org-wide notices (shutdown / developer incapacity). Client read-only.
+    match /announcements/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

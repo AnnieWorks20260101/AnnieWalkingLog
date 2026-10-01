@@ -145,6 +145,7 @@
     "saveSuccess": "저장됨!",
     "saveSuccessMsg": "오늘도 좋은 산책이었어요! 🐾",
     "saveSuccessPhotosFailed": "산책은 저장되었지만 사진 업로드에 실패했습니다. Wi‑Fi 연결과 Storage 규칙을 확인해 주세요.",
+    "saveSuccessPhotosPartial": "산책 기록을 저장했습니다. 사진 %{failed}장을 업로드하지 못했습니다.",
     "pushWalkEndedTitle": "산책 기록",
     "pushWalkEndedBody": "%{senderName}님이 %{petName}와(과) 산책을 마쳤습니다.",
     "pushWalkEndedSenderFallback": "가족 구성원",
@@ -197,6 +198,7 @@
     "premiumSubscribeAnnual": "연 %{price} 구독",
     "premiumSubscribeDefault": "%{price} 구독",
     "premiumRestore": "구매 복원",
+    "premiumPurchasesClosed": "신규 구매는 받지 않습니다. 이미 구독 중이라면 「구매 복원」을 이용해 주세요.",
     "premiumPurchaseSuccess": "프리미엄 구독이 완료되었습니다. 가족 모두가 프리미엄 기능을 이용할 수 있습니다.",
     "premiumRestoreSuccess": "구매가 복원되었습니다.",
     "premiumRestoreNone": "복원할 구매 내역이 없습니다.",
@@ -471,6 +473,9 @@
   "friendList": {
     "title": "친구 목록",
     "noFriends": "아직 등록된 친구가 없습니다.\n오른쪽 아래 버튼을 탭하여 추가하세요 🐾",
+    "filterAll": "전체",
+    "filterUnassigned": "미분류",
+    "emptyFiltered": "이 그룹에 친구가 없습니다.",
     "planInactiveFriend": "현재 요금제에서 이용 불가"
   },
   "friendRegistration": {
@@ -483,6 +488,8 @@
     "photoUploadError": "사진 업로드에 실패했습니다. Firebase Storage 규칙을 확인해주세요(Firestore와 별개입니다).",
     "nameLabel": "이름",
     "namePlaceholder": "예: 뽀삐",
+    "groupLabel": "그룹 (선택)",
+    "groupPlaceholder": "예: 동네, 공원, ○○네",
     "breedLabel": "견종",
     "breedPlaceholder": "예: 토이 푸들, 믹스",
     "genderLabel": "성별",
@@ -668,7 +675,7 @@
           "premium": "1 구독 · 전원"
         },
         "price": {
-          "label": "가격 (예정)",
+          "label": "가격",
           "guest": "무료",
           "registered": "무료",
           "premium": "¥180/월\n¥1,800/년"
@@ -717,5 +724,19 @@
     "cancel": "취소",
     "hour": "시간",
     "minute": "분"
+  },
+  "notices": {
+    "announcementFallbackTitle": "알림",
+    "shutdownBlocked": "현재 이 앱을 이용할 수 없습니다."
+  },
+  "v105Intro": {
+    "title": "업데이트 안내 (v1.05)",
+    "lead": "Annie Walking Log을 이용해 주셔서 감사합니다!",
+    "bullet1": "친구에 그룹을 지정하고, 목록을 전체 또는 그룹으로 필터할 수 있습니다.",
+    "bullet2": "친구 목록 오른쪽에 견종을 표시합니다.",
+    "bullet3": "산책 사진 일부 업로드에 실패해도, 성공한 사진은 기록에 남도록 개선했습니다.",
+    "bullet4": "산책 중 배변·커스텀 마커가 깜빡이거나 안 보이던 문제를 수정했습니다.",
+    "bullet5": "이전 버전의 배변 기록(강아지 ID 없음)이 한 마리 산책 결과에서 안 보이던 문제를 수정했습니다.",
+    "continue": "시작하기"
   }
 }

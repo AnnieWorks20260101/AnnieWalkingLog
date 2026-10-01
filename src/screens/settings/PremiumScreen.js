@@ -27,6 +27,7 @@ import {
   isRevenueCatSupportedPlatform,
   syncFamilyPremiumFromRevenueCat,
 } from '../../services/revenueCat';
+import { useShutdownPurchaseFreeze } from '../../hooks/useShutdownPurchaseFreeze';
 import { openPrivacyPolicy } from '../../utils/openPrivacyPolicy';
 import { openTermsOfService } from '../../utils/openTermsOfService';
 import i18n from '../../i18n';
@@ -47,15 +48,17 @@ export default function PremiumScreen() {
   const { currentTheme, fontSizes } = useTheme();
   const { isGuest, familyId, userId } = useAuth();
   const { tier, isPremium } = usePlanTier();
+  const purchasesFrozen = useShutdownPurchaseFreeze();
   const [packages, setPackages] = useState([]);
   const [loadingPackages, setLoadingPackages] = useState(true);
   const [purchasingPackageId, setPurchasingPackageId] = useState(null);
   const [restoring, setRestoring] = useState(false);
 
   const canPurchase = !isGuest && !!familyId && isRevenueCatSupportedPlatform();
+  const canStartNewPurchase = canPurchase && !purchasesFrozen;
 
   const loadPackages = useCallback(async () => {
-    if (!canPurchase) {
+    if (!canStartNewPurchase) {
       setPackages([]);
       setLoadingPackages(false);
       return;
@@ -72,7 +75,7 @@ export default function PremiumScreen() {
     } finally {
       setLoadingPackages(false);
     }
-  }, [canPurchase, familyId, userId]);
+  }, [canStartNewPurchase, familyId, userId]);
 
   useEffect(() => {
     loadPackages();
@@ -95,6 +98,10 @@ export default function PremiumScreen() {
 
   const handlePurchaseError = useCallback((error) => {
     if (error?.userCancelled) {
+      return;
+    }
+    if (error?.code === 'PURCHASES_CLOSED' || error?.message === 'PURCHASES_CLOSED') {
+      Alert.alert(i18n.t('common.notice'), i18n.t('settings.premiumPurchasesClosed'));
       return;
     }
     console.warn('PremiumScreen: purchase failed:', error);
@@ -187,6 +194,10 @@ export default function PremiumScreen() {
             <Text style={[styles.purchaseHint, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
               {i18n.t('settings.premiumGuestHint')}
             </Text>
+          ) : purchasesFrozen && !isPremium ? (
+            <Text style={[styles.purchaseHint, { color: currentTheme.text, fontSize: fontSizes.m }]}>
+              {i18n.t('settings.premiumPurchasesClosed')}
+            </Text>
           ) : loadingPackages ? (
             <ActivityIndicator size="small" color={currentTheme.primary} style={styles.loader} />
           ) : isPremium ? (
@@ -241,13 +252,15 @@ export default function PremiumScreen() {
             </TouchableOpacity>
           ) : null}
 
-          <Text style={[styles.autoRenewNote, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-            {i18n.t(
-              Platform.OS === 'ios'
-                ? 'settings.premiumAutoRenewNoteIos'
-                : 'settings.premiumAutoRenewNoteAndroid'
-            )}
-          </Text>
+          {!purchasesFrozen ? (
+            <Text style={[styles.autoRenewNote, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+              {i18n.t(
+                Platform.OS === 'ios'
+                  ? 'settings.premiumAutoRenewNoteIos'
+                  : 'settings.premiumAutoRenewNoteAndroid'
+              )}
+            </Text>
+          ) : null}
         </View>
 
         <View style={[styles.legalFooter, { borderTopColor: currentTheme.border }]}>

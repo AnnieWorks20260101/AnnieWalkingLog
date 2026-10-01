@@ -1,5 +1,13 @@
-import React from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  ScrollView,
+} from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,6 +18,12 @@ import ScreenHeader from '../../components/ScreenHeader';
 import { SCREEN_FRIEND_REGISTRATION } from '../../navigation/screenNames';
 import { usePlanTier } from '../../hooks/usePlanTier';
 import { isFriendUsableByPlanOrder } from '../../utils/planFriendUsage';
+import {
+  FRIEND_GROUP_FILTER_ALL,
+  FRIEND_GROUP_FILTER_UNASSIGNED,
+  collectFriendGroupNames,
+  filterFriendsByGroup,
+} from '../../utils/friendGroup';
 import i18n from '../../i18n';
 
 export default function FriendListScreen({ navigation }) {
@@ -18,6 +32,53 @@ export default function FriendListScreen({ navigation }) {
   const { familyId } = useAuth();
   const { entitlements } = usePlanTier();
   const { friends, loading } = useFamilyFriends(familyId);
+  const [groupFilter, setGroupFilter] = useState(FRIEND_GROUP_FILTER_ALL);
+
+  const groupNames = useMemo(() => collectFriendGroupNames(friends), [friends]);
+  const filteredFriends = useMemo(
+    () => filterFriendsByGroup(friends, groupFilter),
+    [friends, groupFilter]
+  );
+
+  const renderFilterChip = (filterKey, label) => {
+    const selected = groupFilter === filterKey;
+    return (
+      <TouchableOpacity
+        key={filterKey}
+        style={[
+          styles.filterChip,
+          { backgroundColor: currentTheme.chipBackground, borderColor: currentTheme.accentBorder },
+          selected && { backgroundColor: currentTheme.primary, borderColor: currentTheme.primary },
+        ]}
+        onPress={() => setGroupFilter(filterKey)}
+        activeOpacity={0.75}
+      >
+        <Text
+          style={[
+            styles.filterChipText,
+            { color: currentTheme.textSecondary },
+            selected && { color: currentTheme.card, fontWeight: 'bold' },
+          ]}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const listHeader = () => (
+    <View style={[styles.filterSection, { borderBottomColor: currentTheme.accentBorder }]}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterScroll}
+      >
+        {renderFilterChip(FRIEND_GROUP_FILTER_ALL, i18n.t('friendList.filterAll'))}
+        {groupNames.map((name) => renderFilterChip(name, name))}
+        {renderFilterChip(FRIEND_GROUP_FILTER_UNASSIGNED, i18n.t('friendList.filterUnassigned'))}
+      </ScrollView>
+    </View>
+  );
 
   const renderItem = ({ item }) => {
     const photoUrl = getPetPhotoUrl(item);
@@ -61,6 +122,11 @@ export default function FriendListScreen({ navigation }) {
             </Text>
           ) : null}
         </View>
+        {typeof item.breed === 'string' && item.breed.trim() ? (
+          <Text style={[styles.friendBreed, { color: currentTheme.textSecondary }]} numberOfLines={1}>
+            {item.breed.trim()}
+          </Text>
+        ) : null}
         <Ionicons name="chevron-forward" size={22} color={currentTheme.textSecondary} />
       </TouchableOpacity>
     );
@@ -88,9 +154,15 @@ export default function FriendListScreen({ navigation }) {
       ) : (
         <FlatList
           style={styles.list}
-          data={friends}
+          data={filteredFriends}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          ListHeaderComponent={listHeader}
+          ListEmptyComponent={
+            <Text style={[styles.emptyFilteredText, { color: currentTheme.textSecondary }]}>
+              {i18n.t('friendList.emptyFiltered')}
+            </Text>
+          }
           contentContainerStyle={{ padding: 10, paddingBottom: 100, flexGrow: 1 }}
         />
       )}
@@ -111,6 +183,31 @@ const createStyles = (fs) => ({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyText: { textAlign: 'center', marginTop: 10, lineHeight: 22 },
+  emptyFilteredText: {
+    textAlign: 'center',
+    marginTop: 32,
+    paddingHorizontal: 24,
+    lineHeight: 22,
+    fontSize: fs.m,
+  },
+  filterSection: {
+    marginBottom: 8,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+  },
+  filterScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 4,
+  },
+  filterChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  filterChipText: { fontSize: fs.s },
   friendCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -126,6 +223,14 @@ const createStyles = (fs) => ({
   noImage: { justifyContent: 'center', alignItems: 'center' },
   friendInfo: { flex: 1, minWidth: 0 },
   friendName: { fontSize: fs.l, fontWeight: 'bold' },
+  friendBreed: {
+    fontSize: fs.s,
+    marginLeft: 8,
+    marginRight: 4,
+    maxWidth: '36%',
+    flexShrink: 1,
+    textAlign: 'right',
+  },
   planInactiveLabel: { fontSize: fs.s, fontWeight: '600', marginTop: 2 },
   fab: {
     position: 'absolute',

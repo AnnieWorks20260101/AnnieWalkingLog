@@ -145,6 +145,7 @@
     "saveSuccess": "Gespeichert!",
     "saveSuccessMsg": "Schöner Spaziergang heute! 🐾",
     "saveSuccessPhotosFailed": "Spaziergang gespeichert, aber Foto-Upload fehlgeschlagen. Wi‑Fi-Verbindung und Storage-Regeln prüfen.",
+    "saveSuccessPhotosPartial": "Spaziergang gespeichert. %{failed} Foto(s) konnten nicht hochgeladen werden.",
     "pushWalkEndedTitle": "Spaziergang-Protokoll",
     "pushWalkEndedBody": "%{senderName} hat einen Spaziergang mit %{petName} beendet.",
     "pushWalkEndedSenderFallback": "Ein Familienmitglied",
@@ -197,6 +198,7 @@
     "premiumSubscribeAnnual": "Abonnieren für %{price}/Jahr",
     "premiumSubscribeDefault": "Abonnieren für %{price}",
     "premiumRestore": "Käufe wiederherstellen",
+    "premiumPurchasesClosed": "Neue Käufe werden nicht angenommen. Wenn Sie bereits abonniert haben, nutzen Sie Käufe wiederherstellen.",
     "premiumPurchaseSuccess": "Sie haben Premium abonniert. Alle in Ihrer Familie können Premium-Funktionen nutzen.",
     "premiumRestoreSuccess": "Ihre Käufe wurden wiederhergestellt.",
     "premiumRestoreNone": "Keine Käufe zum Wiederherstellen gefunden.",
@@ -471,6 +473,9 @@
   "friendList": {
     "title": "Freunde",
     "noFriends": "Noch keine Freunde.\nTippen Sie unten rechts, um einen hinzuzufügen 🐾",
+    "filterAll": "Alle",
+    "filterUnassigned": "Ohne Gruppe",
+    "emptyFiltered": "Keine Freunde in dieser Gruppe.",
     "planInactiveFriend": "Im aktuellen Tarif nicht verfügbar"
   },
   "friendRegistration": {
@@ -483,6 +488,8 @@
     "photoUploadError": "Foto-Upload fehlgeschlagen. Bitte prüfen Sie die Firebase Storage-Regeln (getrennt von Firestore).",
     "nameLabel": "Name",
     "namePlaceholder": "z. B. Bello",
+    "groupLabel": "Gruppe (optional)",
+    "groupPlaceholder": "z. B. Nachbarn, Park, Familie Müller",
     "breedLabel": "Rasse",
     "breedPlaceholder": "z. B. Toypudel, Mischling",
     "genderLabel": "Geschlecht",
@@ -668,7 +675,7 @@
           "premium": "1 Abo · alle"
         },
         "price": {
-          "label": "Preis (geplant)",
+          "label": "Preis",
           "guest": "Kostenlos",
           "registered": "Kostenlos",
           "premium": "¥180/Mo.\n¥1.800/J."
@@ -717,5 +724,19 @@
     "cancel": "Abbrechen",
     "hour": "Std.",
     "minute": "Min."
+  },
+  "notices": {
+    "announcementFallbackTitle": "Hinweis",
+    "shutdownBlocked": "Diese App ist derzeit nicht verfügbar."
+  },
+  "v105Intro": {
+    "title": "Neuigkeiten (v1.05)",
+    "lead": "Danke, dass du Annie Walking Log nutzt!",
+    "bullet1": "Freunden kannst du jetzt Gruppen zuweisen und die Liste nach „Alle“ oder Gruppe filtern.",
+    "bullet2": "Die Hunderasse wird rechts in der Freundesliste angezeigt.",
+    "bullet3": "Scheitert der Upload einzelner Spaziergang-Fotos, bleiben erfolgreich hochgeladene Fotos trotzdem gespeichert.",
+    "bullet4": "Flackern oder fehlende Kot-/Custom-Markierungen während des Spaziergangs behoben.",
+    "bullet5": "Ältere Kotmarkierungen ohne Hunde-ID verschwinden in Ergebnissen mit einem Hund nicht mehr.",
+    "continue": "Weiter"
   }
 }

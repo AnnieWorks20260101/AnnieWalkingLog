@@ -45,6 +45,38 @@ export function sanitizeFriendMark(mark) {
   };
 }
 
+function markComparableFields(mark) {
+  return [mark?.latitude, mark?.longitude, mark?.icon, mark?.buttonId, mark?.petId];
+}
+
+/**
+ * ネイティブ同期で同じ内容が返ってきたときに state を差し替えないための比較。
+ * 差し替えると地図マーカーが再描画され、Android でちらつく。
+ *
+ * @param {unknown} a
+ * @param {unknown} b
+ */
+export function areWalkMarkListsEqual(a, b) {
+  if (a === b) {
+    return true;
+  }
+  const left = Array.isArray(a) ? a : [];
+  const right = Array.isArray(b) ? b : [];
+  if (left.length !== right.length) {
+    return false;
+  }
+  for (let i = 0; i < left.length; i += 1) {
+    const leftFields = markComparableFields(left[i]);
+    const rightFields = markComparableFields(right[i]);
+    for (let field = 0; field < leftFields.length; field += 1) {
+      if (leftFields[field] !== rightFields[field]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 /**
  * @param {Array<Record<string, unknown>>} marks
  * @param {number} index

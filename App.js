@@ -17,6 +17,7 @@ import { WalkPreferencesProvider } from './src/contexts/WalkPreferencesContext';
 import ThemedStatusBar from './src/components/ThemedStatusBar';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import RevenueCatSync from './src/components/RevenueCatSync';
+import StartupNotices from './src/components/StartupNotices';
 import i18n from './src/i18n';
 import { TAB_WALK_LOG, TAB_WALK_GRAPH, TAB_WALK, TAB_PETS, TAB_FRIENDS, TAB_SETTINGS } from './src/navigation/tabNames';
 import {
@@ -43,8 +44,10 @@ import RegisterScreen from './src/screens/auth/RegisterScreen';
 import FamilySetupScreen from './src/screens/auth/FamilySetupScreen';
 import PrivacyPolicyReconsentScreen from './src/screens/auth/PrivacyPolicyReconsentScreen';
 import OnboardingScreen from './src/screens/onboarding/OnboardingScreen';
+import V105IntroScreen from './src/screens/onboarding/V105IntroScreen';
 import { usePrivacyPolicyConsent } from './src/hooks/usePrivacyPolicyConsent';
 import { useOnboardingStatus } from './src/hooks/useOnboardingStatus';
+import { useV105IntroStatus } from './src/hooks/useV105IntroStatus';
 
 import HistoryScreen from './src/screens/walk/HistoryScreen';
 import WalkGraphScreen from './src/screens/walk/WalkGraphScreen';
@@ -182,7 +185,7 @@ function MainApp({ initialTab = TAB_WALK }) {
 function RootNavigator() {
   const { currentTheme } = useTheme();
   const { language } = useDisplayPreferences();
-  const { loading, userId, needsFamilySetup } = useAuth();
+  const { loading, userId, needsFamilySetup, isGuest } = useAuth();
   const { policyConsentAccepted, policyConsentLoading, refreshPolicyConsent } =
     usePrivacyPolicyConsent(userId);
   const {
@@ -190,9 +193,17 @@ function RootNavigator() {
     onboardingLoading,
     markOnboardingCompleted,
   } = useOnboardingStatus(userId);
+  const {
+    needsV105Intro,
+    v105IntroLoading,
+    markV105IntroSeen,
+  } = useV105IntroStatus(userId, {
+    isGuest,
+    enabled: Boolean(userId && policyConsentAccepted && !needsFamilySetup && onboardingCompleted),
+  });
   const [mainInitialTab, setMainInitialTab] = useState(TAB_WALK);
 
-  if (loading || policyConsentLoading || onboardingLoading) {
+  if (loading || policyConsentLoading || onboardingLoading || v105IntroLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: currentTheme.background }}>
         <ActivityIndicator size="large" color={currentTheme.primary} />
@@ -241,6 +252,15 @@ function RootNavigator() {
     );
   }
 
+  if (needsV105Intro) {
+    return (
+      <View key={language} style={{ flex: 1, backgroundColor: currentTheme.background }}>
+        <ThemedStatusBar />
+        <V105IntroScreen markSeen={markV105IntroSeen} />
+      </View>
+    );
+  }
+
   return <MainApp key={`${language}-${mainInitialTab}`} initialTab={mainInitialTab} />;
 }
 
@@ -253,6 +273,7 @@ export default function App() {
             <AuthProvider>
               <RevenueCatSync />
               <RootNavigator />
+              <StartupNotices />
             </AuthProvider>
           </WalkPreferencesProvider>
         </DisplayPreferencesProvider>

@@ -145,6 +145,7 @@
     "saveSuccess": "Guardado!",
     "saveSuccessMsg": "Ótimo passeio hoje! 🐾",
     "saveSuccessPhotosFailed": "O passeio foi guardado, mas o envio de fotos falhou. Verifique a ligação Wi‑Fi e as regras Storage.",
+    "saveSuccessPhotosPartial": "O passeio foi guardado. Não foi possível enviar %{failed} foto(s).",
     "pushWalkEndedTitle": "Registo de passeios",
     "pushWalkEndedBody": "%{senderName} terminou um passeio com %{petName}.",
     "pushWalkEndedSenderFallback": "Um membro da família",
@@ -197,6 +198,7 @@
     "premiumSubscribeAnnual": "Subscrever por %{price}/ano",
     "premiumSubscribeDefault": "Subscrever por %{price}",
     "premiumRestore": "Restaurar compras",
+    "premiumPurchasesClosed": "Não são aceites novas compras. Se já tiver uma subscrição, use Restaurar compras.",
     "premiumPurchaseSuccess": "Está subscrito ao Premium. Toda a família pode usar funcionalidades Premium.",
     "premiumRestoreSuccess": "As suas compras foram restauradas.",
     "premiumRestoreNone": "Não foram encontradas compras para restaurar.",
@@ -471,6 +473,9 @@
   "friendList": {
     "title": "Amigos",
     "noFriends": "Ainda não há amigos.\nToque no botão em baixo à direita para adicionar um 🐾",
+    "filterAll": "Todos",
+    "filterUnassigned": "Sem grupo",
+    "emptyFiltered": "Não há amigos neste grupo.",
     "planInactiveFriend": "Não disponível no plano atual"
   },
   "friendRegistration": {
@@ -483,6 +488,8 @@
     "photoUploadError": "Falha ao carregar a foto. Verifique as regras do Firebase Storage (separadas do Firestore).",
     "nameLabel": "Nome",
     "namePlaceholder": "ex. Rex",
+    "groupLabel": "Grupo (opcional)",
+    "groupPlaceholder": "ex. Bairro, Parque, família Silva",
     "breedLabel": "Raça",
     "breedPlaceholder": "ex. Caniche toy, Misto",
     "genderLabel": "Sexo",
@@ -668,7 +675,7 @@
           "premium": "1 sub · todos"
         },
         "price": {
-          "label": "Preço (previsto)",
+          "label": "Preço",
           "guest": "Grátis",
           "registered": "Grátis",
           "premium": "¥180/mês\n¥1.800/ano"
@@ -717,5 +724,19 @@
     "cancel": "Cancelar",
     "hour": "h",
     "minute": "min"
+  },
+  "notices": {
+    "announcementFallbackTitle": "Aviso",
+    "shutdownBlocked": "Esta app não está disponível de momento."
+  },
+  "v105Intro": {
+    "title": "Novidades (v1.05)",
+    "lead": "Obrigado por usar o Annie Walking Log!",
+    "bullet1": "Agora pode atribuir grupos aos amigos e filtrar a lista por Todos ou por grupo.",
+    "bullet2": "A raça aparece à direita na lista de amigos.",
+    "bullet3": "Se algumas fotos do passeio falharem, as que foram enviadas com sucesso ficam guardadas.",
+    "bullet4": "Corrigido o piscar ou o desaparecimento de marcadores de cocó/personalizados durante o passeio.",
+    "bullet5": "Marcadores antigos sem ID do cão já não desaparecem nos resultados com um só cão.",
+    "continue": "Continuar"
   }
 }

@@ -51,6 +51,8 @@ export default function FriendRegistrationScreen({ navigation, route }) {
   const [photo, setPhoto] = useState(null);
   const [existingPhotoUrl, setExistingPhotoUrl] = useState('');
   const [name, setName] = useState('');
+  const [group, setGroup] = useState('');
+  const [existingGroups, setExistingGroups] = useState([]);
   const [gender, setGender] = useState('');
   const [breed, setBreed] = useState('');
   const [memo, setMemo] = useState('');
@@ -81,6 +83,7 @@ export default function FriendRegistrationScreen({ navigation, route }) {
         }
 
         setName(data.name || '');
+        setGroup(data.group || '');
         setGender(data.gender || '');
         setBreed(data.breed || '');
         setMemo(data.memo || '');
@@ -97,6 +100,30 @@ export default function FriendRegistrationScreen({ navigation, route }) {
 
     loadFriend();
   }, [friendId, familyId, navigation]);
+
+  useEffect(() => {
+    if (!familyId) {
+      return;
+    }
+    const fetchGroups = async () => {
+      try {
+        const q = query(collection(db, 'pet_friends'), where('familyId', '==', familyId));
+        const querySnapshot = await getDocs(q);
+        const groups = new Set();
+        querySnapshot.forEach((friendDoc) => {
+          const data = friendDoc.data();
+          const groupName = typeof data.group === 'string' ? data.group.trim() : '';
+          if (groupName) {
+            groups.add(groupName);
+          }
+        });
+        setExistingGroups(Array.from(groups));
+      } catch (error) {
+        console.error('friend groups fetch failed:', error);
+      }
+    };
+    fetchGroups();
+  }, [familyId]);
 
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -164,7 +191,14 @@ export default function FriendRegistrationScreen({ navigation, route }) {
         }
       }
 
-      const friendData = { name, gender, breed: breed.trim(), memo: memo.trim(), photoUrl };
+      const friendData = {
+        name,
+        group: group.trim(),
+        gender,
+        breed: breed.trim(),
+        memo: memo.trim(),
+        photoUrl,
+      };
 
       if (isEditMode) {
         await updateDoc(doc(db, 'pet_friends', friendId), friendData);
@@ -298,6 +332,51 @@ export default function FriendRegistrationScreen({ navigation, route }) {
         </View>
 
         <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: currentTheme.textSecondary }]}>
+            {i18n.t('friendRegistration.groupLabel')}
+          </Text>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: currentTheme.inputBackground,
+                borderColor: currentTheme.border,
+                color: currentTheme.text,
+              },
+            ]}
+            placeholder={i18n.t('friendRegistration.groupPlaceholder')}
+            placeholderTextColor={currentTheme.textSecondary}
+            value={group}
+            onChangeText={setGroup}
+          />
+          {existingGroups.length > 0 ? (
+            <View style={styles.chipContainer}>
+              {existingGroups.map((g) => (
+                <TouchableOpacity
+                  key={g}
+                  style={[
+                    styles.chip,
+                    { backgroundColor: currentTheme.chipBackground, borderColor: currentTheme.accentBorder },
+                    group === g && { backgroundColor: currentTheme.primary, borderColor: currentTheme.primary },
+                  ]}
+                  onPress={() => setGroup(g)}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      { color: currentTheme.textSecondary },
+                      group === g && { color: currentTheme.card, fontWeight: 'bold' },
+                    ]}
+                  >
+                    {g}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: currentTheme.textSecondary }]}>{i18n.t('friendRegistration.breedLabel')}</Text>
           <TextInput
             style={[styles.input, { backgroundColor: currentTheme.inputBackground, borderColor: currentTheme.border, color: currentTheme.text }]}
@@ -404,6 +483,16 @@ const createStyles = (fs) => ({
   label: { fontSize: fs.m, fontWeight: 'bold', marginBottom: 8 },
   required: {},
   input: { borderWidth: 1, borderRadius: 10, padding: 15, fontSize: fs.m },
+  chipContainer: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
+  chip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  chipText: { fontSize: fs.m },
   memoInput: { minHeight: 100 },
   genderContainer: { flexDirection: 'row', justifyContent: 'space-between' },
   genderButton: { flex: 1, paddingVertical: 12, borderWidth: 1, borderRadius: 10, alignItems: 'center', marginHorizontal: 5 },

@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { REVENUECAT_ENTITLEMENT_ID, REVENUECAT_OFFERING_ID } from '../constants/revenueCat';
+import { isShutdownPurchaseFreezeActive } from './shutdownPurchaseFreeze';
 import { db } from './firebase';
 
 let isConfigured = false;
@@ -283,6 +284,12 @@ export async function getRevenueCatPackages() {
 export async function purchaseRevenueCatPackage(pkg) {
   if (!configureRevenueCat()) {
     throw new Error('REVENUECAT_NOT_CONFIGURED');
+  }
+
+  if (await isShutdownPurchaseFreezeActive()) {
+    const error = new Error('PURCHASES_CLOSED');
+    error.code = 'PURCHASES_CLOSED';
+    throw error;
   }
 
   const { customerInfo } = await Purchases.purchasePackage(pkg);

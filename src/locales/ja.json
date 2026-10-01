@@ -145,6 +145,7 @@
     "saveSuccess": "保存完了！",
     "saveSuccessMsg": "今日もお疲れ様でした！🐾",
     "saveSuccessPhotosFailed": "お散歩の記録は保存しましたが、写真のアップロードに失敗しました。Wi‑Fi接続や Storage のルールをご確認ください。",
+    "saveSuccessPhotosPartial": "お散歩の記録を保存しました。写真 %{failed} 枚はアップロードできませんでした。",
     "pushWalkEndedTitle": "お散歩記録",
     "pushWalkEndedBody": "%{senderName}さんが、%{petName}のお散歩を終了しました",
     "pushWalkEndedSenderFallback": "家族メンバー",
@@ -197,6 +198,7 @@
     "premiumSubscribeAnnual": "年額 %{price} で加入",
     "premiumSubscribeDefault": "%{price} で加入",
     "premiumRestore": "購入を復元",
+    "premiumPurchasesClosed": "新規の購入は受け付けていません。すでにご購入済みの場合は「購入の復元」をご利用ください。",
     "premiumPurchaseSuccess": "プレミアムへの加入が完了しました。家族全員がプレミアム機能を利用できます。",
     "premiumRestoreSuccess": "購入を復元しました。",
     "premiumRestoreNone": "復元できる購入が見つかりませんでした。",
@@ -473,6 +475,9 @@
   "friendList": {
     "title": "友達一覧",
     "noFriends": "まだお友達が登録されていません。\n右下のボタンから追加してください🐾",
+    "filterAll": "全部",
+    "filterUnassigned": "未所属",
+    "emptyFiltered": "このグループのお友達はいません。",
     "planInactiveFriend": "現在のプランでは選択できません"
   },
   "friendRegistration": {
@@ -485,6 +490,8 @@
     "photoUploadError": "写真のアップロードに失敗しました。Firebase Storage のルールを確認してください（Firestore とは別です）。",
     "nameLabel": "お名前",
     "namePlaceholder": "例: ポチ",
+    "groupLabel": "グループ (任意)",
+    "groupPlaceholder": "例: 近所、公園、〇〇家 など",
     "breedLabel": "犬種",
     "breedPlaceholder": "例: トイプードル、ミックス",
     "genderLabel": "性別",
@@ -670,7 +677,7 @@
           "premium": "1人加入で全員"
         },
         "price": {
-          "label": "料金（想定）",
+          "label": "料金",
           "guest": "無料",
           "registered": "無料",
           "premium": "月180円\n年1800円"
@@ -719,5 +726,19 @@
     "cancel": "キャンセル",
     "hour": "時間",
     "minute": "分"
+  },
+  "notices": {
+    "announcementFallbackTitle": "お知らせ",
+    "shutdownBlocked": "現在このアプリはご利用いただけません。"
+  },
+  "v105Intro": {
+    "title": "アップデートのお知らせ（v1.05）",
+    "lead": "いつもアニーのお散歩日記を使ってくれてありがとうワン！",
+    "bullet1": "お友達にグループを付けて、一覧を「全部」やグループで絞り込みできるようになりました。",
+    "bullet2": "友達一覧の右側に犬種を表示するようにしました。",
+    "bullet3": "お散歩中の写真は、一部のアップロードに失敗しても、成功した写真は記録に残るように改善しました。",
+    "bullet4": "お散歩中のうんち・カスタムマークがちらついたり表示されないことがあった問題を修正しました。",
+    "bullet5": "以前のバージョンで記録したうんちなどが、1頭のお散歩結果で見えなくなる問題を修正しました。",
+    "continue": "はじめる"
   }
 }

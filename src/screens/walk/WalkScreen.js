@@ -16,6 +16,7 @@ import { useFamilyPets } from '../../hooks/useFamilyPets';
 import { useFamilyFriends } from '../../hooks/useFamilyFriends';
 import PetSelector from '../../components/PetSelector';
 import WalkPetChips from '../../components/walk/WalkPetChips';
+import WalkMapMarker from '../../components/walk/WalkMapMarker';
 import FriendPickerModal from '../../components/walk/FriendPickerModal';
 import BackgroundLocationDisclosureModal from '../../components/BackgroundLocationDisclosureModal';
 import BackgroundActivityGuideModal from '../../components/BackgroundActivityGuideModal';
@@ -56,7 +57,12 @@ import {
 } from '../../utils/storeReviewPrompt';
 import { setWalkTrackingActive } from '../../navigation/walkSessionFlag';
 import { getCurrentWalkMapCoordinate } from '../../utils/walkMapMarks';
-import { createFriendMark, createPoopMark, createCustomMark } from '../../services/walkMapMarks';
+import {
+  areWalkMarkListsEqual,
+  createFriendMark,
+  createPoopMark,
+  createCustomMark,
+} from '../../services/walkMapMarks';
 import {
   isBackgroundLocationGranted,
   isWalkBackgroundLocationReady,
@@ -342,6 +348,21 @@ export default function WalkScreen({ navigation }) {
     })();
   }, []);
 
+  /** 内容が同じときは state を差し替えない（差し替えると Android でマーカーがちらつく） */
+  const applyNativeWalkMarks = (snapshot) => {
+    const nextRoute = snapshot.route ?? [];
+    const nextPoops = snapshot.poops ?? [];
+    const nextCustomMarks = snapshot.customMarks ?? [];
+
+    setRoute((prev) => (areWalkMarkListsEqual(prev, nextRoute) ? prev : nextRoute));
+    setPoops((prev) => (areWalkMarkListsEqual(prev, nextPoops) ? prev : nextPoops));
+    setCustomMarks((prev) =>
+      areWalkMarkListsEqual(prev, nextCustomMarks) ? prev : nextCustomMarks
+    );
+
+    return nextRoute;
+  };
+
   const syncNativeWalkSession = async () => {
     if (!usesNativeWalkTracking) {
       return;
@@ -350,9 +371,7 @@ export default function WalkScreen({ navigation }) {
     if (!snapshot) {
       return;
     }
-    setRoute(snapshot.route ?? []);
-    setPoops(snapshot.poops ?? []);
-    setCustomMarks(snapshot.customMarks ?? []);
+    applyNativeWalkMarks(snapshot);
 
     const nativeActivePetId = readActiveMarkPetId();
     if (nativeActivePetId && selectedPetIds.includes(nativeActivePetId)) {
@@ -368,10 +387,7 @@ export default function WalkScreen({ navigation }) {
           if (!snapshot) {
             return;
           }
-          const currentRoute = snapshot.route ?? [];
-          setRoute(currentRoute);
-          setPoops(snapshot.poops ?? []);
-          setCustomMarks(snapshot.customMarks ?? []);
+          const currentRoute = applyNativeWalkMarks(snapshot);
 
           const nativeActivePetId = readActiveMarkPetId();
           if (nativeActivePetId && selectedPetIds.includes(nativeActivePetId)) {
@@ -737,10 +753,11 @@ export default function WalkScreen({ navigation }) {
       await setDoc(walkRef, walkData);
 
       let photos = [];
-      let photoUploadFailed = false;
+      let failedPhotoCount = 0;
       if (walkPhotosEnabled && pendingPhotos.length > 0 && uploadPhotos) {
-        try {
-          for (const pending of pendingPhotos) {
+        // 1枚ずつ失敗を受け止める（まとめて失敗扱いにすると成功分が記録から漏れる）
+        for (const pending of pendingPhotos) {
+          try {
             const storageUrl = await uploadWalkPhotoFromUri(
               pending.localUri,
               familyId,
@@ -754,13 +771,20 @@ export default function WalkScreen({ navigation }) {
               latitude: pending.latitude,
               longitude: pending.longitude,
             });
+          } catch (photoError) {
+            console.error('walk photo upload failed:', photoError);
+            failedPhotoCount += 1;
           }
-          if (photos.length > 0) {
+        }
+
+        if (photos.length > 0) {
+          try {
             await updateDoc(walkRef, { photos });
+          } catch (photoRefError) {
+            console.error('walk photo reference save failed:', photoRefError);
+            failedPhotoCount += photos.length;
+            photos = [];
           }
-        } catch (photoError) {
-          console.error('walk photo upload failed:', photoError);
-          photoUploadFailed = true;
         }
       }
 
@@ -785,8 +809,11 @@ export default function WalkScreen({ navigation }) {
       const reviewMilestone = shouldRequestReviewAtCount(completedWalkCount);
       const successTitle = i18n.t('walk.saveSuccess');
       let successMsg = i18n.t('walk.saveSuccessMsg');
-      if (photoUploadFailed) {
-        successMsg = i18n.t('walk.saveSuccessPhotosFailed');
+      if (failedPhotoCount > 0) {
+        successMsg =
+          photos.length > 0
+            ? i18n.t('walk.saveSuccessPhotosPartial', { failed: failedPhotoCount })
+            : i18n.t('walk.saveSuccessPhotosFailed');
       } else if (skippedReason === 'cellular_disabled') {
         successMsg = i18n.t('walk.photoSkippedCellular');
       } else if (skippedReason === 'no_network') {
@@ -1023,9 +1050,7 @@ export default function WalkScreen({ navigation }) {
         <MapView ref={mapRef} style={styles.map} showsUserLocation={true} initialRegion={initialRegion}>
           {route.length > 0 && <Polyline coordinates={route} strokeColor={currentTheme.primary} strokeWidth={5} />}
           {customMarks.map((mark, index) => (
-            <Marker key={`custom-${index}`} coordinate={mark}>
-              <Text style={{ fontSize: 30 }}>{mark.icon}</Text>
-            </Marker>
+            <WalkMapMarker key={`custom-${index}`} coordinate={mark} emoji={mark.icon} />
           ))}
           {friendMarks.map((mark, index) => (
             <Marker key={`friend-${index}`} coordinate={mark}>
@@ -1039,14 +1064,10 @@ export default function WalkScreen({ navigation }) {
             </Marker>
           ))}
           {pendingPhotos.map((photo, index) => (
-            <Marker key={`photo-${index}`} coordinate={photo}>
-              <Text style={{ fontSize: 30 }}>📷</Text>
-            </Marker>
+            <WalkMapMarker key={`photo-${index}`} coordinate={photo} emoji="📷" />
           ))}
           {poops.map((poop, index) => (
-            <Marker key={`poop-${index}`} coordinate={poop}>
-              <Text style={{ fontSize: 30 }}>💩</Text>
-            </Marker>
+            <WalkMapMarker key={`poop-${index}`} coordinate={poop} emoji="💩" />
           ))}
         </MapView>
         {isSavingWalk ? (

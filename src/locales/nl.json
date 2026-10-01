@@ -145,6 +145,7 @@
     "saveSuccess": "Opgeslagen!",
     "saveSuccessMsg": "Mooie wandeling vandaag! 🐾",
     "saveSuccessPhotosFailed": "Wandeling opgeslagen, maar foto-upload mislukt. Controleer je Wi‑Fi-verbinding en Storage-regels.",
+    "saveSuccessPhotosPartial": "Wandeling opgeslagen. %{failed} foto('s) konden niet worden geüpload.",
     "pushWalkEndedTitle": "Wandelogboek",
     "pushWalkEndedBody": "%{senderName} heeft een wandeling met %{petName} beëindigd.",
     "pushWalkEndedSenderFallback": "Een familielid",
@@ -197,6 +198,7 @@
     "premiumSubscribeAnnual": "Abonneren voor %{price}/jaar",
     "premiumSubscribeDefault": "Abonneren voor %{price}",
     "premiumRestore": "Aankopen herstellen",
+    "premiumPurchasesClosed": "Nieuwe aankopen worden niet geaccepteerd. Als u al een abonnement heeft, gebruikt u Aankopen herstellen.",
     "premiumPurchaseSuccess": "Je bent geabonneerd op Premium. Iedereen in je gezin kan Premium-functies gebruiken.",
     "premiumRestoreSuccess": "Je aankopen zijn hersteld.",
     "premiumRestoreNone": "Geen aankopen gevonden om te herstellen.",
@@ -471,6 +473,9 @@
   "friendList": {
     "title": "Vrienden",
     "noFriends": "Nog geen vrienden.\nTik op de knop rechtsonder om er een toe te voegen 🐾",
+    "filterAll": "Alle",
+    "filterUnassigned": "Zonder groep",
+    "emptyFiltered": "Geen vrienden in deze groep.",
     "planInactiveFriend": "Niet beschikbaar op je huidige abonnement"
   },
   "friendRegistration": {
@@ -483,6 +488,8 @@
     "photoUploadError": "Foto uploaden mislukt. Controleer de Firebase Storage-regels (los van Firestore).",
     "nameLabel": "Naam",
     "namePlaceholder": "bijv. Max",
+    "groupLabel": "Groep (optioneel)",
+    "groupPlaceholder": "bijv. Buurt, Park, familie Jansen",
     "breedLabel": "Ras",
     "breedPlaceholder": "bijv. Dwergpoedel, Kruising",
     "genderLabel": "Geslacht",
@@ -668,7 +675,7 @@
           "premium": "1 abo · iedereen"
         },
         "price": {
-          "label": "Prijs (gepland)",
+          "label": "Prijs",
           "guest": "Gratis",
           "registered": "Gratis",
           "premium": "¥180/mnd\n¥1.800/jr"
@@ -717,5 +724,19 @@
     "cancel": "Annuleren",
     "hour": "u",
     "minute": "min"
+  },
+  "notices": {
+    "announcementFallbackTitle": "Melding",
+    "shutdownBlocked": "Deze app is momenteel niet beschikbaar."
+  },
+  "v105Intro": {
+    "title": "Nieuw in v1.05",
+    "lead": "Bedankt dat je Annie Walking Log gebruikt!",
+    "bullet1": "Je kunt vrienden nu groepen geven en de lijst filteren op Alle of op groep.",
+    "bullet2": "Het ras wordt rechts in de vriendenlijst getoond.",
+    "bullet3": "Als sommige wandelfoto’s mislukken, blijven succesvol geüploade foto’s wel bewaard.",
+    "bullet4": "Flikkeren of ontbrekende poep-/aangepaste markers tijdens wandelen opgelost.",
+    "bullet5": "Oudere markers zonder honden-ID verdwijnen niet meer bij resultaten met één hond.",
+    "continue": "Doorgaan"
   }
 }

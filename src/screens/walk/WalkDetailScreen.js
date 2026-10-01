@@ -27,6 +27,7 @@ import WalkSharePreviewModal from '../../components/walk/WalkSharePreviewModal';
 import FriendPickerModal from '../../components/walk/FriendPickerModal';
 import WalkMarkEditBar, { WALK_MARK_EDIT_BAR_HEIGHT } from '../../components/walk/WalkMarkEditBar';
 import WalkPetChips from '../../components/walk/WalkPetChips';
+import WalkMapMarker from '../../components/walk/WalkMapMarker';
 import {
   WALK_MARK_PET_FILTER_ALL,
   friendMarkMatchesPetFilter,
@@ -176,7 +177,11 @@ export default function WalkDetailScreen({ route, navigation }) {
 
   const distanceStr = `${formatDistanceValue(walk.distance, unitSystem)}${getDistanceUnitLabel(unitSystem, i18n)}`;
   const durationStr = formatDurationMinutes(walk.duration, i18n);
-  const filteredPoopCount = poops.filter((poop) => markMatchesPetFilter(poop, markPetFilterId)).length;
+  // 1頭のお散歩では、petId を持たない旧データもその犬のマークとして扱う
+  const markFilterOptions = { includeUnassigned: walkPets.length <= 1 };
+  const filteredPoopCount = poops.filter((poop) =>
+    markMatchesPetFilter(poop, markPetFilterId, markFilterOptions)
+  ).length;
   const poopCountStr = i18n.t('walk.poopCountShort', { count: filteredPoopCount });
   const speedStr = formatAverageSpeed(walk.distance, walk.duration, unitSystem);
   const speedUnit = getSpeedUnitLabel(unitSystem, i18n);
@@ -560,18 +565,16 @@ export default function WalkDetailScreen({ route, navigation }) {
       return null;
     }
     return (
-      <Marker
-        key={`${type}-${index}-${markPetFilterId}`}
+      <WalkMapMarker
+        key={`${type}-${index}`}
         coordinate={mark}
+        emoji={label}
         anchor={{ x: 0.5, y: 0.5 }}
-        tracksViewChanges
         onPress={(event) => {
           event?.stopPropagation?.();
           beginMarkEdit(type, index);
         }}
-      >
-        <Text style={{ fontSize: 30 }}>{label}</Text>
-      </Marker>
+      />
     );
   };
 
@@ -846,7 +849,7 @@ export default function WalkDetailScreen({ route, navigation }) {
             )}
             {customMarks
               .map((mark, index) => ({ mark, index }))
-              .filter(({ mark }) => markMatchesPetFilter(mark, markPetFilterId))
+              .filter(({ mark }) => markMatchesPetFilter(mark, markPetFilterId, markFilterOptions))
               .map(({ mark, index }) =>
                 renderEditMarker('custom', mark, index, mark.icon || '💦')
               )}
@@ -859,14 +862,16 @@ export default function WalkDetailScreen({ route, navigation }) {
                 return null;
               }
               return (
-                <Marker key={`photo-${photo.id ?? index}-${markPetFilterId}`} coordinate={coordinate}>
-                  <Text style={{ fontSize: 30 }}>📷</Text>
-                </Marker>
+                <WalkMapMarker
+                  key={`photo-${photo.id ?? index}`}
+                  coordinate={coordinate}
+                  emoji="📷"
+                />
               );
             })}
             {poops
               .map((poop, index) => ({ poop, index }))
-              .filter(({ poop }) => markMatchesPetFilter(poop, markPetFilterId))
+              .filter(({ poop }) => markMatchesPetFilter(poop, markPetFilterId, markFilterOptions))
               .map(({ poop, index }) => renderEditMarker('poop', poop, index, '💩'))}
           </MapView>
           {editingMark ? (

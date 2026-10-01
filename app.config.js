@@ -47,6 +47,14 @@ module.exports = ({ config }) => {
     );
   }
 
+  const announcementsApiKey = process.env.EXPO_PUBLIC_ANNOUNCEMENTS_API_KEY?.trim() || '';
+  const announcementsProjectId = process.env.EXPO_PUBLIC_ANNOUNCEMENTS_PROJECT_ID?.trim() || '';
+  const announcementsAppId = process.env.EXPO_PUBLIC_ANNOUNCEMENTS_APP_ID?.trim() || '';
+  const announcementsAuthDomain = process.env.EXPO_PUBLIC_ANNOUNCEMENTS_AUTH_DOMAIN?.trim() || '';
+  const announcementsStorageBucket = process.env.EXPO_PUBLIC_ANNOUNCEMENTS_STORAGE_BUCKET?.trim() || '';
+  const announcementsMessagingSenderId =
+    process.env.EXPO_PUBLIC_ANNOUNCEMENTS_MESSAGING_SENDER_ID?.trim() || '';
+
   return {
     ...config,
     android: {
@@ -73,6 +81,12 @@ module.exports = ({ config }) => {
       googleWebClientId,
       revenueCatApiKeyIos,
       revenueCatApiKeyAndroid,
+      announcementsApiKey,
+      announcementsProjectId,
+      announcementsAppId,
+      announcementsAuthDomain,
+      announcementsStorageBucket,
+      announcementsMessagingSenderId,
       eas: {
         ...config.extra?.eas,
         build: {

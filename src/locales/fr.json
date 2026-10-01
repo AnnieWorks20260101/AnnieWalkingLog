@@ -145,6 +145,7 @@
     "saveSuccess": "Enregistré !",
     "saveSuccessMsg": "Belle promenade aujourd'hui ! 🐾",
     "saveSuccessPhotosFailed": "La promenade a été enregistrée, mais l'envoi des photos a échoué. Vérifiez votre connexion Wi‑Fi et les règles Storage.",
+    "saveSuccessPhotosPartial": "La promenade a été enregistrée. %{failed} photo(s) n'ont pas pu être envoyées.",
     "pushWalkEndedTitle": "Journal des promenades",
     "pushWalkEndedBody": "%{senderName} a terminé une promenade avec %{petName}.",
     "pushWalkEndedSenderFallback": "Un membre de la famille",
@@ -197,6 +198,7 @@
     "premiumSubscribeAnnual": "S'abonner pour %{price}/an",
     "premiumSubscribeDefault": "S'abonner pour %{price}",
     "premiumRestore": "Restaurer les achats",
+    "premiumPurchasesClosed": "Les nouveaux achats ne sont plus acceptés. Si vous avez déjà souscrit, utilisez Restaurer les achats.",
     "premiumPurchaseSuccess": "Vous êtes abonné à Premium. Toute votre famille peut utiliser les fonctionnalités Premium.",
     "premiumRestoreSuccess": "Vos achats ont été restaurés.",
     "premiumRestoreNone": "Aucun achat à restaurer.",
@@ -471,6 +473,9 @@
   "friendList": {
     "title": "Amis",
     "noFriends": "Pas encore d'amis.\nAppuyez sur le bouton en bas à droite pour en ajouter un 🐾",
+    "filterAll": "Tous",
+    "filterUnassigned": "Sans groupe",
+    "emptyFiltered": "Aucun ami dans ce groupe.",
     "planInactiveFriend": "Non disponible avec votre forfait actuel"
   },
   "friendRegistration": {
@@ -483,6 +488,8 @@
     "photoUploadError": "Échec du téléversement de la photo. Vérifiez les règles Firebase Storage (distinctes de Firestore).",
     "nameLabel": "Nom",
     "namePlaceholder": "ex. Rex",
+    "groupLabel": "Groupe (optionnel)",
+    "groupPlaceholder": "ex. Voisinage, Parc, famille Dupont",
     "breedLabel": "Race",
     "breedPlaceholder": "ex. Caniche toy, Croisé",
     "genderLabel": "Sexe",
@@ -668,7 +675,7 @@
           "premium": "1 abo · tous"
         },
         "price": {
-          "label": "Prix (prévu)",
+          "label": "Prix",
           "guest": "Gratuit",
           "registered": "Gratuit",
           "premium": "¥180/mois\n¥1 800/an"
@@ -717,5 +724,19 @@
     "cancel": "Annuler",
     "hour": "h",
     "minute": "min"
+  },
+  "notices": {
+    "announcementFallbackTitle": "Annonce",
+    "shutdownBlocked": "Cette application est actuellement indisponible."
+  },
+  "v105Intro": {
+    "title": "Nouveautés (v1.05)",
+    "lead": "Merci d’utiliser Annie Walking Log !",
+    "bullet1": "Vous pouvez ajouter des groupes aux amis et filtrer la liste par Tous ou par groupe.",
+    "bullet2": "La race s’affiche à droite dans la liste des amis.",
+    "bullet3": "Si certaines photos de promenade échouent, celles qui ont réussi restent enregistrées.",
+    "bullet4": "Correction du clignotement ou de l’absence des marqueurs crottes/perso pendant la promenade.",
+    "bullet5": "Les anciennes marques sans ID de chien ne disparaissent plus sur les résultats à un seul chien.",
+    "continue": "Continuer"
   }
 }
