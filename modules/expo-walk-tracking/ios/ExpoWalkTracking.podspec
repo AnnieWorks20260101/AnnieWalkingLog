@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   s.license        = package['license']
   s.author         = 'AnnieWalkingLog'
   s.homepage       = 'https://docs.expo.dev/modules/'
-  s.platforms      = { ios: '16.2' }
+  s.platforms      = { ios: '16.4' }
   s.swift_version  = '5.9'
   s.source         = { :path => __dir__ }
   s.static_framework = true

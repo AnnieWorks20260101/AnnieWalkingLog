@@ -73,6 +73,18 @@ module.exports = ({ config }) => {
         googleMapsApiKey: googleMapsApiKeyIos,
       },
     },
+    plugins: [
+      ...(config.plugins ?? []),
+      // SDK 55+: use package plugin (react-native-maps/Google).
+      // Expo legacy plugin still injects removed `react-native-google-maps` podspec.
+      [
+        'react-native-maps',
+        {
+          iosGoogleMapsApiKey: googleMapsApiKeyIos,
+          androidGoogleMapsApiKey: googleMapsApiKeyAndroid,
+        },
+      ],
+    ],
     extra: {
       ...config.extra,
       openWeatherApiKey,

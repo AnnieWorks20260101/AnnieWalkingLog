@@ -6,12 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.annieworks.AnnieWalkingLog",
@@ -59,7 +53,6 @@
         "backgroundColor": "#ffffff"
       },
       "googleServicesFile": "./google-services.json",
-      "edgeToEdgeEnabled": true,
       "package": "com.annieworks.AnnieWalkingLog",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
@@ -97,6 +90,14 @@
     },
     "plugins": [
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Used to record your pet's walk route, including when the screen is off.",
@@ -131,12 +132,14 @@
       ],
       "./modules/expo-walk-tracking/app.plugin.js",
       "./plugins/withGoogleModularHeaders.js",
+      "./plugins/withFixReactNativeMapsGooglePod.js",
       "@react-native-google-signin/google-signin",
       [
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "16.2"
+            "deploymentTarget": "16.4",
+            "enableSceneSupport": true
           }
         }
       ]

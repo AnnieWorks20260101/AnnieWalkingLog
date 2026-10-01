@@ -1,10 +1,25 @@
-import React from 'react';
-import { Modal, View, Text, TouchableOpacity, Image, FlatList, StyleSheet } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  FlatList,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { getPetPhotoUrl } from '../../services/petPhotoUpload';
+import {
+  FRIEND_GROUP_FILTER_ALL,
+  FRIEND_GROUP_FILTER_UNASSIGNED,
+  collectFriendGroupNames,
+  filterFriendsByGroup,
+} from '../../utils/friendGroup';
 import i18n from '../../i18n';
 
 /** お散歩中・結果画面共通の「お友達を選ぶ」タップ即選択モーダル */
@@ -13,13 +28,53 @@ export default function FriendPickerModal({
   friends = [],
   onSelect,
   onClose,
-  /** @param {string} friendId */
+  /** @param {string} friendId — 親側で「フィルタ前の全友達」を使って判定すること */
   isFriendUsable = () => true,
   onDisabledFriendPress,
 }) {
   const { currentTheme, fontSizes } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = useThemedStyles(createStyles);
+  const [groupFilter, setGroupFilter] = useState(FRIEND_GROUP_FILTER_ALL);
+
+  useEffect(() => {
+    if (!visible) {
+      setGroupFilter(FRIEND_GROUP_FILTER_ALL);
+    }
+  }, [visible]);
+
+  const groupNames = useMemo(() => collectFriendGroupNames(friends), [friends]);
+  const filteredFriends = useMemo(
+    () => filterFriendsByGroup(friends, groupFilter),
+    [friends, groupFilter]
+  );
+  const showGroupFilters = friends.length > 0;
+
+  const renderFilterChip = (filterKey, label) => {
+    const selected = groupFilter === filterKey;
+    return (
+      <TouchableOpacity
+        key={filterKey}
+        style={[
+          styles.filterChip,
+          { backgroundColor: currentTheme.chipBackground, borderColor: currentTheme.accentBorder },
+          selected && { backgroundColor: currentTheme.primary, borderColor: currentTheme.primary },
+        ]}
+        onPress={() => setGroupFilter(filterKey)}
+        activeOpacity={0.75}
+      >
+        <Text
+          style={[
+            styles.filterChipText,
+            { color: currentTheme.textSecondary, fontSize: fontSizes.s },
+            selected && { color: currentTheme.card, fontWeight: 'bold' },
+          ]}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   const renderItem = ({ item }) => {
     const photoUrl = getPetPhotoUrl(item);
@@ -81,12 +136,36 @@ export default function FriendPickerModal({
               {i18n.t('walk.friendPickerEmptyMsg')}
             </Text>
           ) : (
-            <FlatList
-              data={friends}
-              keyExtractor={(item) => item.id}
-              renderItem={renderItem}
-              style={styles.list}
-            />
+            <>
+              {showGroupFilters ? (
+                <View style={[styles.filterSection, { borderBottomColor: currentTheme.accentBorder }]}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterScroll}
+                  >
+                    {renderFilterChip(FRIEND_GROUP_FILTER_ALL, i18n.t('friendList.filterAll'))}
+                    {groupNames.map((name) => renderFilterChip(name, name))}
+                    {renderFilterChip(
+                      FRIEND_GROUP_FILTER_UNASSIGNED,
+                      i18n.t('friendList.filterUnassigned')
+                    )}
+                  </ScrollView>
+                </View>
+              ) : null}
+
+              <FlatList
+                data={filteredFriends}
+                keyExtractor={(item) => item.id}
+                renderItem={renderItem}
+                style={styles.list}
+                ListEmptyComponent={
+                  <Text style={[styles.emptyFilteredText, { color: currentTheme.textSecondary }]}>
+                    {i18n.t('friendList.emptyFiltered')}
+                  </Text>
+                }
+              />
+            </>
           )}
         </TouchableOpacity>
       </TouchableOpacity>
@@ -114,6 +193,24 @@ const createStyles = (fs) => ({
     marginBottom: 12,
   },
   title: { fontWeight: '700' },
+  filterSection: {
+    marginBottom: 8,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  filterScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 4,
+  },
+  filterChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  filterChipText: {},
   list: { flexGrow: 0 },
   friendRow: {
     flexDirection: 'row',
@@ -127,6 +224,13 @@ const createStyles = (fs) => ({
   emptyText: {
     textAlign: 'center',
     paddingVertical: 24,
+    fontSize: fs.m,
+    lineHeight: 22,
+  },
+  emptyFilteredText: {
+    textAlign: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
     fontSize: fs.m,
     lineHeight: 22,
   },

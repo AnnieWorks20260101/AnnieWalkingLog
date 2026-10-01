@@ -72,7 +72,7 @@ function addWalkTrackingComponents(androidManifest) {
 }
 
 const EXPO_WALK_TRACKING_POD = "pod 'ExpoWalkTracking', :path => '../modules/expo-walk-tracking/ios'";
-const IOS_DEPLOYMENT_TARGET = '16.2';
+const IOS_DEPLOYMENT_TARGET = '16.4';
 
 /** @type {import('@expo/config-plugins').ConfigPlugin} */
 function withIosDeploymentTarget(config) {
