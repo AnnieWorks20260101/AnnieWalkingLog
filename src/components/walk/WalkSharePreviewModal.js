@@ -25,7 +25,7 @@ import { applyWalkSharePrivacy } from '../../utils/walkSharePrivacy';
 import { resolveFriendMarkForDisplay } from '../../utils/walkFriendMarks';
 import { fitMapToCoordinates, getRegionForCoordinates } from '../../utils/mapRegion';
 import { getWalkPhotoCoordinate } from '../../utils/walkPhotos';
-import { shareImageFile, shareViewScreenshot } from '../../utils/shareViewScreenshot';
+import { shareViewScreenshot } from '../../utils/shareViewScreenshot';
 import {
   formatAverageSpeed,
   formatDistanceValue,
@@ -71,10 +71,12 @@ export default function WalkSharePreviewModal({
   const insets = useSafeAreaInsets();
   const styles = useThemedStyles(createStyles);
   const shotRef = useRef(null);
+  const photoShotRef = useRef(null);
   const mapRef = useRef(null);
   const [sharing, setSharing] = useState(false);
   const [outerScrollEnabled, setOuterScrollEnabled] = useState(true);
   const [shareTarget, setShareTarget] = useState(SHARE_TARGET_ROUTE);
+  const [photoImageReady, setPhotoImageReady] = useState(false);
 
   const shareWalk = useMemo(
     () => ({
@@ -114,6 +116,7 @@ export default function WalkSharePreviewModal({
     }
     setShareTarget(SHARE_TARGET_ROUTE);
     setOuterScrollEnabled(true);
+    setPhotoImageReady(false);
   }, [visible, walk?.id]);
 
   useEffect(() => {
@@ -122,7 +125,9 @@ export default function WalkSharePreviewModal({
     }
     if (!selectedPhoto) {
       setShareTarget(SHARE_TARGET_ROUTE);
+      return;
     }
+    setPhotoImageReady(false);
   }, [visible, isRouteTarget, selectedPhoto]);
 
   const photoCoordinates = useMemo(
@@ -214,18 +219,13 @@ export default function WalkSharePreviewModal({
     if (sharing) {
       return;
     }
+    if (!isRouteTarget && (!selectedPhoto?.storageUrl || !photoImageReady)) {
+      return;
+    }
     setSharing(true);
     try {
-      if (isRouteTarget) {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        await shareViewScreenshot(shotRef);
-      } else {
-        const url = selectedPhoto?.storageUrl?.trim();
-        if (!url) {
-          throw new Error('share photo missing');
-        }
-        await shareImageFile(url, { mimeType: 'image/jpeg' });
-      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      await shareViewScreenshot(isRouteTarget ? shotRef : photoShotRef);
       onClose();
     } catch (error) {
       console.warn('share walk preview failed:', error);
@@ -238,6 +238,9 @@ export default function WalkSharePreviewModal({
       setSharing(false);
     }
   };
+
+  const shareDisabled =
+    sharing || (!isRouteTarget && (!selectedPhoto?.storageUrl || !photoImageReady));
 
   const renderTargetChip = (key, label, selected, onPress) => (
     <TouchableOpacity
@@ -536,26 +539,36 @@ export default function WalkSharePreviewModal({
               ) : null}
             </>
           ) : (
-            <View
-              style={[
-                styles.card,
-                styles.photoCard,
-                {
-                  backgroundColor: currentTheme.card,
-                  width: CARD_WIDTH,
-                  borderColor: currentTheme.border,
-                },
-              ]}
-            >
-              <Image
-                source={{ uri: selectedPhoto.storageUrl }}
-                style={styles.photoPreview}
-                resizeMode="contain"
-              />
+            <>
+              <ViewShot
+                ref={photoShotRef}
+                options={{ format: 'png', quality: 1, result: 'tmpfile' }}
+                collapsable={false}
+                style={[
+                  styles.card,
+                  styles.photoCard,
+                  {
+                    backgroundColor: currentTheme.card,
+                    width: CARD_WIDTH,
+                    borderColor: currentTheme.border,
+                  },
+                ]}
+              >
+                <Image
+                  source={{ uri: selectedPhoto.storageUrl }}
+                  style={styles.photoPreview}
+                  resizeMode="contain"
+                  onLoad={() => setPhotoImageReady(true)}
+                  onError={() => setPhotoImageReady(false)}
+                />
+                <Text style={[styles.branding, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                  {i18n.t('walk.sharePreviewBranding')}
+                </Text>
+              </ViewShot>
               <Text style={[styles.photoHint, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
                 {i18n.t('walk.sharePreviewPhotoHint', { number: selectedPhotoIndex + 1 })}
               </Text>
-            </View>
+            </>
           )}
         </ScrollView>
 
@@ -584,9 +597,15 @@ export default function WalkSharePreviewModal({
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.shareButton, { backgroundColor: currentTheme.primary }]}
+            style={[
+              styles.shareButton,
+              {
+                backgroundColor: currentTheme.primary,
+                opacity: shareDisabled && !sharing ? 0.55 : 1,
+              },
+            ]}
             onPress={handleShare}
-            disabled={sharing}
+            disabled={shareDisabled}
           >
             {sharing ? (
               <ActivityIndicator size="small" color={currentTheme.card} />
@@ -657,7 +676,6 @@ const createStyles = () =>
     },
     photoCard: {
       alignItems: 'center',
-      paddingBottom: 12,
     },
     photoPreview: {
       width: CARD_WIDTH,
