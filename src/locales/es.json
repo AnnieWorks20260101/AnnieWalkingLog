@@ -770,5 +770,15 @@
     "bullet4": "Se corrigió el parpadeo o la desaparición de marcas de pipí/personalizadas durante el paseo.",
     "bullet5": "Las marcas antiguas sin ID de perro ya no desaparecen en resultados de un solo perro.",
     "continue": "Continuar"
+  },
+  "v10501Intro": {
+    "title": "Novedades (v1.05.01)",
+    "lead": "¡Gracias por usar Annie Walking Log!\n\nEn v1.05.01 puedes añadir fotos después del paseo y elegir qué compartir.",
+    "bullet1": "Añade fotos de la biblioteca en la pantalla de resultados (aplican los límites del plan)",
+    "bullet2": "Al compartir, elige Resultado de ruta o una Foto",
+    "bullet3": "Los conteos de encuentros con amigos y la lista de paseos donde os encontrasteis son más fáciles de ver",
+    "bullet4": "Registra varios amigos durante el paseo y deja notas del encuentro",
+    "closing": "Seguiremos mejorando para que los paseos con tu perro sean aún más divertidos de recordar.",
+    "continue": "Continuar"
   }
 }

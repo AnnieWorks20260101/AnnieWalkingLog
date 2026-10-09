@@ -770,5 +770,15 @@
     "bullet4": "Corrigido o piscar ou o desaparecimento de marcadores de cocó/personalizados durante o passeio.",
     "bullet5": "Marcadores antigos sem ID do cão já não desaparecem nos resultados com um só cão.",
     "continue": "Continuar"
+  },
+  "v10501Intro": {
+    "title": "Novidades (v1.05.01)",
+    "lead": "Obrigado por usar o Annie Walking Log!\n\nNo v1.05.01, pode adicionar fotos depois do passeio e escolher o que partilhar.",
+    "bullet1": "Adicione fotos da biblioteca no ecrã de resultados (limites do plano aplicam-se)",
+    "bullet2": "Ao partilhar, escolha Resultado do percurso ou uma Foto",
+    "bullet3": "Contagens de encontros com amigos e a lista de passeios onde se encontraram ficam mais fáceis de ver",
+    "bullet4": "Registe vários amigos durante o passeio e deixe notas de encontro",
+    "closing": "Continuaremos a melhorar para que os passeios com o seu cão fiquem ainda mais divertidos de recordar.",
+    "continue": "Continuar"
   }
 }

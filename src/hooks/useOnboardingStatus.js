@@ -23,18 +23,21 @@ export function useOnboardingStatus(userId) {
       return;
     }
     await setOnboardingCompleted(userId);
-    // 新規ユーザーはオンボーディング直後に v1.05 お知らせを出さない
+    // 新規ユーザーはオンボーディング直後にバージョンアップお知らせを出さない
     try {
+      const now = new Date().toISOString();
       await setDoc(
         doc(db, 'users', userId),
         {
           hasSeenV105Intro: true,
-          v105IntroSeenAt: new Date().toISOString(),
+          v105IntroSeenAt: now,
+          hasSeenV10501Intro: true,
+          v10501IntroSeenAt: now,
         },
         { merge: true }
       );
     } catch (error) {
-      console.warn('markOnboardingCompleted: skip v105 intro flag failed:', error);
+      console.warn('markOnboardingCompleted: skip version intro flags failed:', error);
     }
     setCompleted(true);
   }, [userId]);

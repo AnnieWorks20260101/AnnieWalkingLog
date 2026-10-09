@@ -49,6 +49,7 @@ import V105IntroScreen from './src/screens/onboarding/V105IntroScreen';
 import { usePrivacyPolicyConsent } from './src/hooks/usePrivacyPolicyConsent';
 import { useOnboardingStatus } from './src/hooks/useOnboardingStatus';
 import { useV105IntroStatus } from './src/hooks/useV105IntroStatus';
+import { useV10501IntroStatus } from './src/hooks/useV10501IntroStatus';
 
 import HistoryScreen from './src/screens/walk/HistoryScreen';
 import WalkGraphScreen from './src/screens/walk/WalkGraphScreen';
@@ -196,17 +197,35 @@ function RootNavigator() {
     onboardingLoading,
     markOnboardingCompleted,
   } = useOnboardingStatus(userId);
+  const postOnboardingReady = Boolean(
+    userId && policyConsentAccepted && !needsFamilySetup && onboardingCompleted
+  );
   const {
     needsV105Intro,
     v105IntroLoading,
     markV105IntroSeen,
   } = useV105IntroStatus(userId, {
     isGuest,
-    enabled: Boolean(userId && policyConsentAccepted && !needsFamilySetup && onboardingCompleted),
+    enabled: postOnboardingReady,
+  });
+  const {
+    needsV10501Intro,
+    v10501IntroLoading,
+    markV10501IntroSeen,
+  } = useV10501IntroStatus(userId, {
+    isGuest,
+    // v1.05 案内のあと（または不要）に判定・表示する
+    enabled: postOnboardingReady && needsV105Intro === false,
   });
   const [mainInitialTab, setMainInitialTab] = useState(TAB_WALK);
 
-  if (loading || policyConsentLoading || onboardingLoading || v105IntroLoading) {
+  if (
+    loading ||
+    policyConsentLoading ||
+    onboardingLoading ||
+    v105IntroLoading ||
+    v10501IntroLoading
+  ) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: currentTheme.background }}>
         <ActivityIndicator size="large" color={currentTheme.primary} />
@@ -260,6 +279,19 @@ function RootNavigator() {
       <View key={language} style={{ flex: 1, backgroundColor: currentTheme.background }}>
         <ThemedStatusBar />
         <V105IntroScreen markSeen={markV105IntroSeen} />
+      </View>
+    );
+  }
+
+  if (needsV10501Intro) {
+    return (
+      <View key={language} style={{ flex: 1, backgroundColor: currentTheme.background }}>
+        <ThemedStatusBar />
+        <V105IntroScreen
+          markSeen={markV10501IntroSeen}
+          i18nKey="v10501Intro"
+          bulletCount={4}
+        />
       </View>
     );
   }

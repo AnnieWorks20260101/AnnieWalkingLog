@@ -770,5 +770,15 @@
     "bullet4": "Flackern oder fehlende Kot-/Custom-Markierungen während des Spaziergangs behoben.",
     "bullet5": "Ältere Kotmarkierungen ohne Hunde-ID verschwinden in Ergebnissen mit einem Hund nicht mehr.",
     "continue": "Weiter"
+  },
+  "v10501Intro": {
+    "title": "Neuigkeiten (v1.05.01)",
+    "lead": "Danke, dass du Annie Walking Log nutzt!\n\nIn v1.05.01 kannst du nach dem Spaziergang Fotos hinzufügen und wählen, was du teilst.",
+    "bullet1": "Fotos aus der Bibliothek auf dem Ergebnisbildschirm hinzufügen (Planlimits gelten)",
+    "bullet2": "Beim Teilen Routenergebnis oder ein Foto wählen",
+    "bullet3": "Begegnungszähler und die Liste der Spaziergänge mit Treffen sind leichter zu prüfen",
+    "bullet4": "Mehrere Freunde während des Spaziergangs erfassen und Begegnungsnotizen hinterlassen",
+    "closing": "Wir verbessern die App weiter, damit Spaziergänge mit deinem Hund noch schöner in Erinnerung bleiben.",
+    "continue": "Weiter"
   }
 }

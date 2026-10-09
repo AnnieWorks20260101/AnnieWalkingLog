@@ -770,5 +770,15 @@
     "bullet4": "Flikkeren of ontbrekende poep-/aangepaste markers tijdens wandelen opgelost.",
     "bullet5": "Oudere markers zonder honden-ID verdwijnen niet meer bij resultaten met één hond.",
     "continue": "Doorgaan"
+  },
+  "v10501Intro": {
+    "title": "Nieuw in v1.05.01",
+    "lead": "Bedankt dat je Annie Walking Log gebruikt!\n\nIn v1.05.01 kun je na de wandeling foto’s toevoegen en kiezen wat je deelt.",
+    "bullet1": "Voeg foto’s uit je bibliotheek toe op het resultaatscherm (planlimieten gelden)",
+    "bullet2": "Bij delen kies je Routeresultaat of een Foto",
+    "bullet3": "Ontmoetingsaantallen van vrienden en de lijst wandelingen waar je elkaar zag zijn makkelijker te checken",
+    "bullet4": "Registreer meerdere vrienden tijdens een wandeling en laat ontmoetingsnotities achter",
+    "closing": "We blijven verbeteren zodat wandelingen met je hond nóg leuker zijn om terug te kijken.",
+    "continue": "Doorgaan"
   }
 }

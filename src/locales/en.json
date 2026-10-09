@@ -772,5 +772,15 @@
     "bullet4": "Fixed an issue where poop/custom markers could flicker or fail to appear during a walk.",
     "bullet5": "Fixed older poop marks without a dog ID disappearing on single-dog walk results.",
     "continue": "Continue"
+  },
+  "v10501Intro": {
+    "title": "What's new (v1.05.01)",
+    "lead": "Thanks for using Annie Walking Log!\n\nIn v1.05.01, you can add photos after a walk and choose what to share.",
+    "bullet1": "Add photos from your library on the walk result screen (plan photo limits still apply)",
+    "bullet2": "When sharing, choose Route result or a Photo",
+    "bullet3": "Friend encounter counts and the list of walks where you met are easier to check",
+    "bullet4": "Record multiple friends during a walk and leave encounter notes",
+    "closing": "We'll keep improving so walks with your dog are even more fun to look back on.",
+    "continue": "Continue"
   }
 }

@@ -770,5 +770,15 @@
     "bullet4": "Corretti sfarfallio o mancata visualizzazione dei marker cacca/personalizzati durante la passeggiata.",
     "bullet5": "I vecchi marker senza ID cane non spariscono più nei risultati con un solo cane.",
     "continue": "Continua"
+  },
+  "v10501Intro": {
+    "title": "Novità (v1.05.01)",
+    "lead": "Grazie per usare Annie Walking Log!\n\nIn v1.05.01 puoi aggiungere foto dopo la passeggiata e scegliere cosa condividere.",
+    "bullet1": "Aggiungi foto dalla libreria nella schermata dei risultati (valgono i limiti del piano)",
+    "bullet2": "In condivisione scegli Risultato percorso o una Foto",
+    "bullet3": "Conteggi degli incontri con gli amici e l’elenco delle passeggiate in cui vi siete incontrati sono più facili da consultare",
+    "bullet4": "Registra più amici durante la passeggiata e lascia note sull’incontro",
+    "closing": "Continueremo a migliorare così le passeggiate con il tuo cane resteranno ancora più belle da ricordare.",
+    "continue": "Continua"
   }
 }

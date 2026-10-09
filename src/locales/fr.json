@@ -770,5 +770,15 @@
     "bullet4": "Correction du clignotement ou de l’absence des marqueurs crottes/perso pendant la promenade.",
     "bullet5": "Les anciennes marques sans ID de chien ne disparaissent plus sur les résultats à un seul chien.",
     "continue": "Continuer"
+  },
+  "v10501Intro": {
+    "title": "Nouveautés (v1.05.01)",
+    "lead": "Merci d’utiliser Annie Walking Log !\n\nDans la v1.05.01, vous pouvez ajouter des photos après la promenade et choisir quoi partager.",
+    "bullet1": "Ajoutez des photos depuis la bibliothèque sur l’écran de résultat (limites du forfait applicables)",
+    "bullet2": "Lors du partage, choisissez Résultat du parcours ou une Photo",
+    "bullet3": "Les compteurs de rencontres et la liste des promenades où vous vous êtes croisés sont plus faciles à consulter",
+    "bullet4": "Enregistrez plusieurs amis pendant la promenade et laissez des notes de rencontre",
+    "closing": "Nous continuerons d’améliorer l’app pour que les promenades avec votre chien soient encore plus agréables à revisiter.",
+    "continue": "Continuer"
   }
 }

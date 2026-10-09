@@ -14,25 +14,36 @@ import { useDisplayPreferences } from '../../contexts/DisplayPreferencesContext'
 import i18n from '../../i18n';
 
 /**
- * v1.05 バージョンアップお知らせ（AnnieEndingNote の v104-intro 相当）
- * @param {{ markSeen: () => Promise<void> }} props
+ * バージョンアップお知らせ（既定は v1.05 / v105Intro）
+ * @param {{
+ *   markSeen: () => Promise<void>,
+ *   i18nKey?: string,
+ *   bulletCount?: number,
+ * }} props
  */
-export default function V105IntroScreen({ markSeen }) {
+export default function V105IntroScreen({
+  markSeen,
+  i18nKey = 'v105Intro',
+  bulletCount = 5,
+}) {
   const { currentTheme, fontSizes } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { language } = useDisplayPreferences();
   const [busy, setBusy] = useState(false);
 
-  const bullets = useMemo(
-    () => [
-      i18n.t('v105Intro.bullet1'),
-      i18n.t('v105Intro.bullet2'),
-      i18n.t('v105Intro.bullet3'),
-      i18n.t('v105Intro.bullet4'),
-      i18n.t('v105Intro.bullet5'),
-    ],
-    [language]
-  );
+  const bullets = useMemo(() => {
+    const items = [];
+    for (let i = 1; i <= bulletCount; i += 1) {
+      items.push(i18n.t(`${i18nKey}.bullet${i}`));
+    }
+    return items;
+  }, [language, i18nKey, bulletCount]);
+
+  const closing = useMemo(() => {
+    const key = `${i18nKey}.closing`;
+    const text = i18n.t(key);
+    return text && text !== key ? text : '';
+  }, [language, i18nKey]);
 
   const handleContinue = async () => {
     if (busy) {
@@ -42,7 +53,7 @@ export default function V105IntroScreen({ markSeen }) {
     try {
       await markSeen();
     } catch (error) {
-      console.error('V105Intro markSeen failed:', error);
+      console.error(`${i18nKey} markSeen failed:`, error);
       setBusy(false);
     }
   };
@@ -55,7 +66,7 @@ export default function V105IntroScreen({ markSeen }) {
         </View>
 
         <Text style={[styles.title, { color: currentTheme.text, fontSize: fontSizes.l + 4 }]}>
-          {i18n.t('v105Intro.title')}
+          {i18n.t(`${i18nKey}.title`)}
         </Text>
         <Text
           style={[
@@ -67,7 +78,7 @@ export default function V105IntroScreen({ markSeen }) {
             },
           ]}
         >
-          {i18n.t('v105Intro.lead')}
+          {i18n.t(`${i18nKey}.lead`)}
         </Text>
 
         <View
@@ -95,6 +106,22 @@ export default function V105IntroScreen({ markSeen }) {
           ))}
         </View>
 
+        {closing ? (
+          <Text
+            style={[
+              styles.lead,
+              {
+                color: currentTheme.textSecondary,
+                fontSize: fontSizes.m,
+                lineHeight: fontSizes.m * 1.45,
+                marginBottom: 8,
+              },
+            ]}
+          >
+            {closing}
+          </Text>
+        ) : null}
+
         {busy ? (
           <ActivityIndicator size="large" color={currentTheme.primary} style={styles.loader} />
         ) : (
@@ -103,7 +130,7 @@ export default function V105IntroScreen({ markSeen }) {
             onPress={handleContinue}
           >
             <Text style={[styles.buttonText, { color: currentTheme.card }]}>
-              {i18n.t('v105Intro.continue')}
+              {i18n.t(`${i18nKey}.continue`)}
             </Text>
           </Pressable>
         )}
