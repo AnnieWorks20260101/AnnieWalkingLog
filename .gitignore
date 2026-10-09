@@ -32,6 +32,7 @@ build/
 *.ipa
 *.tar.gz
 local.properties
+keystore.properties
 android/keystore.properties
 annieworks.keystore
 credentials.json

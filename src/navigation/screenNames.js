@@ -10,6 +10,7 @@ export const SCREEN_PET_REGISTRATION = 'PetRegistration';
 
 export const SCREEN_FRIEND_LIST = 'FriendList';
 export const SCREEN_FRIEND_REGISTRATION = 'FriendRegistration';
+export const SCREEN_FRIEND_ENCOUNTERS = 'FriendEncounters';
 
 export const SCREEN_SETTINGS_MAIN = 'SettingsMain';
 export const SCREEN_PERMISSIONS_CHECK = 'PermissionsCheck';

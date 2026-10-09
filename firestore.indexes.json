@@ -23,6 +23,15 @@
         { "fieldPath": "familyId", "order": "ASCENDING" },
         { "fieldPath": "isTestSeed", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "walks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "familyId", "order": "ASCENDING" },
+        { "fieldPath": "friendPetIds", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "startTime", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

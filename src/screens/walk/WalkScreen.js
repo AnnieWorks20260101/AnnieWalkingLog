@@ -62,7 +62,14 @@ import {
   createFriendMark,
   createPoopMark,
   createCustomMark,
+  offsetCoordinateForCluster,
 } from '../../services/walkMapMarks';
+import {
+  applyFriendEncounterDeltas,
+  collectFriendEncounterIncrements,
+  collectFriendPetIds,
+} from '../../services/friendEncounters';
+import { resolveFriendMarkForDisplay } from '../../utils/walkFriendMarks';
 import {
   isBackgroundLocationGranted,
   isWalkBackgroundLocationReady,
@@ -744,6 +751,7 @@ export default function WalkScreen({ navigation }) {
         poops: poops,
         customMarks: customMarks,
         friendMarks: friendMarks,
+        friendPetIds: collectFriendPetIds(friendMarks),
         photos: [],
         memos: [],
         ...(startWeatherRef.current ? { startWeather: startWeatherRef.current } : {}),
@@ -751,6 +759,13 @@ export default function WalkScreen({ navigation }) {
       };
 
       await setDoc(walkRef, walkData);
+
+      // 今後の遭遇回数（ピン1つ = 1回）。失敗してもお散歩保存は成功扱い。
+      applyFriendEncounterDeltas(collectFriendEncounterIncrements(friendMarks), {
+        encounterAt: startTime,
+      }).catch((error) => {
+        console.warn('friend encounter count update failed:', error);
+      });
 
       let photos = [];
       let failedPhotoCount = 0;
@@ -937,16 +952,22 @@ export default function WalkScreen({ navigation }) {
     setIsFriendPickerVisible(true);
   };
 
-  const recordFriendMark = async (friend) => {
+  const recordFriendMarks = async (selectedFriends) => {
     setIsFriendPickerVisible(false);
+    if (!Array.isArray(selectedFriends) || selectedFriends.length === 0) {
+      return;
+    }
     const coordinate = await getCurrentWalkMapCoordinate();
+    const total = selectedFriends.length;
     setFriendMarks((prev) => [
       ...prev,
-      createFriendMark(coordinate, {
-        friendPetId: friend.id,
-        name: friend.name,
-        photoUrl: friend.photoUrl,
-      }),
+      ...selectedFriends.map((friend, index) =>
+        createFriendMark(offsetCoordinateForCluster(coordinate, index, total), {
+          friendPetId: friend.id,
+          name: friend.name,
+          photoUrl: friend.photoUrl,
+        })
+      ),
     ]);
   };
 
@@ -1052,17 +1073,25 @@ export default function WalkScreen({ navigation }) {
           {customMarks.map((mark, index) => (
             <WalkMapMarker key={`custom-${index}`} coordinate={mark} emoji={mark.icon} />
           ))}
-          {friendMarks.map((mark, index) => (
-            <Marker key={`friend-${index}`} coordinate={mark}>
-              {mark.photoUrl ? (
-                <Image source={{ uri: mark.photoUrl }} style={styles.friendMarkerImage} />
-              ) : (
-                <View style={[styles.friendMarkerFallback, { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary }]}>
-                  <Ionicons name="paw" size={20} color={currentTheme.primary} />
-                </View>
-              )}
-            </Marker>
-          ))}
+          {friendMarks.map((mark, index) => {
+            const displayMark = resolveFriendMarkForDisplay(mark, friends);
+            return (
+              <Marker key={`friend-${index}`} coordinate={mark}>
+                {displayMark.photoUrl ? (
+                  <Image source={{ uri: displayMark.photoUrl }} style={styles.friendMarkerImage} />
+                ) : (
+                  <View
+                    style={[
+                      styles.friendMarkerFallback,
+                      { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary },
+                    ]}
+                  >
+                    <Ionicons name="paw" size={20} color={currentTheme.primary} />
+                  </View>
+                )}
+              </Marker>
+            );
+          })}
           {pendingPhotos.map((photo, index) => (
             <WalkMapMarker key={`photo-${index}`} coordinate={photo} emoji="📷" />
           ))}
@@ -1136,7 +1165,8 @@ export default function WalkScreen({ navigation }) {
       <FriendPickerModal
         visible={isFriendPickerVisible}
         friends={friends}
-        onSelect={recordFriendMark}
+        multiSelect
+        onConfirm={recordFriendMarks}
         isFriendUsable={(friendId) => isFriendUsableByPlanOrder(friendId, friends, entitlements)}
         onDisabledFriendPress={handleDisabledFriendPress}
         onClose={() => setIsFriendPickerVisible(false)}

@@ -65,3 +65,37 @@ export function getWalkPhotoCoordinate(photo) {
   }
   return null;
 }
+
+/**
+ * Firestore 保存用（localUri は含めない）
+ * @param {Array<Record<string, unknown>> | null | undefined} photos
+ */
+export function sanitizeWalkPhotosForStorage(photos) {
+  if (!Array.isArray(photos)) {
+    return [];
+  }
+  return photos
+    .filter((photo) => typeof photo?.storageUrl === 'string' && photo.storageUrl.trim().length > 0)
+    .map((photo) => ({
+      id: typeof photo.id === 'string' && photo.id ? photo.id : `photo_${Date.now()}`,
+      storageUrl: photo.storageUrl.trim(),
+      takenAt: typeof photo.takenAt === 'string' ? photo.takenAt : new Date().toISOString(),
+      latitude: Number(photo.latitude),
+      longitude: Number(photo.longitude),
+    }));
+}
+
+/**
+ * プラン枚数制限のカウント対象（アップロード済み + 編集中の未アップロード）
+ * @param {Array<Record<string, unknown>> | null | undefined} photos
+ */
+export function countWalkPhotoSlots(photos) {
+  if (!Array.isArray(photos)) {
+    return 0;
+  }
+  return photos.filter(
+    (photo) =>
+      (typeof photo?.storageUrl === 'string' && photo.storageUrl.trim().length > 0) ||
+      (typeof photo?.localUri === 'string' && photo.localUri.trim().length > 0)
+  ).length;
+}

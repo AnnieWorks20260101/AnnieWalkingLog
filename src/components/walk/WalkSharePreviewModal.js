@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Modal,
   View,
@@ -10,6 +10,7 @@ import {
   Dimensions,
   StyleSheet,
   Alert,
+  Platform,
 } from 'react-native';
 import MapView, { Polyline, Marker } from 'react-native-maps';
 import ViewShot from 'react-native-view-shot';
@@ -21,9 +22,10 @@ import WalkPetChips from './WalkPetChips';
 import WalkStartWeather, { hasStartWeatherDisplay } from '../WalkStartWeather';
 import i18n from '../../i18n';
 import { applyWalkSharePrivacy } from '../../utils/walkSharePrivacy';
+import { resolveFriendMarkForDisplay } from '../../utils/walkFriendMarks';
 import { fitMapToCoordinates, getRegionForCoordinates } from '../../utils/mapRegion';
 import { getWalkPhotoCoordinate } from '../../utils/walkPhotos';
-import { shareViewScreenshot } from '../../utils/shareViewScreenshot';
+import { shareImageFile, shareViewScreenshot } from '../../utils/shareViewScreenshot';
 import {
   formatAverageSpeed,
   formatDistanceValue,
@@ -35,7 +37,9 @@ import { formatTimestampTime } from '../../utils/formatTime';
 import { toWalkStartDate } from '../../utils/walkGraphMetrics';
 
 const CARD_WIDTH = Math.min(Dimensions.get('window').width - 32, 360);
-const MAP_HEIGHT = 200;
+const MAP_HEIGHT = 220;
+const PHOTO_PREVIEW_HEIGHT = Math.min(Dimensions.get('window').height * 0.42, 360);
+const SHARE_TARGET_ROUTE = 'route';
 
 const DEFAULT_REGION = {
   latitude: 35.681236,
@@ -43,6 +47,10 @@ const DEFAULT_REGION = {
   latitudeDelta: 0.005,
   longitudeDelta: 0.005,
 };
+
+function isShareablePhoto(photo) {
+  return typeof photo?.storageUrl === 'string' && photo.storageUrl.trim().length > 0;
+}
 
 export default function WalkSharePreviewModal({
   visible,
@@ -53,6 +61,7 @@ export default function WalkSharePreviewModal({
   poops = [],
   customMarks = [],
   friendMarks = [],
+  friends = [],
   privacyRadiusMeters,
   unitSystem,
   timeFormat,
@@ -64,6 +73,8 @@ export default function WalkSharePreviewModal({
   const shotRef = useRef(null);
   const mapRef = useRef(null);
   const [sharing, setSharing] = useState(false);
+  const [outerScrollEnabled, setOuterScrollEnabled] = useState(true);
+  const [shareTarget, setShareTarget] = useState(SHARE_TARGET_ROUTE);
 
   const shareWalk = useMemo(
     () => ({
@@ -80,6 +91,39 @@ export default function WalkSharePreviewModal({
     () => applyWalkSharePrivacy(shareWalk, privacyRadiusMeters),
     [shareWalk, privacyRadiusMeters]
   );
+
+  const shareablePhotos = useMemo(
+    () => privacyData.photos.filter(isShareablePhoto),
+    [privacyData.photos]
+  );
+
+  const showTargetSelector = shareablePhotos.length > 0;
+  const selectedPhotoIndex =
+    typeof shareTarget === 'string' && shareTarget.startsWith('photo:')
+      ? Number(shareTarget.slice('photo:'.length))
+      : -1;
+  const selectedPhoto =
+    selectedPhotoIndex >= 0 && selectedPhotoIndex < shareablePhotos.length
+      ? shareablePhotos[selectedPhotoIndex]
+      : null;
+  const isRouteTarget = shareTarget === SHARE_TARGET_ROUTE;
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    setShareTarget(SHARE_TARGET_ROUTE);
+    setOuterScrollEnabled(true);
+  }, [visible, walk?.id]);
+
+  useEffect(() => {
+    if (!visible || isRouteTarget) {
+      return;
+    }
+    if (!selectedPhoto) {
+      setShareTarget(SHARE_TARGET_ROUTE);
+    }
+  }, [visible, isRouteTarget, selectedPhoto]);
 
   const photoCoordinates = useMemo(
     () =>
@@ -106,10 +150,34 @@ export default function WalkSharePreviewModal({
   );
 
   const handleMapReady = useCallback(() => {
-    if (privacyData.route.length > 0) {
-      fitMapToCoordinates(mapRef, mapCoordinates);
+    fitMapToCoordinates(mapRef, mapCoordinates);
+  }, [mapCoordinates]);
+
+  const handleFitRoute = useCallback(() => {
+    fitMapToCoordinates(mapRef, mapCoordinates);
+  }, [mapCoordinates]);
+
+  const enableOuterScroll = useCallback(() => {
+    setOuterScrollEnabled(true);
+  }, []);
+
+  const disableOuterScroll = useCallback(() => {
+    setOuterScrollEnabled(false);
+  }, []);
+
+  const showMap = isRouteTarget && privacyData.route.length >= 2;
+
+  // Modal 内の MapView は非表示のままだと Android で真っ白になりやすいので、開いたときだけ載せる
+  useEffect(() => {
+    if (!visible || !showMap) {
+      setOuterScrollEnabled(true);
+      return undefined;
     }
-  }, [mapCoordinates, privacyData.route.length]);
+    const timer = setTimeout(() => {
+      fitMapToCoordinates(mapRef, mapCoordinates);
+    }, Platform.OS === 'android' ? 350 : 150);
+    return () => clearTimeout(timer);
+  }, [visible, showMap, mapCoordinates]);
 
   const endTimeLabel = useMemo(() => {
     const endDate = toWalkStartDate(walk.endTime) || toWalkStartDate(walk.startTime);
@@ -148,7 +216,16 @@ export default function WalkSharePreviewModal({
     }
     setSharing(true);
     try {
-      await shareViewScreenshot(shotRef);
+      if (isRouteTarget) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        await shareViewScreenshot(shotRef);
+      } else {
+        const url = selectedPhoto?.storageUrl?.trim();
+        if (!url) {
+          throw new Error('share photo missing');
+        }
+        await shareImageFile(url, { mimeType: 'image/jpeg' });
+      }
       onClose();
     } catch (error) {
       console.warn('share walk preview failed:', error);
@@ -162,7 +239,36 @@ export default function WalkSharePreviewModal({
     }
   };
 
-  const showMap = privacyData.route.length >= 2;
+  const renderTargetChip = (key, label, selected, onPress) => (
+    <TouchableOpacity
+      key={key}
+      style={[
+        styles.targetChip,
+        {
+          backgroundColor: selected ? currentTheme.primary : currentTheme.card,
+          borderColor: selected ? currentTheme.primary : currentTheme.accentBorder,
+        },
+      ]}
+      onPress={onPress}
+      disabled={sharing}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={label}
+    >
+      <Text
+        style={[
+          styles.targetChipText,
+          {
+            color: selected ? currentTheme.card : currentTheme.text,
+            fontSize: fontSizes.s,
+          },
+        ]}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -185,170 +291,272 @@ export default function WalkSharePreviewModal({
           </TouchableOpacity>
         </View>
 
+        {showTargetSelector ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.targetBar}
+            contentContainerStyle={styles.targetBarContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            {renderTargetChip(
+              SHARE_TARGET_ROUTE,
+              i18n.t('walk.sharePreviewTargetRoute'),
+              isRouteTarget,
+              () => setShareTarget(SHARE_TARGET_ROUTE)
+            )}
+            {shareablePhotos.map((photo, index) =>
+              renderTargetChip(
+                photo.id ?? `photo-${index}`,
+                i18n.t('walk.sharePreviewTargetPhoto', { number: index + 1 }),
+                selectedPhotoIndex === index,
+                () => setShareTarget(`photo:${index}`)
+              )
+            )}
+          </ScrollView>
+        ) : null}
+
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          scrollEnabled={outerScrollEnabled}
+          nestedScrollEnabled
+          removeClippedSubviews={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <ViewShot
-            ref={shotRef}
-            options={{ format: 'png', quality: 1, result: 'tmpfile' }}
-            collapsable={false}
-            style={[
-              styles.card,
-              {
-                backgroundColor: currentTheme.card,
-                width: CARD_WIDTH,
-                borderColor: currentTheme.border,
-              },
-            ]}
-          >
-            <View style={[styles.cardHeader, { borderBottomColor: currentTheme.accentBorder }]}>
-              {endTimeLabel ? (
-                <Text
-                  style={[styles.endTime, { color: currentTheme.text, fontSize: fontSizes.m }]}
-                  numberOfLines={1}
-                >
-                  {endTimeLabel}
-                </Text>
-              ) : null}
-              <WalkPetChips pets={walkPets} layout="row" style={styles.petChips} />
-            </View>
-
-            <View style={[styles.mapBox, { backgroundColor: currentTheme.background }]}>
+          {isRouteTarget ? (
+            <>
               {showMap ? (
-                <MapView
-                  ref={mapRef}
-                  style={styles.map}
-                  initialRegion={initialRegion}
-                  onMapReady={handleMapReady}
-                  scrollEnabled={false}
-                  zoomEnabled={false}
-                  rotateEnabled={false}
-                  pitchEnabled={false}
-                  pointerEvents="none"
-                >
-                  <Polyline
-                    coordinates={privacyData.route}
-                    strokeColor={currentTheme.primary}
-                    strokeWidth={4}
-                  />
-                  {privacyData.customMarks.map((mark, index) => (
-                    <Marker
-                      key={`custom-${mark.id ?? index}`}
-                      coordinate={mark}
-                      anchor={{ x: 0.5, y: 0.5 }}
-                    >
-                      <Text style={styles.markEmoji}>{mark.icon || '💦'}</Text>
-                    </Marker>
-                  ))}
-                  {privacyData.friendMarks.map((mark, index) => (
-                    <Marker
-                      key={`friend-${mark.friendPetId ?? index}`}
-                      coordinate={mark}
-                      anchor={{ x: 0.5, y: 0.5 }}
-                    >
-                      {mark.photoUrl ? (
-                        <Image source={{ uri: mark.photoUrl }} style={styles.friendMarkerImage} />
-                      ) : (
-                        <View
-                          style={[
-                            styles.friendMarkerFallback,
-                            { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary },
-                          ]}
-                        >
-                          <Ionicons name="paw" size={16} color={currentTheme.primary} />
-                        </View>
-                      )}
-                    </Marker>
-                  ))}
-                  {privacyData.photos.map((photo, index) => {
-                    const coordinate = getWalkPhotoCoordinate(photo);
-                    if (!coordinate) {
-                      return null;
-                    }
-                    return (
-                      <Marker key={`photo-${photo.id ?? index}`} coordinate={coordinate}>
-                        <Text style={styles.markEmoji}>📷</Text>
-                      </Marker>
-                    );
-                  })}
-                  {privacyData.poops.map((poop, index) => (
-                    <Marker
-                      key={`poop-${poop.id ?? index}`}
-                      coordinate={poop}
-                      anchor={{ x: 0.5, y: 0.5 }}
-                    >
-                      <Text style={styles.markEmoji}>💩</Text>
-                    </Marker>
-                  ))}
-                </MapView>
-              ) : (
-                <View style={styles.noRouteBox}>
-                  <Text style={[styles.noRouteText, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-                    {privacyData.routeFullyHidden
-                      ? i18n.t('walk.sharePreviewNoRoute')
-                      : i18n.t('walk.sharePreviewNoRouteData')}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            <View style={[styles.statsRow, { borderTopColor: currentTheme.accentBorder }]}>
-              <View style={styles.statColumn}>
-                <Text style={[styles.statLabel, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-                  {i18n.t('walk.distance')}
+                <Text style={[styles.mapHint, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                  {i18n.t('walk.sharePreviewMapHint')}
                 </Text>
-                <Text style={[styles.statValue, { color: currentTheme.primary, fontSize: fontSizes.m }]}>
-                  {distanceStr}
-                </Text>
-              </View>
-              <View style={styles.statColumn}>
-                <Text style={[styles.statLabel, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-                  {i18n.t('walk.time')}
-                </Text>
-                <Text style={[styles.statValue, { color: currentTheme.primary, fontSize: fontSizes.m }]}>
-                  {durationStr}
-                </Text>
-              </View>
-              <View style={styles.statColumn}>
-                <Text style={[styles.statLabel, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-                  {i18n.t('walk.poopLabel')}
-                </Text>
-                <Text style={[styles.statValue, { color: currentTheme.primary, fontSize: fontSizes.m }]}>
-                  {poopCountStr}
-                </Text>
-              </View>
-            </View>
-
-            <View style={[styles.speedRow, { borderTopColor: currentTheme.accentBorder }]}>
-              <Text style={[styles.statLabel, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-                {i18n.t('walk.averageSpeed')}
-              </Text>
-              <Text style={[styles.speedValue, { color: currentTheme.primary, fontSize: fontSizes.m }]}>
-                {speedDisplay}
-              </Text>
-              {showWeather ? (
-                <WalkStartWeather
-                  startWeather={walk.startWeather}
-                  iconSize={24}
-                  textStyle={[styles.weatherValue, { color: currentTheme.primary, fontSize: fontSizes.s }]}
-                />
               ) : null}
-            </View>
+              <ViewShot
+                ref={shotRef}
+                options={{ format: 'png', quality: 1, result: 'tmpfile' }}
+                collapsable={false}
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: currentTheme.card,
+                    width: CARD_WIDTH,
+                    borderColor: currentTheme.border,
+                  },
+                ]}
+              >
+                <View style={[styles.cardHeader, { borderBottomColor: currentTheme.accentBorder }]}>
+                  {endTimeLabel ? (
+                    <Text
+                      style={[styles.endTime, { color: currentTheme.text, fontSize: fontSizes.m }]}
+                      numberOfLines={1}
+                    >
+                      {endTimeLabel}
+                    </Text>
+                  ) : null}
+                  <WalkPetChips pets={walkPets} layout="row" style={styles.petChips} />
+                </View>
 
-            {memoText ? (
-              <View style={[styles.memoBlock, { borderTopColor: currentTheme.accentBorder }]}>
-                <Text style={[styles.memoText, { color: currentTheme.text, fontSize: fontSizes.s }]}>
-                  {memoText}
+                <View
+                  style={[styles.mapBox, { backgroundColor: currentTheme.background, width: CARD_WIDTH }]}
+                  collapsable={false}
+                  onStartShouldSetResponderCapture={() => {
+                    disableOuterScroll();
+                    return false;
+                  }}
+                  onResponderRelease={enableOuterScroll}
+                  onResponderTerminate={enableOuterScroll}
+                >
+                  {visible && showMap ? (
+                    <MapView
+                      key={`share-map-${walk?.id ?? 'walk'}-${visible ? '1' : '0'}`}
+                      ref={mapRef}
+                      style={{ width: CARD_WIDTH, height: MAP_HEIGHT }}
+                      initialRegion={initialRegion}
+                      onMapReady={handleMapReady}
+                      scrollEnabled
+                      zoomEnabled
+                      rotateEnabled={false}
+                      pitchEnabled={false}
+                      moveOnMarkerPress={false}
+                      onTouchStart={disableOuterScroll}
+                      onTouchEnd={enableOuterScroll}
+                      onTouchCancel={enableOuterScroll}
+                      onRegionChangeComplete={enableOuterScroll}
+                    >
+                      <Polyline
+                        coordinates={privacyData.route}
+                        strokeColor={currentTheme.primary}
+                        strokeWidth={4}
+                      />
+                      {privacyData.customMarks.map((mark, index) => (
+                        <Marker
+                          key={`custom-${mark.id ?? index}`}
+                          coordinate={mark}
+                          anchor={{ x: 0.5, y: 0.5 }}
+                          tracksViewChanges={false}
+                        >
+                          <Text style={styles.markEmoji}>{mark.icon || '💦'}</Text>
+                        </Marker>
+                      ))}
+                      {privacyData.friendMarks.map((mark, index) => {
+                        const displayMark = resolveFriendMarkForDisplay(mark, friends);
+                        return (
+                          <Marker
+                            key={`friend-${mark.friendPetId ?? index}`}
+                            coordinate={mark}
+                            anchor={{ x: 0.5, y: 0.5 }}
+                            tracksViewChanges={false}
+                          >
+                            {displayMark.photoUrl ? (
+                              <Image source={{ uri: displayMark.photoUrl }} style={styles.friendMarkerImage} />
+                            ) : (
+                              <View
+                                style={[
+                                  styles.friendMarkerFallback,
+                                  { backgroundColor: currentTheme.cardTinted, borderColor: currentTheme.primary },
+                                ]}
+                              >
+                                <Ionicons name="paw" size={16} color={currentTheme.primary} />
+                              </View>
+                            )}
+                          </Marker>
+                        );
+                      })}
+                      {privacyData.photos.map((photo, index) => {
+                        const coordinate = getWalkPhotoCoordinate(photo);
+                        if (!coordinate) {
+                          return null;
+                        }
+                        return (
+                          <Marker
+                            key={`photo-${photo.id ?? index}`}
+                            coordinate={coordinate}
+                            tracksViewChanges={false}
+                          >
+                            <Text style={styles.markEmoji}>📷</Text>
+                          </Marker>
+                        );
+                      })}
+                      {privacyData.poops.map((poop, index) => (
+                        <Marker
+                          key={`poop-${poop.id ?? index}`}
+                          coordinate={poop}
+                          anchor={{ x: 0.5, y: 0.5 }}
+                          tracksViewChanges={false}
+                        >
+                          <Text style={styles.markEmoji}>💩</Text>
+                        </Marker>
+                      ))}
+                    </MapView>
+                  ) : (
+                    <View style={styles.noRouteBox}>
+                      <Text style={[styles.noRouteText, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                        {privacyData.routeFullyHidden
+                          ? i18n.t('walk.sharePreviewNoRoute')
+                          : i18n.t('walk.sharePreviewNoRouteData')}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={[styles.statsRow, { borderTopColor: currentTheme.accentBorder }]}>
+                  <View style={styles.statColumn}>
+                    <Text style={[styles.statLabel, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                      {i18n.t('walk.distance')}
+                    </Text>
+                    <Text style={[styles.statValue, { color: currentTheme.primary, fontSize: fontSizes.m }]}>
+                      {distanceStr}
+                    </Text>
+                  </View>
+                  <View style={styles.statColumn}>
+                    <Text style={[styles.statLabel, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                      {i18n.t('walk.time')}
+                    </Text>
+                    <Text style={[styles.statValue, { color: currentTheme.primary, fontSize: fontSizes.m }]}>
+                      {durationStr}
+                    </Text>
+                  </View>
+                  <View style={styles.statColumn}>
+                    <Text style={[styles.statLabel, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                      {i18n.t('walk.poopLabel')}
+                    </Text>
+                    <Text style={[styles.statValue, { color: currentTheme.primary, fontSize: fontSizes.m }]}>
+                      {poopCountStr}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[styles.speedRow, { borderTopColor: currentTheme.accentBorder }]}>
+                  <Text style={[styles.statLabel, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                    {i18n.t('walk.averageSpeed')}
+                  </Text>
+                  <Text style={[styles.speedValue, { color: currentTheme.primary, fontSize: fontSizes.m }]}>
+                    {speedDisplay}
+                  </Text>
+                  {showWeather ? (
+                    <WalkStartWeather
+                      startWeather={walk.startWeather}
+                      iconSize={24}
+                      textStyle={[styles.weatherValue, { color: currentTheme.primary, fontSize: fontSizes.s }]}
+                    />
+                  ) : null}
+                </View>
+
+                {memoText ? (
+                  <View style={[styles.memoBlock, { borderTopColor: currentTheme.accentBorder }]}>
+                    <Text style={[styles.memoText, { color: currentTheme.text, fontSize: fontSizes.s }]}>
+                      {memoText}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <Text style={[styles.branding, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                  {i18n.t('walk.sharePreviewBranding')}
                 </Text>
-              </View>
-            ) : null}
-
-            <Text style={[styles.branding, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
-              {i18n.t('walk.sharePreviewBranding')}
-            </Text>
-          </ViewShot>
+              </ViewShot>
+              {showMap ? (
+                <TouchableOpacity
+                  style={[
+                    styles.fitButton,
+                    {
+                      backgroundColor: currentTheme.card,
+                      borderColor: currentTheme.accentBorder,
+                    },
+                  ]}
+                  onPress={handleFitRoute}
+                  activeOpacity={0.85}
+                  accessibilityLabel={i18n.t('walk.sharePreviewFitRoute')}
+                >
+                  <Ionicons name="expand-outline" size={18} color={currentTheme.primary} />
+                  <Text style={[styles.fitButtonText, { color: currentTheme.primary, fontSize: fontSizes.s }]}>
+                    {i18n.t('walk.sharePreviewFitRoute')}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </>
+          ) : (
+            <View
+              style={[
+                styles.card,
+                styles.photoCard,
+                {
+                  backgroundColor: currentTheme.card,
+                  width: CARD_WIDTH,
+                  borderColor: currentTheme.border,
+                },
+              ]}
+            >
+              <Image
+                source={{ uri: selectedPhoto.storageUrl }}
+                style={styles.photoPreview}
+                resizeMode="contain"
+              />
+              <Text style={[styles.photoHint, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
+                {i18n.t('walk.sharePreviewPhotoHint', { number: selectedPhotoIndex + 1 })}
+              </Text>
+            </View>
+          )}
         </ScrollView>
 
         <View
@@ -410,6 +618,24 @@ const createStyles = () =>
       fontWeight: '700',
       flex: 1,
     },
+    targetBar: {
+      flexGrow: 0,
+      marginBottom: 8,
+    },
+    targetBarContent: {
+      paddingHorizontal: 16,
+      gap: 8,
+      alignItems: 'center',
+    },
+    targetChip: {
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+      borderRadius: 18,
+      borderWidth: 1,
+    },
+    targetChipText: {
+      fontWeight: '600',
+    },
     scroll: {
       flex: 1,
     },
@@ -418,10 +644,31 @@ const createStyles = () =>
       paddingHorizontal: 16,
       paddingBottom: 16,
     },
+    mapHint: {
+      alignSelf: 'stretch',
+      textAlign: 'center',
+      marginBottom: 8,
+      lineHeight: 18,
+    },
     card: {
       borderRadius: 12,
       borderWidth: 2,
       overflow: 'hidden',
+    },
+    photoCard: {
+      alignItems: 'center',
+      paddingBottom: 12,
+    },
+    photoPreview: {
+      width: CARD_WIDTH,
+      height: PHOTO_PREVIEW_HEIGHT,
+      backgroundColor: '#111',
+    },
+    photoHint: {
+      marginTop: 10,
+      paddingHorizontal: 12,
+      textAlign: 'center',
+      lineHeight: 18,
     },
     cardHeader: {
       paddingHorizontal: 12,
@@ -437,13 +684,26 @@ const createStyles = () =>
     },
     mapBox: {
       height: MAP_HEIGHT,
+      width: CARD_WIDTH,
       overflow: 'hidden',
     },
-    map: {
-      ...StyleSheet.absoluteFillObject,
+    fitButton: {
+      marginTop: 10,
+      alignSelf: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+      borderRadius: 18,
+      borderWidth: 1,
+    },
+    fitButtonText: {
+      fontWeight: '600',
     },
     noRouteBox: {
       flex: 1,
+      height: MAP_HEIGHT,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 16,

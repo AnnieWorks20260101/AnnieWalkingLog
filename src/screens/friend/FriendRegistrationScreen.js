@@ -38,6 +38,7 @@ import { canAddFriend } from '../../constants/planEntitlements';
 import { showPlanLimitAlert } from '../../utils/planLimitAlert';
 
 import { uploadFriendPhotoFromUri } from '../../services/friendPhotoUpload';
+import { SCREEN_FRIEND_ENCOUNTERS } from '../../navigation/screenNames';
 
 export default function FriendRegistrationScreen({ navigation, route }) {
   const { currentTheme } = useTheme();
@@ -438,6 +439,23 @@ export default function FriendRegistrationScreen({ navigation, route }) {
           />
         </View>
 
+        {isEditMode ? (
+          <TouchableOpacity
+            style={[styles.encountersButton, { borderColor: currentTheme.primary }]}
+            onPress={() =>
+              navigation.navigate(SCREEN_FRIEND_ENCOUNTERS, {
+                friendId,
+                friendName: name.trim() || undefined,
+              })
+            }
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.encountersButtonText, { color: currentTheme.primary }]}>
+              {i18n.t('friendRegistration.viewEncounters')}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         <TouchableOpacity
           style={[
             styles.saveButton,
@@ -503,6 +521,14 @@ const createStyles = (fs) => ({
   genderTextActiveGirl: { color: '#fff' },
   saveButton: { borderRadius: 25, paddingVertical: 15, alignItems: 'center', marginTop: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5 },
   saveButtonText: { fontSize: fs.l, fontWeight: 'bold' },
+  encountersButton: {
+    borderRadius: 25,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 2,
+  },
+  encountersButtonText: { fontWeight: 'bold', fontSize: fs.m },
   deleteButton: {
     borderRadius: 25,
     paddingVertical: 14,

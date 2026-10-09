@@ -29,6 +29,7 @@ import {
   SCREEN_PET_REGISTRATION,
   SCREEN_FRIEND_LIST,
   SCREEN_FRIEND_REGISTRATION,
+  SCREEN_FRIEND_ENCOUNTERS,
   SCREEN_SETTINGS_MAIN,
   SCREEN_PERMISSIONS_CHECK,
   SCREEN_GUEST_UPGRADE,
@@ -63,6 +64,7 @@ import PetListScreen from './src/screens/pet/PetListScreen';
 import PetRegistrationScreen from './src/screens/pet/PetRegistrationScreen';
 import FriendListScreen from './src/screens/friend/FriendListScreen';
 import FriendRegistrationScreen from './src/screens/friend/FriendRegistrationScreen';
+import FriendEncountersScreen from './src/screens/friend/FriendEncountersScreen';
 import GuestUpgradeScreen from './src/screens/settings/GuestUpgradeScreen';
 import { NavigationRefContext } from './src/navigation/NavigationRefContext';
 import AppBackHandler from './src/navigation/AppBackHandler';
@@ -103,6 +105,7 @@ function FriendStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name={SCREEN_FRIEND_LIST} component={FriendListScreen} />
       <Stack.Screen name={SCREEN_FRIEND_REGISTRATION} component={FriendRegistrationScreen} />
+      <Stack.Screen name={SCREEN_FRIEND_ENCOUNTERS} component={FriendEncountersScreen} />
     </Stack.Navigator>
   );
 }

@@ -22,12 +22,17 @@ import {
 } from '../../utils/friendGroup';
 import i18n from '../../i18n';
 
-/** お散歩中・結果画面共通の「お友達を選ぶ」タップ即選択モーダル */
+/**
+ * お友達選択モーダル。
+ * multiSelect=true のとき複数選択→完了。false のときタップで即選択（結果画面など）。
+ */
 export default function FriendPickerModal({
   visible,
   friends = [],
   onSelect,
+  onConfirm,
   onClose,
+  multiSelect = false,
   /** @param {string} friendId — 親側で「フィルタ前の全友達」を使って判定すること */
   isFriendUsable = () => true,
   onDisabledFriendPress,
@@ -36,10 +41,12 @@ export default function FriendPickerModal({
   const insets = useSafeAreaInsets();
   const styles = useThemedStyles(createStyles);
   const [groupFilter, setGroupFilter] = useState(FRIEND_GROUP_FILTER_ALL);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   useEffect(() => {
     if (!visible) {
       setGroupFilter(FRIEND_GROUP_FILTER_ALL);
+      setSelectedIds([]);
     }
   }, [visible]);
 
@@ -49,6 +56,23 @@ export default function FriendPickerModal({
     [friends, groupFilter]
   );
   const showGroupFilters = friends.length > 0;
+  const selectedCount = selectedIds.length;
+
+  const toggleFriend = (friend) => {
+    setSelectedIds((prev) =>
+      prev.includes(friend.id) ? prev.filter((id) => id !== friend.id) : [...prev, friend.id]
+    );
+  };
+
+  const handleConfirm = () => {
+    if (!multiSelect || selectedCount === 0) {
+      return;
+    }
+    const selectedFriends = selectedIds
+      .map((id) => friends.find((friend) => friend.id === id))
+      .filter(Boolean);
+    onConfirm?.(selectedFriends);
+  };
 
   const renderFilterChip = (filterKey, label) => {
     const selected = groupFilter === filterKey;
@@ -79,9 +103,14 @@ export default function FriendPickerModal({
   const renderItem = ({ item }) => {
     const photoUrl = getPetPhotoUrl(item);
     const usable = isFriendUsable(item.id);
+    const isSelected = selectedIds.includes(item.id);
     const handlePress = () => {
       if (!usable) {
         onDisabledFriendPress?.(item);
+        return;
+      }
+      if (multiSelect) {
+        toggleFriend(item);
         return;
       }
       onSelect?.(item);
@@ -108,6 +137,13 @@ export default function FriendPickerModal({
         <Text style={[styles.friendName, { color: currentTheme.text }]} numberOfLines={1}>
           {item.name}
         </Text>
+        {multiSelect && usable ? (
+          <Ionicons
+            name={isSelected ? 'checkbox' : 'square-outline'}
+            size={24}
+            color={isSelected ? currentTheme.primary : currentTheme.textSecondary}
+          />
+        ) : null}
       </TouchableOpacity>
     );
   };
@@ -124,7 +160,7 @@ export default function FriendPickerModal({
         >
           <View style={styles.header}>
             <Text style={[styles.title, { color: currentTheme.text, fontSize: fontSizes.l }]}>
-              {i18n.t('walk.friendPickerTitle')}
+              {i18n.t(multiSelect ? 'walk.friendPickerTitleMulti' : 'walk.friendPickerTitle')}
             </Text>
             <TouchableOpacity onPress={onClose} hitSlop={12}>
               <Ionicons name="close-circle" size={26} color={currentTheme.textSecondary} />
@@ -165,6 +201,27 @@ export default function FriendPickerModal({
                   </Text>
                 }
               />
+
+              {multiSelect ? (
+                <TouchableOpacity
+                  style={[
+                    styles.confirmButton,
+                    {
+                      backgroundColor:
+                        selectedCount > 0 ? currentTheme.primary : currentTheme.textSecondary,
+                    },
+                  ]}
+                  onPress={handleConfirm}
+                  disabled={selectedCount === 0}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.confirmButtonText, { color: currentTheme.card, fontSize: fontSizes.m }]}>
+                    {selectedCount > 0
+                      ? i18n.t('walk.friendPickerDoneCount', { count: selectedCount })
+                      : i18n.t('walk.friendPickerDone')}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
             </>
           )}
         </TouchableOpacity>
@@ -192,7 +249,7 @@ const createStyles = (fs) => ({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  title: { fontWeight: '700' },
+  title: { fontWeight: '700', flex: 1, marginRight: 8 },
   filterSection: {
     marginBottom: 8,
     paddingBottom: 10,
@@ -220,7 +277,7 @@ const createStyles = (fs) => ({
   friendRowDisabled: { opacity: 0.4 },
   avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, marginRight: 12 },
   noImage: { justifyContent: 'center', alignItems: 'center' },
-  friendName: { fontSize: fs.m, fontWeight: '600' },
+  friendName: { fontSize: fs.m, fontWeight: '600', flex: 1, marginRight: 8 },
   emptyText: {
     textAlign: 'center',
     paddingVertical: 24,
@@ -234,4 +291,11 @@ const createStyles = (fs) => ({
     fontSize: fs.m,
     lineHeight: 22,
   },
+  confirmButton: {
+    marginTop: 12,
+    borderRadius: 24,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  confirmButtonText: { fontWeight: 'bold' },
 });

@@ -15,7 +15,7 @@ import { useFamilyFriends } from '../../hooks/useFamilyFriends';
 import { getPetPhotoUrl } from '../../services/petPhotoUpload';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
-import { SCREEN_FRIEND_REGISTRATION } from '../../navigation/screenNames';
+import { SCREEN_FRIEND_REGISTRATION, SCREEN_FRIEND_ENCOUNTERS } from '../../navigation/screenNames';
 import { usePlanTier } from '../../hooks/usePlanTier';
 import { isFriendUsableByPlanOrder } from '../../utils/planFriendUsage';
 import {
@@ -24,6 +24,14 @@ import {
   collectFriendGroupNames,
   filterFriendsByGroup,
 } from '../../utils/friendGroup';
+import {
+  FRIEND_SORT_REGISTERED,
+  FRIEND_SORT_ENCOUNTER_COUNT,
+  FRIEND_SORT_LAST_ENCOUNTER,
+  sortFriends,
+} from '../../utils/friendSort';
+import { readFriendEncounterCount, readFriendLastEncounterDate } from '../../services/friendEncounters';
+import { useDisplayPreferences } from '../../contexts/DisplayPreferencesContext';
 import i18n from '../../i18n';
 
 export default function FriendListScreen({ navigation }) {
@@ -31,40 +39,47 @@ export default function FriendListScreen({ navigation }) {
   const styles = useThemedStyles(createStyles);
   const { familyId } = useAuth();
   const { entitlements } = usePlanTier();
+  const { language } = useDisplayPreferences();
   const { friends, loading } = useFamilyFriends(familyId);
   const [groupFilter, setGroupFilter] = useState(FRIEND_GROUP_FILTER_ALL);
+  const [sortKey, setSortKey] = useState(FRIEND_SORT_REGISTERED);
+
+  const formatEncounterDate = (date) => {
+    if (!date) {
+      return i18n.t('friendList.lastEncounterUnknown');
+    }
+    const locale = language === 'en' ? 'en-US' : language === 'ja' ? 'ja-JP' : undefined;
+    return date.toLocaleDateString(locale, { year: 'numeric', month: 'numeric', day: 'numeric' });
+  };
 
   const groupNames = useMemo(() => collectFriendGroupNames(friends), [friends]);
-  const filteredFriends = useMemo(
-    () => filterFriendsByGroup(friends, groupFilter),
-    [friends, groupFilter]
+  const displayedFriends = useMemo(
+    () => sortFriends(filterFriendsByGroup(friends, groupFilter), sortKey),
+    [friends, groupFilter, sortKey]
   );
 
-  const renderFilterChip = (filterKey, label) => {
-    const selected = groupFilter === filterKey;
-    return (
-      <TouchableOpacity
-        key={filterKey}
+  const renderChip = (selected, label, onPress, key) => (
+    <TouchableOpacity
+      key={key}
+      style={[
+        styles.filterChip,
+        { backgroundColor: currentTheme.chipBackground, borderColor: currentTheme.accentBorder },
+        selected && { backgroundColor: currentTheme.primary, borderColor: currentTheme.primary },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <Text
         style={[
-          styles.filterChip,
-          { backgroundColor: currentTheme.chipBackground, borderColor: currentTheme.accentBorder },
-          selected && { backgroundColor: currentTheme.primary, borderColor: currentTheme.primary },
+          styles.filterChipText,
+          { color: currentTheme.textSecondary },
+          selected && { color: currentTheme.card, fontWeight: 'bold' },
         ]}
-        onPress={() => setGroupFilter(filterKey)}
-        activeOpacity={0.75}
       >
-        <Text
-          style={[
-            styles.filterChipText,
-            { color: currentTheme.textSecondary },
-            selected && { color: currentTheme.card, fontWeight: 'bold' },
-          ]}
-        >
-          {label}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 
   const listHeader = () => (
     <View style={[styles.filterSection, { borderBottomColor: currentTheme.accentBorder }]}>
@@ -73,9 +88,45 @@ export default function FriendListScreen({ navigation }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filterScroll}
       >
-        {renderFilterChip(FRIEND_GROUP_FILTER_ALL, i18n.t('friendList.filterAll'))}
-        {groupNames.map((name) => renderFilterChip(name, name))}
-        {renderFilterChip(FRIEND_GROUP_FILTER_UNASSIGNED, i18n.t('friendList.filterUnassigned'))}
+        {renderChip(
+          groupFilter === FRIEND_GROUP_FILTER_ALL,
+          i18n.t('friendList.filterAll'),
+          () => setGroupFilter(FRIEND_GROUP_FILTER_ALL),
+          FRIEND_GROUP_FILTER_ALL
+        )}
+        {groupNames.map((name) =>
+          renderChip(groupFilter === name, name, () => setGroupFilter(name), `group-${name}`)
+        )}
+        {renderChip(
+          groupFilter === FRIEND_GROUP_FILTER_UNASSIGNED,
+          i18n.t('friendList.filterUnassigned'),
+          () => setGroupFilter(FRIEND_GROUP_FILTER_UNASSIGNED),
+          FRIEND_GROUP_FILTER_UNASSIGNED
+        )}
+      </ScrollView>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={[styles.filterScroll, styles.sortScroll]}
+      >
+        {renderChip(
+          sortKey === FRIEND_SORT_REGISTERED,
+          i18n.t('friendList.sortRegistered'),
+          () => setSortKey(FRIEND_SORT_REGISTERED),
+          FRIEND_SORT_REGISTERED
+        )}
+        {renderChip(
+          sortKey === FRIEND_SORT_ENCOUNTER_COUNT,
+          i18n.t('friendList.sortEncounterCount'),
+          () => setSortKey(FRIEND_SORT_ENCOUNTER_COUNT),
+          FRIEND_SORT_ENCOUNTER_COUNT
+        )}
+        {renderChip(
+          sortKey === FRIEND_SORT_LAST_ENCOUNTER,
+          i18n.t('friendList.sortLastEncounter'),
+          () => setSortKey(FRIEND_SORT_LAST_ENCOUNTER),
+          FRIEND_SORT_LAST_ENCOUNTER
+        )}
       </ScrollView>
     </View>
   );
@@ -83,8 +134,12 @@ export default function FriendListScreen({ navigation }) {
   const renderItem = ({ item }) => {
     const photoUrl = getPetPhotoUrl(item);
     const isUsable = isFriendUsableByPlanOrder(item.id, friends, entitlements);
+    const encounterCount = readFriendEncounterCount(item.encounterCount);
+    const lastEncounterDate = readFriendLastEncounterDate(item.lastEncounterAt);
+    const breed = typeof item.breed === 'string' ? item.breed.trim() : '';
+
     return (
-      <TouchableOpacity
+      <View
         style={[
           styles.friendCard,
           {
@@ -94,8 +149,6 @@ export default function FriendListScreen({ navigation }) {
           },
           !isUsable && styles.friendCardInactive,
         ]}
-        onPress={() => navigation.navigate(SCREEN_FRIEND_REGISTRATION, { friendId: item.id })}
-        activeOpacity={0.7}
       >
         <View style={styles.avatarContainer}>
           {photoUrl ? (
@@ -113,8 +166,21 @@ export default function FriendListScreen({ navigation }) {
           )}
         </View>
         <View style={styles.friendInfo}>
-          <Text style={[styles.friendName, { color: currentTheme.text }]} numberOfLines={1}>
-            {item.name}
+          <View style={styles.nameRow}>
+            <Text style={[styles.friendName, { color: currentTheme.text }]} numberOfLines={1}>
+              {item.name}
+            </Text>
+            {breed ? (
+              <Text style={[styles.friendBreed, { color: currentTheme.textSecondary }]} numberOfLines={1}>
+                {i18n.t('friendList.breedInParens', { breed })}
+              </Text>
+            ) : null}
+          </View>
+          <Text style={[styles.encounterCount, { color: currentTheme.textSecondary }]} numberOfLines={1}>
+            {i18n.t('friendList.encounterCount', { count: encounterCount })}
+          </Text>
+          <Text style={[styles.lastEncounterDate, { color: currentTheme.textSecondary }]} numberOfLines={1}>
+            {i18n.t('friendList.lastEncounterDate', { date: formatEncounterDate(lastEncounterDate) })}
           </Text>
           {!isUsable ? (
             <Text style={[styles.planInactiveLabel, { color: currentTheme.textSecondary }]}>
@@ -122,13 +188,30 @@ export default function FriendListScreen({ navigation }) {
             </Text>
           ) : null}
         </View>
-        {typeof item.breed === 'string' && item.breed.trim() ? (
-          <Text style={[styles.friendBreed, { color: currentTheme.textSecondary }]} numberOfLines={1}>
-            {item.breed.trim()}
-          </Text>
-        ) : null}
-        <Ionicons name="chevron-forward" size={22} color={currentTheme.textSecondary} />
-      </TouchableOpacity>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={[styles.actionButton, { borderColor: currentTheme.accentBorder, backgroundColor: currentTheme.background }]}
+            onPress={() => navigation.navigate(SCREEN_FRIEND_REGISTRATION, { friendId: item.id })}
+            accessibilityLabel={i18n.t('friendList.editButton')}
+            activeOpacity={0.75}
+          >
+            <Ionicons name="create-outline" size={20} color={currentTheme.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, { borderColor: currentTheme.accentBorder, backgroundColor: currentTheme.background }]}
+            onPress={() =>
+              navigation.navigate(SCREEN_FRIEND_ENCOUNTERS, {
+                friendId: item.id,
+                friendName: item.name,
+              })
+            }
+            accessibilityLabel={i18n.t('friendList.encountersButton')}
+            activeOpacity={0.75}
+          >
+            <Ionicons name="map-outline" size={20} color={currentTheme.primary} />
+          </TouchableOpacity>
+        </View>
+      </View>
     );
   };
 
@@ -154,7 +237,7 @@ export default function FriendListScreen({ navigation }) {
       ) : (
         <FlatList
           style={styles.list}
-          data={filteredFriends}
+          data={displayedFriends}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           ListHeaderComponent={listHeader}
@@ -201,6 +284,9 @@ const createStyles = (fs) => ({
     gap: 8,
     paddingRight: 4,
   },
+  sortScroll: {
+    marginTop: 8,
+  },
   filterChip: {
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -221,15 +307,28 @@ const createStyles = (fs) => ({
   avatarContainer: { marginRight: 12 },
   avatar: { width: 56, height: 56, borderRadius: 28, borderWidth: 1 },
   noImage: { justifyContent: 'center', alignItems: 'center' },
-  friendInfo: { flex: 1, minWidth: 0 },
-  friendName: { fontSize: fs.l, fontWeight: 'bold' },
-  friendBreed: {
-    fontSize: fs.s,
-    marginLeft: 8,
-    marginRight: 4,
-    maxWidth: '36%',
-    flexShrink: 1,
-    textAlign: 'right',
+  friendInfo: { flex: 1, minWidth: 0, marginRight: 8 },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    minWidth: 0,
+  },
+  friendName: { fontSize: fs.l, fontWeight: 'bold', flexShrink: 0, maxWidth: '70%' },
+  friendBreed: { fontSize: fs.s, fontWeight: 'normal', flexShrink: 1, minWidth: 0 },
+  encounterCount: { fontSize: fs.s, marginTop: 2 },
+  lastEncounterDate: { fontSize: fs.s, marginTop: 1 },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   planInactiveLabel: { fontSize: fs.s, fontWeight: '600', marginTop: 2 },
   fab: {

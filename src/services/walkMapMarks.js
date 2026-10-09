@@ -1,5 +1,6 @@
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { collectFriendPetIds } from './friendEncounters';
 
 function sanitizePetId(value) {
   return typeof value === 'string' ? value : '';
@@ -32,16 +33,18 @@ export function sanitizeCustomMark(mark) {
 }
 
 /**
- * @param {{ latitude?: unknown, longitude?: unknown, friendPetId?: unknown, name?: unknown, photoUrl?: unknown }} mark
- * @returns {{ latitude: number, longitude: number, friendPetId: string, name: string, photoUrl: string }}
+ * @param {{ latitude?: unknown, longitude?: unknown, friendPetId?: unknown, name?: unknown, photoUrl?: unknown, memo?: unknown }} mark
+ * @returns {{ latitude: number, longitude: number, friendPetId: string, name: string, photoUrl: string, memo: string }}
  */
 export function sanitizeFriendMark(mark) {
+  const rawMemo = typeof mark.memo === 'string' ? mark.memo.trim() : '';
   return {
     latitude: Number(mark.latitude),
     longitude: Number(mark.longitude),
     friendPetId: typeof mark.friendPetId === 'string' ? mark.friendPetId : '',
     name: typeof mark.name === 'string' ? mark.name : '',
     photoUrl: typeof mark.photoUrl === 'string' ? mark.photoUrl : '',
+    memo: rawMemo.slice(0, 80),
   };
 }
 
@@ -75,6 +78,33 @@ export function areWalkMarkListsEqual(a, b) {
     }
   }
   return true;
+}
+
+/**
+ * 複数ピンが完全に重ならないよう、基準座標の周囲に少しずらす（およそ radiusMeters）。
+ * @param {{ latitude: number, longitude: number }} coordinate
+ * @param {number} index
+ * @param {number} total
+ * @param {number} [radiusMeters]
+ * @returns {{ latitude: number, longitude: number }}
+ */
+export function offsetCoordinateForCluster(coordinate, index, total, radiusMeters = 5) {
+  const latitude = Number(coordinate?.latitude);
+  const longitude = Number(coordinate?.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return { latitude: 0, longitude: 0 };
+  }
+  if (!Number.isFinite(total) || total <= 1) {
+    return { latitude, longitude };
+  }
+  const angle = (2 * Math.PI * index) / total - Math.PI / 2;
+  const latRad = (latitude * Math.PI) / 180;
+  const metersPerDegLat = 111320;
+  const metersPerDegLng = Math.max(111320 * Math.cos(latRad), 1e-6);
+  return {
+    latitude: latitude + (Math.cos(angle) * radiusMeters) / metersPerDegLat,
+    longitude: longitude + (Math.sin(angle) * radiusMeters) / metersPerDegLng,
+  };
 }
 
 /**
@@ -123,7 +153,7 @@ export function createCustomMark(coordinate, options = {}) {
 
 /**
  * @param {{ latitude: number, longitude: number }} coordinate
- * @param {{ friendPetId?: string, name?: string, photoUrl?: string }} options
+ * @param {{ friendPetId?: string, name?: string, photoUrl?: string, memo?: string }} options
  */
 export function createFriendMark(coordinate, options = {}) {
   return sanitizeFriendMark({
@@ -131,6 +161,7 @@ export function createFriendMark(coordinate, options = {}) {
     friendPetId: options.friendPetId,
     name: options.name,
     photoUrl: options.photoUrl,
+    memo: options.memo,
   });
 }
 
@@ -150,9 +181,11 @@ export function removeWalkMark(marks, index) {
  * @param {{ poops?: unknown[], customMarks?: unknown[], friendMarks?: unknown[] }} marks
  */
 export async function persistWalkMapMarks(walkId, { poops, customMarks, friendMarks }) {
+  const nextFriendMarks = Array.isArray(friendMarks) ? friendMarks.map(sanitizeFriendMark) : [];
   await updateDoc(doc(db, 'walks', walkId), {
     poops: Array.isArray(poops) ? poops.map(sanitizePoopMark) : [],
     customMarks: Array.isArray(customMarks) ? customMarks.map(sanitizeCustomMark) : [],
-    friendMarks: Array.isArray(friendMarks) ? friendMarks.map(sanitizeFriendMark) : [],
+    friendMarks: nextFriendMarks,
+    friendPetIds: collectFriendPetIds(nextFriendMarks),
   });
 }

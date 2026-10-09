@@ -1,15 +1,27 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import i18n from '../../i18n';
 
-/** WalkDetailScreen の mapPadding / 中央ピン位置と揃える */
+/** WalkDetailScreen の mapPadding / 中央ピン位置と揃える（通常） */
 export const WALK_MARK_EDIT_BAR_HEIGHT = 152;
+/** 遭遇メモ入力あり */
+export const WALK_MARK_EDIT_BAR_HEIGHT_WITH_MEMO = 210;
 
-export default function WalkMarkEditBar({ title, hint, onSave, onCancel, onDelete, saving = false }) {
+export default function WalkMarkEditBar({
+  title,
+  hint,
+  onSave,
+  onCancel,
+  onDelete,
+  saving = false,
+  memoValue,
+  onChangeMemo,
+  showMemo = false,
+}) {
   const { currentTheme, fontSizes } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = useThemedStyles(createStyles);
@@ -30,6 +42,26 @@ export default function WalkMarkEditBar({ title, hint, onSave, onCancel, onDelet
       <Text style={[styles.hint, { color: currentTheme.textSecondary, fontSize: fontSizes.s }]}>
         {hintText}
       </Text>
+      {showMemo ? (
+        <TextInput
+          style={[
+            styles.memoInput,
+            {
+              backgroundColor: currentTheme.inputBackground ?? currentTheme.background,
+              borderColor: currentTheme.border,
+              color: currentTheme.text,
+              fontSize: fontSizes.m,
+            },
+          ]}
+          value={memoValue ?? ''}
+          onChangeText={onChangeMemo}
+          placeholder={i18n.t('walk.friendMarkMemoPlaceholder')}
+          placeholderTextColor={currentTheme.textSecondary}
+          maxLength={80}
+          returnKeyType="done"
+          editable={!saving}
+        />
+      ) : null}
       <View style={[styles.actions, onDelete && styles.actionsWithDelete]}>
         {onDelete ? (
           <TouchableOpacity
@@ -85,6 +117,13 @@ const createStyles = (fs) => ({
   },
   title: { fontWeight: '700', marginBottom: 4 },
   hint: { lineHeight: Math.round(fs.s * 1.45), marginBottom: 10 },
+  memoInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 10,
+  },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 10 },
   actionsWithDelete: { justifyContent: 'space-between' },
   rightActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },

@@ -18,11 +18,13 @@ export function markMatchesPetFilter(mark, filterPetId, options = {}) {
 }
 
 /**
- * 出会った人ピンは「すべて」のときだけ表示
- * @param {string} filterPetId
+ * 遭遇ピンはペット絞り込みの対象外（どの犬フィルターでも表示）。
+ * ※ 1頭お散歩では markPetFilterId が自動でその犬の ID になるため、
+ *   「すべて」のときだけ表示にすると遭遇ピンが消えてしまう。
+ * @param {string} _filterPetId
  */
-export function friendMarkMatchesPetFilter(filterPetId) {
-  return !filterPetId || filterPetId === WALK_MARK_PET_FILTER_ALL;
+export function friendMarkMatchesPetFilter(_filterPetId) {
+  return true;
 }
 
 /**

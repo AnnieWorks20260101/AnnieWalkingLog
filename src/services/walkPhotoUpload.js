@@ -13,6 +13,23 @@ function walkPhotosFolderPath(familyId, walkId) {
 }
 
 /**
+ * お散歩写真1枚を Storage から削除（無い場合は無視）
+ */
+export async function deleteWalkPhotoFromStorage(familyId, walkId, photoId) {
+  if (!familyId || !walkId || !photoId) {
+    return;
+  }
+  try {
+    await deleteObject(ref(storage, walkPhotoObjectPath(familyId, walkId, photoId)));
+  } catch (error) {
+    if (error?.code === 'storage/object-not-found') {
+      return;
+    }
+    throw error;
+  }
+}
+
+/**
  * お散歩に紐づく Storage 写真を削除（フォルダ内の全ファイル）
  * object-not-found は無視（既に削除済みなど）
  */
